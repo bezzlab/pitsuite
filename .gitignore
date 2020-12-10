@@ -1,0 +1,10 @@
+.idea/
+
+target/
+pitguiv2.iml
+
+existing.json
+
+plots/
+
+*.log

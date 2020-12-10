@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXCheckBox?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.SplicingTableController">
+    <children>
+        <GridPane fx:id="mainGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" percentWidth="50" />
+                <ColumnConstraints hgrow="SOMETIMES" percentWidth="20" />
+                <ColumnConstraints hgrow="SOMETIMES" percentWidth="30" />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints percentHeight="5" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="5" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="5" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="30" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="5" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="30" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="5" prefHeight="30.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="10" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="15" vgrow="SOMETIMES" />
+            </rowConstraints>
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3">
+                    <children>
+                  <JFXComboBox fx:id="comparisonSplicingCombobox" />
+                        <JFXTextField fx:id="geneFilterSplicingTextField" promptText="Gene" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <HBox.margin>
+                                <Insets top="5.0" />
+                            </HBox.margin>
+                        </JFXTextField>
+                        <Label fx:id="pvalLabel" text="P-val &lt;= " />
+                        <Spinner fx:id="pValFilterSplicingSpinner" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <Label fx:id="typeLabel" text="Type" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <JFXTextField fx:id="eventTypeFilterSplicingTextField" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <HBox.margin>
+                                <Insets top="5.0" />
+                            </HBox.margin>
+                        </JFXTextField>
+                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="Pept. evidence" />
+                        <Button fx:id="filterSplicingButton" mnemonicParsing="false" text="Filter" />
+                  <Label text="Min gene ratio" />
+                  <Spinner fx:id="minRatioSpinner" />
+                    </children>
+                    <opaqueInsets>
+                        <Insets />
+                    </opaqueInsets>
+                    <padding>
+                        <Insets left="5.0" />
+                    </padding>
+                </HBox>
+                <TableView fx:id="splicingEventsTableView" prefHeight="289.0" prefWidth="575.0" GridPane.rowIndex="1" GridPane.rowSpan="3">
+                    <columns>
+                        <TableColumn fx:id="geneSymbolSplicingTableColumn" text="Gene" />
+                        <TableColumn fx:id="strandSplicingTableColumn" text="Strand" />
+                        <TableColumn fx:id="eventTypeSplicingTableColumn" text="Type" />
+                        <TableColumn fx:id="exonStartSplicingTableColumn" text="Start" />
+                        <TableColumn fx:id="exonEndSplicingTableColumn" text="End" />
+                        <TableColumn fx:id="dPsiSplicingTableColumn" text="dPSI" />
+                        <TableColumn fx:id="pValSplicingTableColumn" text="P-Val" />
+                        <TableColumn fx:id="geneRatioColumn" text="Gene ratio" />
+                        <TableColumn fx:id="peptideEvidenceColumn" text="Peptide evidence" />
+                    </columns>
+                </TableView>
+                <HBox alignment="CENTER_RIGHT" spacing="5.0" GridPane.rowIndex="4">
+                    <children>
+                        <Label id="info_label" fx:id="numberOfGenesInTableLabel" text="#" />
+                        <Label id="info_label" layoutX="574.0" layoutY="17.0" text="genes," />
+                        <Label id="info_label" fx:id="numberOfSplicingEventssInTableLabel" layoutX="544.0" layoutY="13.0" text="#" />
+                        <Label id="info_label" layoutX="559.0" layoutY="13.0" text="events." />
+                    </children>
+                </HBox>
+            <TabPane tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.rowSpan="8" GridPane.vgrow="ALWAYS">
+              <tabs>
+                <Tab text="Details">
+                  <content>
+                    <AnchorPane minHeight="0.0" minWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <GridPane fx:id="rightGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <columnConstraints>
+                                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                                </columnConstraints>
+                                  <rowConstraints>
+                                      <RowConstraints percentHeight="5.0" vgrow="SOMETIMES" />
+                                      <RowConstraints percentHeight="5.0" vgrow="SOMETIMES" />
+                                      <RowConstraints percentHeight="20.0" vgrow="SOMETIMES" />
+                                      <RowConstraints percentHeight="10.0" vgrow="SOMETIMES" />
+                                      <RowConstraints percentHeight="30.0" vgrow="SOMETIMES" />
+                                    <RowConstraints />
+                                  </rowConstraints>
+
+                                 <children>
+                                        <Label text="Domains In" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+                                        <TextArea fx:id="domainsInTextArea" editable="false" wrapText="true" GridPane.rowIndex="2" />
+                                        <TextArea fx:id="domainsOutTextArea" editable="false" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                        <Label text="Domains out" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+
+                                     <VBox id="white-panel" alignment="CENTER" GridPane.columnSpan="2147483647" GridPane.rowIndex="4">
+                                         <Pane fx:id="arrowRepresentationPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
+                                         <Pane fx:id="exonRepresentationPane" layoutX="10.0" layoutY="29.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
+                                     </VBox>
+                                        <Label text="Representation" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
+                                        <HBox>
+                                            <Button id="button-incognito" fx:id="eventTypeAboutButton" alignment="TOP_LEFT" contentDisplay="GRAPHIC_ONLY" graphicTextGap="0.0" mnemonicParsing="false">
+                                                <graphic>
+                                                    <FontIcon iconColor="#6b6b6b" iconLiteral="fa-question-circle" />
+                                                </graphic>
+                                            </Button>
+                                            <Label fx:id="eventTypeLabel" text="Event Type:" />
+                                        </HBox>
+                                    <ComboBox fx:id="selectedRunRepresentation" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                     <GridPane fx:id="representationChartsBox"  GridPane.columnSpan="2147483647" GridPane.rowIndex="5" GridPane.vgrow="ALWAYS">
+
+                                         <columnConstraints>
+                                             <ColumnConstraints percentWidth="33" />
+                                             <ColumnConstraints percentWidth="33" />
+                                             <ColumnConstraints percentWidth="33" />
+                                         </columnConstraints>
+                                         <rowConstraints>
+                                             <RowConstraints percentHeight="100" />
+                                         </rowConstraints>
+
+                                     </GridPane>
+
+                                 </children>
+                              </GridPane>
+                           </children>
+                        </AnchorPane>
+                  </content>
+                </Tab>
+                <Tab text="Kegg">
+                  <content>
+                      <fx:include fx:id="kegg" source="kegg.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                  </content>
+                </Tab>
+                  <Tab text="GO">
+                     <content>
+                        <fx:include fx:id="goTerms" source="goTerms.fxml" />
+                     </content>
+                  </Tab>
+              </tabs>
+            </TabPane>
+
+
+            </children>
+        </GridPane>
+    </children>
+</AnchorPane>

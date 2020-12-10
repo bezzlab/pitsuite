@@ -1,0 +1,22 @@
+
+.root{
+    -fx-font-size: 18pt;
+    -fx-font-family: "Courier New";
+
+
+    -charts-primary-color: rgb(86, 200, 236);
+    -charts-secondary-color: #27db5a;
+    -charts-terciary-color: #ff02dc;
+
+    -charts-primary-color-transparent: rgba(86, 200, 236, 0.78);
+    -charts-secondary-color-transparent: rgba(39, 219, 90, 0.78);
+    -charts-terciary-color-transparent: rgba(255, 2, 220, 0.77);
+
+    -button-primary:  #868ED5;
+    -tab-selected: #baa7d5;
+
+    -slider-thumb-middle-gray: rgb(201, 201, 201);
+    -titled-pane-light-gray: rgb(232, 232, 232);
+    -hover-light-gray: rgb(226, 226, 226);
+    -very-light-gray: rgb(236, 236, 236);
+}

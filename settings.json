@@ -1,0 +1,9 @@
+{
+    "Fonts": {
+        "general": {"size": 18},
+        "charts": {"size": 18},
+        "browser": {"size": 21}
+    },
+    "tools": {"R": "/usr/bin/Rscript"},
+    "Browser": {"minSashimiReads": 1}
+}

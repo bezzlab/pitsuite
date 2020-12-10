@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.web.WebView?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.GenomeBrowserController">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox>
+               <children>
+                  <HBox alignment="CENTER_LEFT" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <Label text="Chr:" />
+                        <JFXComboBox fx:id="chrCombobox" />
+                        <JFXComboBox fx:id="comparisonCombobox" />
+                        <Separator orientation="VERTICAL" />
+                        <Button fx:id="genomeBrowserMoveLeftButton" mnemonicParsing="false" text="&lt;" />
+                        <JFXTextField fx:id="minGenomCoordGenomBrowserTextField" alignment="CENTER" />
+                        <Label layoutX="10.0" layoutY="10.0" text="-" />
+                        <JFXTextField fx:id="maxGenomCoordGenomBrowserTextField" alignment="CENTER" />
+                        <Button fx:id="genomeBrowserMoveRightButton" mnemonicParsing="false" text="&gt;" />
+                        <Separator orientation="VERTICAL" />
+                        <Label text="Zoom:" />
+<!--                        <FontIcon iconColor="#b5b5b5" iconLiteral="eli-zoom-in" />-->
+                        <Slider fx:id="genomeZoomBrowserSlider" />
+<!--                        <FontIcon iconColor="#b5b5b5" iconLiteral="eli-zoom-out" />-->
+                        <HBox alignment="CENTER_LEFT">
+                           <children>
+                              <Label text="(" />
+                              <HBox alignment="CENTER_LEFT">
+                                 <children>
+                                    <Label id="info_label" fx:id="numbOfGenesGenomBrowser" stylesheets="@cssStyleSheets/styleSheet.css" text="#" />
+                                 </children>
+                              </HBox>
+                              <Label id="info_label" stylesheets="@cssStyleSheets/styleSheet.css" text=" genes.)" />
+                           </children>
+                        </HBox>
+                     </children>
+                     <opaqueInsets>
+                        <Insets left="5.0" />
+                     </opaqueInsets>
+                     <padding>
+                        <Insets left="5.0" />
+                     </padding>
+                  </HBox>
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <MenuButton mnemonicParsing="false">
+                           <items>
+                              <MenuItem fx:id="showLegendGenomeBrowser" mnemonicParsing="false" text="Legend" />
+                              <SeparatorMenuItem mnemonicParsing="false" />
+                              <MenuItem fx:id="showHideFoldChange" mnemonicParsing="false" text="Show/Hide Fold Change Info" />
+                           </items>
+                           <graphic>
+                              <FontIcon iconColor="#b5b5b5" iconLiteral="fa-cog" iconSize="19" />
+                           </graphic>
+                        </MenuButton>
+                     </children>
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                     <padding>
+                        <Insets right="5.0" />
+                     </padding>
+                  </HBox>
+               </children>
+            </HBox>
+            <HBox fx:id="genomeHBoxSlider" />
+            <GridPane fx:id="browserGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+               <rowConstraints>
+                  <RowConstraints percentHeight="70" />
+                  <RowConstraints percentHeight="30" />
+               </rowConstraints>
+               <columnConstraints>
+                  <ColumnConstraints hgrow="ALWAYS" percentWidth="100" />
+               </columnConstraints>
+               <children>
+                  <ScrollPane id="browser-scrollpane" fx:id="genomeBrowserScrollPane" hbarPolicy="NEVER" stylesheets="@cssStyleSheets/styleSheet.css" GridPane.hgrow="NEVER" GridPane.rowIndex="0" GridPane.vgrow="ALWAYS">
+                     <content>
+                        <VBox fx:id="genomeViewerVBox" style="-fx-background-color: greenyellow;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <opaqueInsets>
+                              <Insets left="5.0" />
+                           </opaqueInsets>
+                        </VBox>
+                     </content>
+                  </ScrollPane>
+                  <TitledPane fx:id="foldChangeTitledPane" animated="false" text="Diff. Gene Expression" GridPane.rowIndex="1">
+                     <content>
+                        <HBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <children>
+                                    <HBox alignment="CENTER" layoutX="15.0" layoutY="10.0" spacing="5.0">
+                                       <children>
+                                          <Label text="Gene:" />
+                                          <JFXTextField fx:id="geneFilterFoldChangeTextField" />
+                                          <Label text="Adj. P-val:" />
+                                          <Spinner fx:id="adjPValFilterFoldChangeSpinner" />
+                                          <Label layoutX="404.0" layoutY="21.0" text="abs(fold) :" />
+                                          <Spinner fx:id="foldFilterFoldChangeSpinner" layoutX="446.0" layoutY="14.0" />
+                                       </children>
+                                       <padding>
+                                          <Insets left="5.0" />
+                                       </padding>
+                                    </HBox>
+                                    <TableView fx:id="foldChangeTableView">
+                                       <columns>
+                                          <TableColumn fx:id="geneSymbolFoldChangeTableColumn" text="Symbol" />
+                                          <TableColumn fx:id="logFoldFoldChangeTableColumn" text="Log2Fold" />
+                                          <TableColumn fx:id="pValFoldChangeTableColumn" text="P-Val" />
+                                          <TableColumn fx:id="adjPValFoldChangeTableColumn" text="Adj. P-val" />
+                                       </columns>
+                                    </TableView>
+                                    <HBox alignment="CENTER_RIGHT">
+                                       <children>
+                                          <Label id="info_label" fx:id="numberOfGenesInTableLabel" stylesheets="@cssStyleSheets/styleSheet.css" text="#" />
+                                          <Label id="info_label" layoutX="579.0" layoutY="10.0" stylesheets="@cssStyleSheets/styleSheet.css" text=" genes." />
+                                       </children>
+                                    </HBox>
+                                 </children>
+                              </VBox>
+                              <VBox id="white-panel" alignment="CENTER" layoutX="10.0" layoutY="10.0">
+                                 <children>
+                                    <WebView fx:id="volcanoPlotWebView">
+                                       <VBox.margin>
+                                          <Insets />
+                                       </VBox.margin>
+                                    </WebView>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                     </content>
+                  </TitledPane>
+               </children>
+            </GridPane>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

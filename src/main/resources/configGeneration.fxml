@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="Controllers.configGeneration"
+            prefHeight="400.0" prefWidth="600.0">
+    <children>
+    <GridPane fx:id="leftGridPane" alignment="center_left" hgap="10" vgap="10" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+
+    </GridPane>
+    <GridPane fx:id="initialGridPane" alignment="center" hgap="10" vgap="10" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+    <Button fx:id="newProjectButton" minWidth="129" text="New project" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+    <Button text="Open existing project" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+    <Button fx:id="analysisButton" minWidth="129" text="Run analysis" GridPane.ColumnIndex="0" GridPane.rowIndex="2" />
+    <Button fx:id="testButton" minWidth="129" text="test" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+    </GridPane>
+    </children>
+
+
+
+</AnchorPane>

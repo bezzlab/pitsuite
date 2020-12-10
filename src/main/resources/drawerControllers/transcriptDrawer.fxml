@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.drawerControllers.TranscriptDrawerController">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Hyperlink fx:id="transcriptIdLink" alignment="CENTER" contentDisplay="CENTER" />
+
+            <TableView fx:id="transcriptTable">
+              <columns>
+                <TableColumn fx:id="conditionColumn" text="Condition" />
+                <TableColumn fx:id="sampleColumn" text="Sample" />
+                  <TableColumn fx:id="tpmColumn" text="TPM" />
+              </columns>
+            </TableView>
+            <BarChart fx:id="tpmChart" title="Transcript abundance per sample">
+              <xAxis>
+                <CategoryAxis label="Sample" side="BOTTOM" />
+              </xAxis>
+              <yAxis>
+                <NumberAxis label="TPM" side="LEFT" />
+              </yAxis>
+            </BarChart>
+            <TableView fx:id="exonTable" prefHeight="200.0" prefWidth="200.0">
+              <columns>
+                <TableColumn fx:id="exonStartColumn" prefWidth="75.0" text="Start" />
+                <TableColumn fx:id="exonEndColumn" prefWidth="75.0" text="End" />
+              </columns>
+            </TableView>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

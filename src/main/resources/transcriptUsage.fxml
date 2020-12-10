@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXCheckBox?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.TranscriptUsageController">
+    <children>
+        <GridPane fx:id="mainGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <columnConstraints>
+                <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
+                <ColumnConstraints hgrow="SOMETIMES" percentWidth="50.0" />
+            <ColumnConstraints />
+            </columnConstraints>
+            <rowConstraints>
+                <RowConstraints percentHeight="5.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="40.0" vgrow="SOMETIMES" />
+                <RowConstraints percentHeight="55.0" vgrow="SOMETIMES" />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            <RowConstraints />
+            </rowConstraints>
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="5.0" GridPane.columnSpan="3">
+                    <children>
+                        <JFXComboBox fx:id="comparisonSplicingCombobox" />
+                        <JFXTextField fx:id="geneFilterSplicingTextField" promptText="Gene" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <HBox.margin>
+                                <Insets top="5.0" />
+                            </HBox.margin>
+                        </JFXTextField>
+                        <Label fx:id="pvalLabel" text="P-val &lt;= " />
+                        <Spinner fx:id="pValFilterSplicingSpinner" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="Pept. evidence" />
+                        <Button fx:id="filterSplicingButton" mnemonicParsing="false" text="Filter" />
+                    </children>
+                    <opaqueInsets>
+                        <Insets />
+                    </opaqueInsets>
+                    <padding>
+                        <Insets left="5.0" />
+                    </padding>
+                </HBox>
+                <TableView fx:id="transcriptUsageTableView" GridPane.rowIndex="1" GridPane.rowSpan="1">
+                    <columns>
+                        <TableColumn fx:id="geneSymbolTableColumn" text="Gene" />
+                        <TableColumn fx:id="transcriptTableColumn" text="Transcript" />
+                        <TableColumn fx:id="dPsiTableColumn" text="dPSI" />
+                        <TableColumn fx:id="pValTableColumn" text="P-Val" />
+                    </columns>
+                </TableView>
+                <TabPane fx:id="rightTabPane" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.rowSpan="8" GridPane.vgrow="ALWAYS">
+                    <tabs>
+                        <Tab text="Details">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <Pane fx:id="exonsPane" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                           </children>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                        <Tab text="Kegg">
+                            <content>
+                                <fx:include fx:id="kegg" source="kegg.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                            </content>
+                        </Tab>
+                        <Tab text="GO">
+                            <content>
+                                <fx:include fx:id="goTerms" source="goTerms.fxml" />
+                            </content>
+                        </Tab>
+                    </tabs>
+                </TabPane>
+
+
+            </children>
+        </GridPane>
+    </children>
+</AnchorPane>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXListView?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.SplitPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.* ?>
+
+<?import javafx.scene.control.MenuBar?>
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.SettingsController">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <SplitPane dividerPositions="0.29797979797979796" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+              <items>
+                <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <JFXListView fx:id="categoriesListview" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                     </children>
+                  </AnchorPane>
+                <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <children>
+                        <GridPane fx:id="fontPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                          <columnConstraints>
+                            <ColumnConstraints hgrow="SOMETIMES" />
+                            <ColumnConstraints hgrow="SOMETIMES" />
+                          </columnConstraints>
+                          <rowConstraints>
+                            <RowConstraints vgrow="SOMETIMES" />
+                            <RowConstraints vgrow="SOMETIMES" />
+                            <RowConstraints vgrow="SOMETIMES" />
+                          </rowConstraints>
+                           <children>
+                              <Label text="Browser font size" />
+                              <Label text="General font size" GridPane.rowIndex="1" />
+                               <Label text="Charts font size" GridPane.rowIndex="2" />
+                               <Spinner fx:id="browserFontSizeSpinner" GridPane.columnIndex="1" >
+                                   <valueFactory>
+                                       <SpinnerValueFactory.IntegerSpinnerValueFactory min="5" max="50" amountToStepBy="1"/>
+                                   </valueFactory>
+                               </Spinner>
+                               <Spinner fx:id="generalFontSizeSpinner" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                   <valueFactory>
+                                       <SpinnerValueFactory.IntegerSpinnerValueFactory min="5" max="50" amountToStepBy="1"/>
+                                   </valueFactory>
+                               </Spinner>
+                               <Spinner fx:id="chartsFontSizeSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2">
+                                   <valueFactory>
+                                       <SpinnerValueFactory.IntegerSpinnerValueFactory min="5" max="50" amountToStepBy="1"/>
+                                   </valueFactory>
+                               </Spinner>
+                           </children>
+                        </GridPane>
+                         <GridPane fx:id="externalToolsPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                             <columnConstraints>
+                                 <ColumnConstraints hgrow="SOMETIMES" />
+                                 <ColumnConstraints hgrow="SOMETIMES" />
+                             </columnConstraints>
+                             <rowConstraints>
+                                 <RowConstraints vgrow="SOMETIMES" />
+                             </rowConstraints>
+                             <children>
+                                 <Label text="path to Rscript" />
+                                 <TextField fx:id="pathToRField" GridPane.columnIndex="1" />
+                             </children>
+                         </GridPane>
+
+
+                         <GridPane fx:id="browserPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                             <columnConstraints>
+                                 <ColumnConstraints hgrow="SOMETIMES" />
+                                 <ColumnConstraints hgrow="SOMETIMES" />
+                             </columnConstraints>
+                             <rowConstraints>
+                                 <RowConstraints vgrow="SOMETIMES" />
+                             </rowConstraints>
+                             <children>
+                                 <Label text="Minimum numbers of junction reads on Sashimi plot" />
+                                 <Spinner fx:id="minSashimiReads" GridPane.columnIndex="1" >
+                                     <valueFactory>
+                                         <SpinnerValueFactory.IntegerSpinnerValueFactory min="1" initialValue="1" max="10000000" amountToStepBy="1"/>
+                                     </valueFactory>
+                                 </Spinner>
+                             </children>
+                         </GridPane>
+                     </children>
+                  </AnchorPane>
+              </items>
+            </SplitPane>
+            <HBox alignment="BASELINE_RIGHT" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <Button fx:id="applyButton" mnemonicParsing="false" onMouseClicked="#applyChanges" text="Apply" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

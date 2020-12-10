@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.drawerControllers.MutationDrawerController">
+   <children>
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <Label fx:id="refPosLabel" text="Label" />
+            <Label fx:id="refLabel" text="Label" />
+            <Label fx:id="altLabel" text="Label" />
+            <TableView fx:id="variationTable">
+              <columns>
+                <TableColumn fx:id="conditionColumn" text="Condition" />
+                <TableColumn fx:id="sampleColumn" text="Sample" />
+                  <TableColumn fx:id="qualColumn" text="Qual" />
+                  <TableColumn fx:id="afColumn" text="AF" />
+              </columns>
+            </TableView>
+            <BarChart fx:id="qualChart" title="Variation prediction score per sample">
+              <xAxis>
+                <CategoryAxis label="Sample" side="BOTTOM" />
+              </xAxis>
+              <yAxis>
+                <NumberAxis label="Quality" side="LEFT" />
+              </yAxis>
+            </BarChart>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import com.jfoenix.controls.JFXCheckBox?>
+<?import com.jfoenix.controls.JFXSlider?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.control.TableView?>
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.SpectrumViewerController">
+   <children>
+      <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <columnConstraints>
+          <ColumnConstraints percentWidth="40" />
+          <ColumnConstraints percentWidth="60" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints percentHeight="30" />
+            <RowConstraints percentHeight="70" />
+
+        </rowConstraints>
+         <children>
+            <VBox>
+               <children>
+                  <Label text="Tolerance" />
+                  <JFXSlider fx:id="toleranceSlider" />
+                  <JFXButton onMouseClicked="#resetZoom" text="Reset zoom" />
+                  <Label text="Ions" />
+                  <GridPane>
+                    <columnConstraints>
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                      <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                     <children>
+                         <Label GridPane.rowIndex="0">a</Label>
+                         <Label GridPane.rowIndex="1">b</Label>
+                         <Label GridPane.rowIndex="2">c</Label>
+                         <Label GridPane.rowIndex="3">x</Label>
+                         <Label GridPane.rowIndex="4">y</Label>
+                         <Label GridPane.rowIndex="5">z</Label>
+                        <JFXCheckBox fx:id="a1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                         <JFXCheckBox fx:id="a2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                         <JFXCheckBox fx:id="a3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+                         <JFXCheckBox fx:id="b1" selected="true" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                         <JFXCheckBox fx:id="b2" selected="true" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                         <JFXCheckBox fx:id="b3" selected="true" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                         <JFXCheckBox fx:id="c1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                         <JFXCheckBox fx:id="c2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+                         <JFXCheckBox fx:id="c3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+                         <JFXCheckBox fx:id="x1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                         <JFXCheckBox fx:id="x2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+                         <JFXCheckBox fx:id="x3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+                         <JFXCheckBox fx:id="y1" selected="true" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                         <JFXCheckBox fx:id="y2" selected="true" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+                         <JFXCheckBox fx:id="y3" selected="true" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+                         <JFXCheckBox fx:id="z1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                         <JFXCheckBox fx:id="z2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+                         <JFXCheckBox fx:id="z3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="5" />
+
+                     </children>
+                  </GridPane>
+                  <Label text="Neutral losses" />
+                  <JFXCheckBox fx:id="nh3Checkbox" text="NH3" />
+                  <JFXCheckBox fx:id="h2oCheckbox" text="H2O" />
+                  <JFXCheckBox fx:id="h3po4Checkbox" text="H3PO4" />
+               </children>
+            </VBox>
+             <TableView fx:id="ionTable" GridPane.columnIndex="1">
+
+             </TableView>
+            <Pane fx:id="spectrumPane" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+         </children>
+      </GridPane>
+   </children>
+</AnchorPane>

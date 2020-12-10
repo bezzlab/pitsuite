@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXDrawer?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuButton?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.GeneBrowserController">
+   <children>
+      <JFXDrawer fx:id="drawer" defaultDrawerSize="600" direction="RIGHT" overLayVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+      <VBox spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+
+
+            <HBox alignment="CENTER_LEFT" layoutX="10.0" maxHeight="-Infinity" minHeight="-Infinity" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <children>
+                  <JFXTextField fx:id="geneIdTextField" promptText="Gene" HBox.hgrow="NEVER" />
+                  <Button fx:id="queryGeneDataBaseButton" mnemonicParsing="false" text="Search" HBox.hgrow="SOMETIMES" />
+<!--                  <Separator orientation="VERTICAL"  />-->
+                  <Button fx:id="geneBrowserMoveLeftButton" mnemonicParsing="false" text="&lt;" />
+                  <Label fx:id="currentCoordinateTextField" text="#-#" textAlignment="CENTER" HBox.hgrow="SOMETIMES" />
+                  <Button fx:id="geneBrowserMoveRightButton" mnemonicParsing="false" text="&gt;" />
+<!--                  <Separator orientation="VERTICAL"  />-->
+                  <Label text="Zoom" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="zoomInExonButton" mnemonicParsing="false" text="+" />
+                  <Button fx:id="zoomOutExonButton" layoutX="501.0" layoutY="16.0" mnemonicParsing="false" text="-" />
+                  <Button fx:id="zoomFullSeqExons" mnemonicParsing="false" stylesheets="@cssStyleSheets/styleSheet.css" text="--" />
+<!--                  <Separator orientation="VERTICAL" prefHeight="200.0" />-->
+                  <Label fx:id="sortTPMLabel" prefHeight="16.0" text="Sort (TPM):" HBox.hgrow="ALWAYS" />
+                  <JFXComboBox fx:id="conditionsGeneBrowserCombobox" HBox.hgrow="SOMETIMES" />
+                  <Label fx:id="tpmLabel" text="TPM&gt;=" HBox.hgrow="ALWAYS" />
+                  <JFXTextField fx:id="minTpmFilterGeneBrowserTextField" HBox.hgrow="NEVER" />
+<!--                  <Separator orientation="VERTICAL" prefHeight="200.0" />-->
+                  <Label fx:id="qualLabel" text="Qual&gt;=" />
+                  <JFXTextField fx:id="minQualFilterGeneBrowserTextField" HBox.hgrow="NEVER" />
+                  <JFXTextField fx:id="findSeqField" disable="true" promptText="Search sequence" />
+                  <Button fx:id="findSeqButton" disable="true" mnemonicParsing="false" onMouseClicked="#findSequence" text="Find" />
+                  <Label fx:id="seqSearchMatchIndexLabel" />
+                  <HBox alignment="CENTER_RIGHT" spacing="5.0" HBox.hgrow="SOMETIMES">
+                     <children>
+                        <MenuButton mnemonicParsing="false" HBox.hgrow="SOMETIMES">
+                           <items>
+                              <MenuItem fx:id="showHideDepthGeneBrowserMenuItem" mnemonicParsing="false" text="Show/Hide Depth" />
+                              <MenuItem fx:id="displayCdsGeneBrowserMenuItem" mnemonicParsing="false" text="Show/Hide CDs" />
+                              <MenuItem fx:id="transcriptCentricViewMenuItem" mnemonicParsing="false" text="Transcript centric View" />
+                              <MenuItem fx:id="cdsCentricViewMenuItem" mnemonicParsing="false" text="CDS centric View" />
+                              <MenuItem fx:id="tpmChartMenuItem" mnemonicParsing="false" text="TPM Chart" />
+                           </items>
+                           <graphic>
+                              <FontIcon iconColor="#b5b5b5" iconLiteral="fa-cog" iconSize="19" />
+                           </graphic>
+                        </MenuButton>
+                     </children>
+                     <padding>
+                        <Insets right="5.0" />
+                     </padding>
+                  </HBox>
+               </children>
+               <opaqueInsets>
+                  <Insets left="5.0" />
+               </opaqueInsets>
+               <padding>
+                  <Insets left="5.0" />
+               </padding>
+            </HBox>
+            <HBox fx:id="geneHBoxSlider" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="NEVER">
+               <VBox.margin>
+                  <Insets bottom="10.0" top="10.0" />
+               </VBox.margin></HBox>
+            <GridPane fx:id="browserGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+
+               <columnConstraints>
+                  <ColumnConstraints hgrow="NEVER" percentWidth="100" />
+               </columnConstraints>
+
+               <children>
+                  <ScrollPane id="browser-scrollpane" fx:id="geneBrowserScrollPane" stylesheets="@cssStyleSheets/styleSheet.css" vbarPolicy="NEVER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.hgrow="NEVER" GridPane.rowIndex="0" GridPane.vgrow="NEVER">
+                     <content>
+                        <AnchorPane fx:id="browserAnchorPane">
+                           <children>
+                              <Pane fx:id="verticalLineGeneBrowserPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              <Pane fx:id="selectionZoomRectanglePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              <VBox fx:id="geneExonsSeqsVBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <children>
+                                    <fx:include fx:id="bamPane" source="bam.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                    <fx:include fx:id="bedPane" source="bed.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+
+                                 </children>
+                              </VBox>
+                           </children>
+                        </AnchorPane>
+
+                     </content>
+                  </ScrollPane>
+                  <TitledPane fx:id="extraInfoTitledPane" animated="false" expanded="false" text="Info" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+                     <content>
+                        <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <TabPane fx:id="infoTitleTabs" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <tabs>
+                                    <Tab fx:id="mutationsTab" closable="false" text="Mutations">
+                                       <content>
+                                          <VBox fx:id="transcriptionVBox">
+                                             <children>
+                                                <HBox alignment="CENTER_LEFT" spacing="5.0" />
+                                                <TableView fx:id="varTableView">
+                                                   <columns>
+                                                      <TableColumn fx:id="geneVarTableColumn" text="Gene" />
+                                                      <TableColumn fx:id="coordVarTableColumn" text="Position" />
+                                                      <TableColumn fx:id="refVarTableColumn" text="Ref" />
+                                                      <TableColumn fx:id="altVarTableColumn" text="Alt" />
+                                                      <TableColumn fx:id="synonymousVarTableColumn" text="Synonymous" />
+                                                      <TableColumn fx:id="inCdsVarTableColumn" text="In Cds" />
+                                                      <TableColumn fx:id="peptEvidenceVarTableColumn" text="Pept. Evidence" />
+                                                   </columns>
+                                                </TableView>
+                                             </children>
+                                          </VBox>
+                                       </content>
+                                    </Tab>
+                                    <Tab fx:id="codingSeqTab" closable="false" text="Coding sequences">
+                                       <content>
+                                          <VBox fx:id="cdsVBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                             <children>
+                                                <fx:include fx:id="mutatedCds" source="mutatedCds.fxml" VBox.vgrow="ALWAYS" />
+                                             </children>
+                                          </VBox>
+                                       </content>
+                                    </Tab>
+                                    <Tab closable="false" text="Splicing Events">
+                                       <content>
+                                          <AnchorPane minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <VBox>
+                                                   <children>
+                                                      <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                                         <children>
+                                                            <Label text="Coordinates: " />
+                                                            <Label fx:id="exonStartCoordPsiTabTextField" text="#" />
+                                                            <Label layoutX="10.0" layoutY="21.0" text="-" />
+                                                            <Label fx:id="exonEndCoordPsiTabTextField" text="#" />
+                                                         </children>
+                                                         <VBox.margin>
+                                                            <Insets left="5.0" />
+                                                         </VBox.margin>
+                                                      </HBox>
+                                                      <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="10.0" spacing="20.0" />
+                                                   </children>
+                                                </VBox>
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </Tab>
+                                </tabs>
+                              </TabPane>
+                           </children>
+                        </VBox>
+                     </content>
+                  </TitledPane>
+               </children>
+               <rowConstraints>
+                  <RowConstraints />
+                  <RowConstraints />
+               </rowConstraints>
+            </GridPane>
+         </children>
+      </VBox>
+   </children>
+</AnchorPane>
