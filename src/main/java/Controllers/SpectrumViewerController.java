@@ -25,7 +25,7 @@ import javafx.scene.web.WebView;
 import javafx.util.Callback;
 import javafx.util.Pair;
 import org.apache.commons.io.IOUtils;
-import pitguiv2.Config;
+import Singletons.Config;
 import utilities.MSRun;
 import utilities.spectrumviewer.FragmentRow;
 import utilities.spectrumviewer.Ion;
@@ -302,7 +302,7 @@ public class SpectrumViewerController implements Initializable {
 
     private void parseBinaries(PSM psm, MSRun run, String peptide){
 
-        String filepath = config.getOutputPath()+"/ms/"+psm.getLabel()+"/files/"+psm.getFile()+".mzML";
+        String filepath = Config.getRunPath(run.getName())+"/"+psm.getFile()+".mzML";
 
         System.out.println(filepath);
         HashMap<Integer, Long> index = run.getIndex(psm.getFile());

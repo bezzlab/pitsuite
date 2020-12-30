@@ -98,10 +98,13 @@
                            <children>
                               <Pane fx:id="verticalLineGeneBrowserPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                               <Pane fx:id="selectionZoomRectanglePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                              <VBox fx:id="geneExonsSeqsVBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                              <VBox fx:id="geneExonsSeqsVBox" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
+                                    AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" >
                                  <children>
                                     <fx:include fx:id="bamPane" source="bam.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                    <fx:include fx:id="bedPane" source="bed.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                    <fx:include fx:id="bedPane" source="bed.fxml" AnchorPane.bottomAnchor="0.0"
+                                                AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                                                AnchorPane.topAnchor="0.0" style="-fx-padding: 0 0 15 0;"/>
 
                                  </children>
                               </VBox>

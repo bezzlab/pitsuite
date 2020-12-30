@@ -35,7 +35,7 @@ public class PSM {
     public PSM(String run, String modifications, double prob, String label, String file) {
         this.run = run;
         this.prob = prob;
-        parsePtms(modifications);
+        ptms = PTM.parsePtms(modifications);
         this.label = label;
         this.file = file;
     }
@@ -46,7 +46,7 @@ public class PSM {
         this.prob = prob;
         this.label = label;
         this.specIndex = specIndex;
-        parsePtms(modifications);
+        ptms = PTM.parsePtms(modifications);
         this.file = file;
     }
 
@@ -54,14 +54,14 @@ public class PSM {
     public PSM(String modifications, double prob, int specIndex, String file) {
         this.prob = prob;
         this.specIndex = specIndex;
-        parsePtms(modifications);
+        ptms = PTM.parsePtms(modifications);
         this.file = file;
 
     }
 
     public PSM(String mod, double probability, String label, int specIndex, String file, HashMap intensities) {
         this.prob = probability;
-        parsePtms(mod);
+        ptms = PTM.parsePtms(mod);
         this.label = label;
         this.file = file;
         this.specIndex = specIndex;
@@ -69,34 +69,7 @@ public class PSM {
     }
 
 
-    private void parsePtms(String modsStr){
-        ptms = new HashSet<>();
-        if(modsStr.length()>0){
 
-
-            Pattern pattern = Pattern.compile("(.*)\\((.*)\\)");
-            Pattern residuePattern = Pattern.compile("(\\d+)([A-Z]+)");
-            String[] modsSplit = modsStr.split(", ");
-
-            for(String mod: modsSplit){
-                if(mod.length()>0 && !mod.equals("none")){
-                    Matcher matcher = pattern.matcher(mod);
-                    matcher.matches();
-                    Matcher residueMatcher = residuePattern.matcher(matcher.group(1));
-                    if(residueMatcher.matches()){
-                        ptms.add(new PTM(residueMatcher.group(2), Integer.parseInt(residueMatcher.group(1)),
-                                Double.parseDouble(matcher.group(2)), residueMatcher.matches()));
-                    }else{
-                        ptms.add(new PTM(matcher.group(1), Double.parseDouble(matcher.group(2)), false));
-                    }
-                }
-
-
-            }
-        }else{
-            ptms.add(new PTM("None", -1, true));
-        }
-    }
 
     public String getRun() {
         return run;

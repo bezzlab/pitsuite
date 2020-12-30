@@ -26,7 +26,6 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.util.Pair;
 import netscape.javascript.JSObject;
-import org.apache.commons.io.IOUtils;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.dizitart.no2.Nitrite;
@@ -34,6 +33,7 @@ import org.dizitart.no2.NitriteCollection;
 import org.dizitart.no2.filters.Filters;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import Singletons.Config;
 import utilities.MSRun;
 import utilities.MassSpecModificationSample;
 import utilities.MassSpecSample;
@@ -302,7 +302,7 @@ public class PeptideTableController implements Initializable {
         spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
 
 
-        for ( String run : parentController.getConfig().getRuns()){
+        for ( String run : Config.getRuns()){
             runCombobox.getItems().add(run);
         }
 
@@ -315,22 +315,46 @@ public class PeptideTableController implements Initializable {
     @FXML
     public void loadRun(){
 
-        selectedRun = new MSRun(runCombobox.getSelectionModel().getSelectedItem(), parentController.getConfig().getOutputPath());
+        selectedRun = new MSRun(runCombobox.getSelectionModel().getSelectedItem(), Config.getOutputPath());
 
 
 
         new Thread(() -> {
 
-            selectedRun.load(db, parentController.getConfig().getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
+            selectedRun.load(db, Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
                     this, peptideToFind, parentController.getConfig());
 
 
             peptideTable.getItems().clear();
             peptideTable.getItems().addAll(selectedRun.getAllPeptides());
+
+
         }).start();
 
 
 
+    }
+
+    public void findPeptideInTable(String peptideSeq, String run){
+
+        if(selectedRun.getName().equals(run)){
+            int i = 0;
+            for(Peptide peptide: peptideTable.getItems()){
+                if(peptide.getSequence().equals(peptideSeq)){
+                    int finalI = i;
+                    Platform.runLater(() -> {
+                        peptideTable.requestFocus();
+                        peptideTable.getSelectionModel().select(finalI);
+                        peptideTable.getFocusModel().focus(finalI);
+                        peptideTable.scrollTo(finalI);
+                        selectPeptide(peptide);
+                    });
+
+                    break;
+                }
+                i++;
+            }
+        }
     }
 
     public void selectPeptide(Peptide peptide){

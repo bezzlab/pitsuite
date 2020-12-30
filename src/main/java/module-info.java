@@ -16,6 +16,7 @@ module pitguivTwo {
     requires com.jfoenix; // to stylized visual elements
     requires htsjdk; // for samtools
     requires nitrite;
+    requires mongo.java.driver;
     exports Controllers;
     exports mongoDB;
     exports pitguiv2;

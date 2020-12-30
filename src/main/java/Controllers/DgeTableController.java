@@ -682,11 +682,9 @@ public class DgeTableController extends Controller {
         LinkedList<String> symbols = new LinkedList<>();
 
         for(FoldChangeTableModel fcModel: foldChangesArray){
-            if(fcModel.getProteinPval(protComparisonCombobox.getValue().toString())!=null){
-                x.add(fcModel.getLogFoldChange());
-                y.add(fcModel.getProteinFc(protComparisonCombobox.getValue().toString()));
-                symbols.add(fcModel.getGeneSymbol());
-            }
+            x.add(fcModel.getLogFoldChange());
+            y.add(fcModel.getProteinFc(protComparisonCombobox.getValue().toString()));
+            symbols.add(fcModel.getGeneSymbol());
         }
 
         StringBuilder names = new StringBuilder("[");
@@ -826,35 +824,79 @@ public class DgeTableController extends Controller {
 //        XYChart.Series s = new XYChart.Series();
 //        allSeriesAbundance.add(new XYChart.Data(conditionKey+" "+sampleKey, condition.getInt(sampleKey));
 
+
+        boolean isSILAC = true;
+
         for(Document result: documents){
-            JSONObject res = new JSONObject(result).getJSONObject("abundance");
-            int i = 0;
-            for (String conditionKey : res.keySet()) {
-                double intensity = res.getDouble(conditionKey);
 
-                if (i + 1 > allSeriesAbundance.size()) {
-                    allSeriesAbundance.add(new XYChart.Series());
+
+            if(isSILAC){
+
+                JSONObject res = new JSONObject(result).getJSONObject("ratio");
+                int i = 0;
+                for (String conditionKey : res.keySet()) {
+                    double intensity = res.getDouble(conditionKey);
+
+                    if (i + 1 > allSeriesAbundance.size()) {
+                        allSeriesAbundance.add(new XYChart.Series());
+                    }
+                    allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, intensity));
+
                 }
-                allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, intensity));
-
-            }
 
 
+                res = new JSONObject(result).getJSONObject("peptides");
+                for (String Peptide : res.keySet()) {
 
-            res = new JSONObject(result).getJSONObject("peptides");
-            for (String PSM : res.keySet()) {
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(Peptide);
+                    allPeptidesSeries.add(peptideSeries);
 
-                XYChart.Series peptideSeries = new XYChart.Series();
-                peptideSeries.setName(PSM);
-                allPeptidesSeries.add(peptideSeries);
+                    JSONObject peptideObj = res.getJSONObject(Peptide);
 
-                JSONObject peptideObj = res.getJSONObject(PSM);
-
-                for (String conditionKey : peptideObj.keySet()) {
-                    double intensity = peptideObj.getDouble(conditionKey);
+                    for (String runKey : peptideObj.keySet()) {
+                        JSONObject runObject = peptideObj.getJSONObject(runKey);
                         //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
-                    peptideSeries.getData().add(new XYChart.Data(conditionKey, intensity));
+                        for (String conditionKey : runObject.keySet()) {
+                            double ratio = runObject.getDouble(conditionKey);
+                            //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
+                            peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+runKey, ratio));
 
+                        }
+
+                    }
+                }
+            }else {
+
+
+                JSONObject res = new JSONObject(result).getJSONObject("abundance");
+                int i = 0;
+                for (String conditionKey : res.keySet()) {
+                    double intensity = res.getDouble(conditionKey);
+
+                    if (i + 1 > allSeriesAbundance.size()) {
+                        allSeriesAbundance.add(new XYChart.Series());
+                    }
+                    allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, intensity));
+
+                }
+
+
+                res = new JSONObject(result).getJSONObject("peptides");
+                for (String PSM : res.keySet()) {
+
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(PSM);
+                    allPeptidesSeries.add(peptideSeries);
+
+                    JSONObject peptideObj = res.getJSONObject(PSM);
+
+                    for (String conditionKey : peptideObj.keySet()) {
+                        double intensity = peptideObj.getDouble(conditionKey);
+                        //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
+                        peptideSeries.getData().add(new XYChart.Data(conditionKey, intensity));
+
+                    }
                 }
             }
 

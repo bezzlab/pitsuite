@@ -3,6 +3,7 @@ package Controllers;
 
 import Cds.Peptide;
 import FileReading.AllGenesReader;
+import Singletons.ControllersBasket;
 import TablesModels.BamFile;
 import export.ProVcf;
 import javafx.animation.KeyFrame;
@@ -19,6 +20,7 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -27,18 +29,21 @@ import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.dizitart.no2.Nitrite;
 import org.json.JSONObject;
-import pitguiv2.Config;
+import pitdb.PitdbUploader;
+import pitguiv2.App;
+import Singletons.Config;
 import pitguiv2.Settings;
 import utilities.BioFile;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.Scanner;
-
+import org.apache.commons.io.FilenameUtils;
 
 public class ResultsController implements Initializable {
 
@@ -91,6 +96,8 @@ public class ResultsController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
 
+        ControllersBasket.setResultsController(this);
+
         Menu menu1 = new Menu("File");
         MenuItem menuItem1 = new MenuItem("Close project");
         MenuItem menuItem2 = new MenuItem("Settings");
@@ -104,6 +111,8 @@ public class ResultsController implements Initializable {
         Menu menu3 = new Menu("Export");
         MenuItem menu3Item1 = new MenuItem("Variations");
         menu3.getItems().add(menu3Item1);
+        MenuItem menu3Item2 = new MenuItem("PITDB");
+        menu3.getItems().add(menu3Item2);
 
         menuBar.getMenus().add(menu1);
         menuBar.getMenus().add(menu2);
@@ -119,11 +128,13 @@ public class ResultsController implements Initializable {
         menu3Item1.setOnAction(e -> {
             saveProVcf();
         });
+        menuItem1.setOnAction(e -> {
+            closeProject();
+        });
 
-
-
-
-
+        menu3Item2.setOnAction(e -> {
+            uploadToPitdb();
+        });
 
 
     }
@@ -187,20 +198,6 @@ public class ResultsController implements Initializable {
                 }
             });
 
-//            Platform.runLater(() -> {
-//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideMap" + ".fxml"));
-//                try {
-//                    Parent root = fxmlLoader2.load();
-//
-//                    peptideMapController = fxmlLoader2.getController();
-//                    peptideMapController.setParentControler(this, settings, hostServices, projectName, db, allGenesReader);
-//                    resultsTabPane.getTabs().get(4).setContent(root);
-//                } catch(Exception e){
-//                    e.printStackTrace();
-//                }
-//            });
-
-
 
             Platform.runLater(() -> {
                 FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
@@ -210,6 +207,7 @@ public class ResultsController implements Initializable {
                     peptideTableController = fxmlLoader2.getController();
                     peptideTableController.setParentController(this, db);
                     resultsTabPane.getTabs().get(5).setContent(root);
+                    ControllersBasket.setPeptideTableController(peptideTableController);
                 } catch(Exception e){
                     e.printStackTrace();
                 }
@@ -239,11 +237,11 @@ public class ResultsController implements Initializable {
     }
 
 
-    public void setProjectName(String projectName){
+    public void setProjectName(String path){
 
-        this.projectName = projectName;
-        db = Nitrite.builder().filePath(projectName).openOrCreate();
-        loadConfig(projectName);
+        this.projectName = FilenameUtils.getBaseName(Paths.get(path).getFileName().toString());
+        db = Nitrite.builder().filePath(path).openOrCreate();
+        loadConfig(path);
         settings = loadSettings();
         Settings.getInstance().setSetting(settings);
 
@@ -283,7 +281,7 @@ public class ResultsController implements Initializable {
         Cursor configFind = db.getCollection("config").find();
         Document configDoc = configFind.iterator().next();
 
-        config = new Config(new JSONObject(configDoc));
+        Config.setConfigDocument(new JSONObject(configDoc));
     }
 
     private JSONObject loadSettings(){
@@ -405,7 +403,7 @@ public class ResultsController implements Initializable {
     }
 
     public void resize(){
-        mutationsTableController.resize();
+        //mutationsTableController.resize();
         browserController.resize();
         dgeTableController.resize();
         splicingTableController.resize();
@@ -427,6 +425,46 @@ public class ResultsController implements Initializable {
 
     public void setExtraFiles(ObservableList<BioFile> extraFiles){
         this.extraFiles = extraFiles;
+    }
+
+    public void closeProject(){
+
+        FXMLLoader loader = new FXMLLoader(App.class.getResource("/primary.fxml"));
+        Parent root = null;
+        db.close();
+        try {
+            root = loader.load();FXMLDocumentController controller = loader.getController();
+
+
+
+
+            stage.close();
+
+
+
+
+            controller.setStage(stage);
+            Scene scene = new Scene(root, 1200, 1000);
+            stage.setWidth(1200);
+            stage.setHeight(1000);
+            stage.setScene(scene);
+            stage.getIcons().add(new Image(this.getClass().getResourceAsStream("/logo.png")));
+            stage.setMaximized(false);
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void uploadToPitdb(){
+        PitdbUploader uploader = new PitdbUploader(db, projectName);
+        uploader.upload();
+    }
+
+    public void moveToTab(int tabIndex){
+        resultsTabPane.getSelectionModel().select(tabIndex);
     }
 
 

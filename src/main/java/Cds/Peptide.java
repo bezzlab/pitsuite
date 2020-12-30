@@ -35,6 +35,7 @@ public class Peptide {
     public Peptide(Document document){
         this.sequence = document.get("peptide", String.class);
         this.probability = (double) document.get("probability");
+        this.run = new MSRun((String) document.get("run"));
 
         psms = new ArrayList<>();
 
@@ -62,7 +63,7 @@ public class Peptide {
 
     }
 
-    public Peptide(Document document, String runName){ //for combined runs
+    public Peptide(Document document, String runName, MSRun run){ //for combined runs
         this.sequence = document.get("peptide", String.class);
 
         psms = new ArrayList<>();
@@ -72,11 +73,11 @@ public class Peptide {
             JSONObject psm = (JSONObject) o;
 
 
-            if(psm.containsKey("label") && psm.get("label").equals(runName)){
+            if(psm.containsKey("run") && psm.get("run").equals(runName)){
 
                 if(psm.containsKey("intensities")){
                     psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
-                            (String) psm.get("label"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"),
+                            (String) psm.get("run"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"),
                             (HashMap) psm.get("intensities")));
                 }else{
                     psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
@@ -101,7 +102,13 @@ public class Peptide {
 //
 //        }
 
-        this.probability = (Double) document.get("probability", JSONObject.class).get(runName);
+
+        if(run.getType().equals("SILAC")){
+            this.probability = (Double) document.get("probability");
+        }else{
+            this.probability = (Double) document.get("probability", JSONObject.class).get(runName);
+        }
+
 
     }
 
@@ -172,4 +179,10 @@ public class Peptide {
     public HashMap<String, Double> getIntensities() {
         return intensities;
     }
+
+    public String getRunName(){
+        return run.getName();
+    }
+
+
 }

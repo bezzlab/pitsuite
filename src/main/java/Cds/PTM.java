@@ -1,5 +1,10 @@
 package Cds;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class PTM {
 
     private String residue;
@@ -81,5 +86,18 @@ public class PTM {
         hash = 53 * hash + (this.residue != null ? this.residue.hashCode() : 0);
         hash = (int) (53 * hash + this.massShift);
         return hash;
+    }
+
+    public static HashSet<PTM> parsePtms(String modsStr){
+
+        if(modsStr.length()==0){
+            return PhilosopherPTM.parsePtms(modsStr);
+        }else{
+            if(modsStr.matches("(.+)\\((\\d+\\.\\d+)\\)")){
+                return PhilosopherPTM.parsePtms(modsStr);
+            }else{
+                return MaxQuantPTM.parsePtms(modsStr);
+            }
+        }
     }
 }

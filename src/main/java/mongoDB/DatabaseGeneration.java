@@ -290,7 +290,6 @@ public class DatabaseGeneration {
 
             Document currDocument = new Document();
 
-            currDocument.put("geneID", geneID);
             currDocument.put("chr", geneJsonReaderItemJson.getChr());
             currDocument.put("start", geneJsonReaderItemJson.getStart());
             currDocument.put("end", geneJsonReaderItemJson.getEnd());
@@ -437,7 +436,13 @@ public class DatabaseGeneration {
                 Document currDocument = new Document();
                 currDocument.put("gene", key);
                 JSONObject geneObj = (JSONObject) jsonObject.get(key);
-                currDocument.put("abundance", geneObj.get("abundance"));
+
+                if(geneObj.containsKey("abundance")){
+                    currDocument.put("abundance", geneObj.get("abundance"));
+                }else{
+                    currDocument.put("ratio", geneObj.get("ratio"));
+                }
+
                 currDocument.put("peptides", geneObj.get("peptides"));
                 genesDocsToDBList.add(currDocument);
             }

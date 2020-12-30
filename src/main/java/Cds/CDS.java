@@ -2,6 +2,7 @@ package Cds;
 
 import TablesModels.Variation;
 import javafx.util.Pair;
+import utilities.MSRun;
 
 import java.util.*;
 
@@ -135,7 +136,7 @@ public class CDS {
                 return;
             }
         }
-        Peptide peptide = new Peptide(sequence);
+        Peptide peptide = new Peptide(sequence, new MSRun(run));
         peptide.addPsm(new PSM(run, mod, probability, condition, sample));
         peptides.add(peptide);
     }
@@ -148,36 +149,57 @@ public class CDS {
         pfams.add(pfam);
     }
 
-    public Pair<String, Integer> getSubStringWithOffset(Transcript transcript, double genomicStart, double genomicEnd){
+    public Pair<String, Integer[]> getSubStringWithOffset(Transcript transcript, double genomicStart, double genomicEnd){
         Pair<Integer, Integer> startEnd = transcripts.get(transcript);
 
 
         int transcriptStart = transcript.getStartGenomCoord();
         int transcriptEnd  = transcript.getStartGenomCoord();
 
+        int startOffset = 0;
+
         boolean startFound=false;
         boolean endFound=false;
+
+        int i = 0;
         for(Exon exon: transcript.getExons()){
+            i++;
             if(genomicStart>=exon.getStart() && genomicStart<=exon.getEnd()){
                 transcriptStart += genomicStart-exon.getStart()+1;
                 startFound=true;
                 break;
-            }
-            else{
+            }else if(genomicStart<exon.getStart() && genomicEnd>exon.getStart()){
+                transcriptStart += 1;
+                startFound=true;
+                startOffset = (int) (exon.getStart() - genomicStart - 1);
+                break;
+            }else{
                 transcriptStart+=exon.getEnd()-exon.getStart()+1;
             }
         }
 
+
+//        if(getGenomicPos(transcript).getKey()>genomicStart){
+//            startOffset = getTranscriptWithCdsPos(transcript).getKey();
+//        }
+
+        System.out.println(i);
+        i=0;
+
         for(Exon exon: transcript.getExons()){
+            i++;
             if(genomicEnd>=exon.getStart() && genomicEnd<=exon.getEnd()){
                 transcriptEnd += genomicEnd-exon.getStart()+1;
                 endFound=true;
+                break;
+            }else if(genomicEnd < exon.getStart()){
                 break;
             }
             else{
                 transcriptEnd+=exon.getEnd()-exon.getStart()+1;
             }
         }
+        System.out.println(i);
 
 
         transcriptStart = transcriptStart - transcript.getStartGenomCoord();
@@ -192,7 +214,7 @@ public class CDS {
         int cdsEnd = (transcriptStart + rnaLength) / 3 + 1;
 
 
-        if(startFound && endFound && cdsStart>=0 && cdsEnd<sequence.length() && cdsEnd>cdsStart){
+        if(startFound && cdsEnd > 0){
             System.out.println(transcriptStart / 3 +" "+(transcriptStart + rnaLength) / 3 + 1+" "+sequence.length());
             String subseq;
             if(strand.equals("+")){
@@ -212,7 +234,7 @@ public class CDS {
             }
 
 
-            return new Pair<>(subseq,offset);
+            return new Pair<>(subseq, new Integer[]{offset, startOffset});
         }
         return null;
 

@@ -533,13 +533,13 @@ public class SplicingTableController extends Controller {
 
 
         // domains info
-        String[] domainsInArray = (String[]) splicingEventInfoDoc.get("domains_in");
-        String[] domainsOutArray = (String[]) splicingEventInfoDoc.get("domains_out");
-        String domainsIn = Arrays.toString(domainsInArray).replace("[", "").replace("]", "");
-        String domainsOut = Arrays.toString(domainsOutArray).replace("[", "").replace("]", "");
-
-        domainsInTextArea.setText(domainsIn);
-        domainsOutTextArea.setText(domainsOut);
+//        String[] domainsInArray = (String[]) splicingEventInfoDoc.get("domains_in");
+//        String[] domainsOutArray = (String[]) splicingEventInfoDoc.get("domains_out");
+//        String domainsIn = Arrays.toString(domainsInArray).replace("[", "").replace("]", "");
+//        String domainsOut = Arrays.toString(domainsOutArray).replace("[", "").replace("]", "");
+//
+//        domainsInTextArea.setText(domainsIn);
+//        domainsOutTextArea.setText(domainsOut);
 
 
         HashMap<String, ArrayList<Double>> psiValues = new HashMap<>();

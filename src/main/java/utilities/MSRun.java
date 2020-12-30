@@ -4,14 +4,13 @@ import Cds.PSM;
 import Cds.Peptide;
 import Controllers.PeptideTableController;
 import javafx.application.Platform;
-import javafx.util.Pair;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.NitriteCollection;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import pitguiv2.Config;
+import Singletons.Config;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,7 +18,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 import static org.dizitart.no2.filters.Filters.eq;
-import static org.dizitart.no2.filters.Filters.in;
 
 public class MSRun {
 
@@ -32,26 +30,38 @@ public class MSRun {
     private ArrayList<MSRun> subRuns;
     private String output;
     HashMap<String, HashMap<Integer, Long>> mzmlIndexes = new HashMap();
+    private String type;
 
     public MSRun(String name, String output) {
         this.name = name;
         this.output = output;
     }
 
+    public MSRun(String name) {
+        this.name = name;
+    }
+
+    public MSRun(String name, String output, String type) {
+        this.name = name;
+        this.output = output;
+        this.type = type;
+    }
+
     public void load(Nitrite db, String output, String runName, PeptideTableController controller, Peptide peptideToFind, Config config){
         NitriteCollection collection = db.getCollection("peptideMap");
         Cursor cursor = collection.find(eq("run", runName));
 
-        hasQuantification = config.hasQuantification(runName);
+        hasQuantification = Config.hasQuantification(runName);
         if(hasQuantification){
-            channels = config.getRunSamples(runName);
+            channels = Config.getRunSamples(runName);
         }
 
-        isCombined = config.isCombinedRun(runName);
+        isCombined = Config.isCombinedRun(runName);
+        this.type = Config.getRunType(runName);
         if(isCombined){
             subRuns = new ArrayList<>();
-            for(Object subrunName: config.getCombinedRuns(runName)){
-                subRuns.add(new MSRun((String) subrunName, config.getOutputPath()));
+            for(Object subrunName: Config.getCombinedRuns(runName)){
+                subRuns.add(new MSRun((String) subrunName, Config.getOutputPath(), type));
             }
         }
 
@@ -95,7 +105,7 @@ public class MSRun {
     }
 
     private void loadIndex(String output,  String file){
-        String path = output+"/ms/"+name+"/files/"+file+".mzML.index";
+        String path = Config.getRunPath(name)+"/"+file+".mzML.index";
         try {
             Files.lines(Path.of(path)).forEach(line -> {
                 String[] lineSplit = line.split(",");
@@ -128,7 +138,7 @@ public class MSRun {
     }
 
     public Peptide addPeptide(Document doc){
-        Peptide peptide =  new Peptide(doc, name);
+        Peptide peptide =  new Peptide(doc, name, this);
 
 
         for(PSM psm : peptide.getPsms()){
@@ -182,6 +192,10 @@ public class MSRun {
                 Peptide pep = subrun.getPeptide(peptide);
                 if(pep!=null){
                     for(Map.Entry<String, Double> entry: pep.getIntensities().entrySet()){
+
+
+
+
                         if(!intensities.containsKey(entry.getKey())){
                             intensities.put(entry.getKey(), entry.getValue());
                         }else{
@@ -199,5 +213,9 @@ public class MSRun {
         }else{
             return allPeptides.get(peptide).getIntensities();
         }
+    }
+
+    public String getType() {
+        return type;
     }
 }

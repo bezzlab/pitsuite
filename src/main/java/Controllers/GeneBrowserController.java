@@ -5,6 +5,7 @@ import Controllers.drawerControllers.DrawerController;
 import FileReading.AllGenesReader;
 import FileReading.FastaIndex;
 import Gene.Gene;
+import Singletons.ControllersBasket;
 import TablesModels.BamFile;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
@@ -14,7 +15,6 @@ import javafx.animation.PauseTransition;
 import javafx.application.HostServices;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -52,6 +52,7 @@ import org.dizitart.no2.NitriteCollection;
 import org.dizitart.no2.filters.Filters;
 import org.json.simple.JSONObject;
 import pitguiv2.App;
+import Singletons.Config;
 import utilities.BioFile;
 
 import java.io.IOException;
@@ -526,7 +527,7 @@ public class GeneBrowserController implements Initializable {
         cdsCentricViewMenuItem.setDisable(true);
         transcriptCentricViewMenuItem.setDisable(true);
 
-        fastaIndex = new FastaIndex(parentController.getConfig().getFastaPath());
+        fastaIndex = new FastaIndex(Config.getFastaPath());
 
         mutatedCdsController.setResultsController(parentController);
 
@@ -1311,48 +1312,103 @@ public class GeneBrowserController implements Initializable {
     private Group getPepGroup (CDS cds, Transcript transcript, double height, int startGenomCoord, int endGenomCoord,
                                double rectanglesAreaWidth){
         Group pepGroup = new Group();
+        HashMap<String, HashSet<String>> peptideSeqsRuns = new HashMap<>();
 
         for (Peptide peptide : cds.getPeptides() ) {
             String pepSeq = peptide.getSequence();
+            if(!peptideSeqsRuns.containsKey(pepSeq)) {
 
-            Pair<Integer, Integer> peptideGenomicPos = getPepPos(pepSeq, cds, transcript);
+                peptideSeqsRuns.put(pepSeq, new HashSet<>());
 
-            if(peptideGenomicPos!=null) {
-                int pepStartCoord = peptideGenomicPos.getKey();
-                int pepEndCoord = peptideGenomicPos.getValue();
+                Pair<Integer, Integer> peptideGenomicPos = getPepPos(pepSeq, cds, transcript);
 
-                Rectangle pepRect = new Rectangle();
-                pepRect.setHeight(height);
+                if (peptideGenomicPos != null) {
+                    int pepStartCoord = peptideGenomicPos.getKey();
+                    int pepEndCoord = peptideGenomicPos.getValue();
 
-                pepRect.setOnMouseClicked(mouseEvent -> {
-                    if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-                        if (mouseEvent.getClickCount() == 2) {
-                            parentController.showPeptideTab(peptide);
+                    Rectangle pepRect = new Rectangle();
+                    pepRect.setHeight(height);
+
+                    pepRect.setOnMouseClicked(mouseEvent -> {
+                        if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                            if (mouseEvent.getClickCount() == 2) {
+
+                                if(peptideSeqsRuns.get(pepSeq).size()>1){
+                                    ChoiceDialog d = new ChoiceDialog(peptideSeqsRuns.get(pepSeq).iterator().next(),
+                                            peptideSeqsRuns.get(pepSeq).toArray());
+
+
+                                    d.showAndWait();
+                                    ControllersBasket.getResultsController().moveToTab(5);
+                                    ControllersBasket.getPeptideTableController()
+                                            .findPeptideInTable(pepSeq, (String) d.getSelectedItem());
+                                }else{
+                                    ControllersBasket.getResultsController().moveToTab(5);
+                                    ControllersBasket.getPeptideTableController()
+                                            .findPeptideInTable(pepSeq, peptideSeqsRuns.get(pepSeq).iterator().next());
+
+                                }
+                            }
+                        }
+                    });
+
+                    // tooltip for peptides
+                    Tooltip pepToolTip = new Tooltip("Peptide");
+                    pepToolTip.setShowDelay(Duration.millis(500));
+                    pepToolTip.setFont(Font.font(fontSize));
+                    pepToolTip.setShowDuration(Duration.seconds(4));
+                    Tooltip.install(pepRect, pepToolTip);
+
+                    pepRect.setFill(Color.rgb(255, 33, 26, 0.5));
+                    pepRect.setStroke(Color.BLACK);
+                    pepRect.setWidth(3);
+
+
+                    int pepStartCoordInView = Math.max(startGenomCoord, pepStartCoord);
+                    int pepEndCoordInView = Math.min(endGenomCoord, pepEndCoord);
+
+                    double totalSizeInView = endGenomCoord - startGenomCoord;
+
+                    pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
+                    pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
+                    pepGroup.getChildren().add(pepRect);
+
+
+
+                    for(PSM psm: peptide.getPsms()){
+                        HashSet<PTM> ptms = psm.getModifications();
+                        for(PTM ptm: ptms){
+                            Rectangle rect = new Rectangle();
+                            if(cds.getStrand().equals("+")){
+                                rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView+3*(ptm.getPos()-1),
+                                        startGenomCoord, totalSizeInView)));
+                            }else{
+                                rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView
+                                                +3*(peptide.getSequence().length()-ptm.getPos())-1,
+                                        startGenomCoord, totalSizeInView)));
+                                rect.setWidth(rectanglesAreaWidth * (getProportion(pepStartCoordInView
+                                                +3*(peptide.getSequence().length()-ptm.getPos()+1)-1,
+                                        pepStartCoordInView
+                                                +3*(peptide.getSequence().length()-ptm.getPos())-1, totalSizeInView)));
+
+                            }
+
+                            //rect.setWidth(20);
+                            rect.setHeight(20);
+                            rect.setY(height+5);
+                            rect.setFill(Color.RED);
+                            pepGroup.getChildren().add(rect);
                         }
                     }
-                });
-
-                // tooltip for peptides
-                Tooltip pepToolTip = new Tooltip("Peptide");
-                pepToolTip.setShowDelay(Duration.millis(500));
-                pepToolTip.setFont(Font.font(fontSize));
-                pepToolTip.setShowDuration(Duration.seconds(4));
-                Tooltip.install(pepRect, pepToolTip);
-
-                pepRect.setFill(Color.rgb(255, 33, 26, 0.5));
-                pepRect.setStroke(Color.BLACK);
-                pepRect.setWidth(3);
 
 
-                int pepStartCoordInView = Math.max(startGenomCoord, pepStartCoord);
-                int pepEndCoordInView = Math.min(endGenomCoord, pepEndCoord);
 
-                double totalSizeInView = endGenomCoord - startGenomCoord;
-
-                pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
-                pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
-                pepGroup.getChildren().add(pepRect);
+                }
             }
+            peptideSeqsRuns.get(pepSeq).add(Config.getMainRun(peptide.getRunName()));
+
+
+
 
         }
 
@@ -1664,6 +1720,7 @@ public class GeneBrowserController implements Initializable {
 
     private void drawAlignedSequencesVBox() {
 
+
         geneExonsSeqsVBox.getChildren().add(drawRefDNA());
         for ( Transcript transcript : displayedTranscripts) {
 
@@ -1710,11 +1767,6 @@ public class GeneBrowserController implements Initializable {
      * adds spaces at the beginning and at the end, so that sequences
      * are aligned.
      *
-     * @param transcriptId
-     * @param transcript
-     * @param minimumCoordinate
-     * @param maximumCoordinate
-     * @return
      */
     private String formatSequence(String transcriptId, Transcript transcript, int minimumCoordinate, int maximumCoordinate) {
         String formatedSeqString = "";
@@ -1856,6 +1908,7 @@ public class GeneBrowserController implements Initializable {
                 int finalI = i;
 
                 t.setOnMouseClicked(mouseEvent -> {
+                    System.out.println("AAAAAAAAAAAAAAAAAAAADDDDDDDDDDDDDDD");
                     mouseEvent.consume();
                     if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
                         int genomCoord = finalI + (int) geneSlider.getLowValue();
@@ -2175,7 +2228,7 @@ public class GeneBrowserController implements Initializable {
         cdsRectangle.setStrokeWidth(3);
 
 
-        int tmpStartGeneCoord = Math.max(cdsStartGenomCoord, startGenomCoord);
+        int tmpStartGeneCoord = Math.max(cdsStartGenomCoord, startGenomCoord) - 1;
         int tmpEndGeneCoord = Math.min(cdsEndGenomCoord, endGenomCoord);
 
         double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
@@ -2185,6 +2238,7 @@ public class GeneBrowserController implements Initializable {
         cdsRectangle.setWidth(width);
 
         cdsGroup.getChildren().add(cdsRectangle);
+
 
         if (hasPfam) {
 
@@ -2245,7 +2299,7 @@ public class GeneBrowserController implements Initializable {
 
         double offsetY = 0;
         if(geneSlider.getHighValue() - geneSlider.getLowValue() <= 500){
-            Pair<String, Integer> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
+            Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
 
             if(pair!=null){
 
@@ -2269,13 +2323,14 @@ public class GeneBrowserController implements Initializable {
                 }
 
                 String subseq = pair.getKey();
-                int offset = pair.getValue();
+                int offset = pair.getValue()[0];
                 for (int i = 0; i < subseq.length(); i++) {
                     Text t = new Text(String.valueOf(subseq.charAt(i)));
                     t.setFont(Font.font("monospace", fontSize));
 
 
-                    t.setX(X + (i*3 + offset + 0.5) * width / (endGenomCoord-startGenomCoord) - t.getLayoutBounds().getWidth()/2);
+                    t.setX(X + (i*3 + offset + pair.getValue()[1] + 0.5) *
+                            (rectanglesAreaWidth * ((double) subseq.length()*3/ (endGenomCoord-startGenomCoord))/(double) (subseq.length()*3)) - t.getLayoutBounds().getWidth()/2);
                     t.setY(t.getLayoutBounds().getHeight());
 
                     cdsGroup.getChildren().add(t);
@@ -2302,14 +2357,14 @@ public class GeneBrowserController implements Initializable {
     }
 
 
-    public HBox drawRefDNA(){
+    public Group drawRefDNA(){
         String seq = fastaIndex.getSequenceAt(chr, (int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
         Group group = new Group();
 
         final double width = representationWidthFinal / seq.length();
         double height;
 
-        HBox seqHBox = new HBox();
+
 
 
 
@@ -2326,6 +2381,7 @@ public class GeneBrowserController implements Initializable {
 
             Rectangle r = new Rectangle();
             r.setX(i * width);
+            //t.setY(2*height);
             r.setY(-height);
             r.setWidth(width);
             r.setHeight(height);
@@ -2354,8 +2410,7 @@ public class GeneBrowserController implements Initializable {
             group.getChildren().add(t);
 
         }
-        seqHBox.getChildren().add(group);
-        return seqHBox;
+        return group;
 
     }
 

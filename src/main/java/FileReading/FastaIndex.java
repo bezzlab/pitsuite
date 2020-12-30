@@ -43,7 +43,8 @@ public class FastaIndex {
 
 
         long positionToRead = chromosomes.get(chr) + start - 1 + start/60;
-        int amountBytesToRead = end - start + 1;
+        int amountBytesToRead = (int) (end - start  + (end - start + positionToRead % 61) / 60);
+        //int amountBytesToRead = (int) (end - start );
         try {
             RandomAccessFile f = new RandomAccessFile(new File(path),"r");
             byte[] b = new byte[amountBytesToRead];
