@@ -3,12 +3,14 @@ package Singletons;
 import Controllers.GeneBrowserController;
 import Controllers.PeptideTableController;
 import Controllers.ResultsController;
+import javafx.scene.Scene;
 
 public class ControllersBasket {
 
     private static GeneBrowserController geneBrowserController;
     private static PeptideTableController peptideTableController;
     private static ResultsController resultsController;
+    private static Scene scene;
 
 
     public static GeneBrowserController getGeneBrowserController() {
@@ -33,5 +35,13 @@ public class ControllersBasket {
 
     public static void setResultsController(ResultsController resultsController) {
         ControllersBasket.resultsController = resultsController;
+    }
+
+    public static Scene getScene() {
+        return scene;
+    }
+
+    public static void setScene(Scene scene) {
+        ControllersBasket.scene = scene;
     }
 }

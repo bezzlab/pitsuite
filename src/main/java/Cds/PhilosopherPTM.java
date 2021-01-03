@@ -1,5 +1,7 @@
 package Cds;
 
+import javafx.scene.paint.Color;
+
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,9 +43,19 @@ public class PhilosopherPTM extends PTM{
 
             }
         }else{
-            ptms.add(new PTM("None", -1, true));
+            ptms.add(new PhilosopherPTM("None", -1, true));
         }
 
         return ptms;
+    }
+
+    @Override
+    public String getShape() {
+        return null;
+    }
+
+    @Override
+    public Color getColor() {
+        return null;
     }
 }

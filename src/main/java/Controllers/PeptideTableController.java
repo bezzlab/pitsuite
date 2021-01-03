@@ -381,11 +381,14 @@ public class PeptideTableController implements Initializable {
         }
 
         peptideSampleTable.getItems().clear();
+        modificationsTable.getItems().clear();
+        psmTable.getItems().clear();
+        spectrumViewerController.clear();
         chartsBox.getChildren().clear();
 
 
         for(MSRun run: selectedRun.getRuns()){
-            if(run.getPeptide(peptide.getSequence())!=null){
+            if(run.getPeptide(peptide.getSequence())!=null && run.getPeptide(peptide.getSequence()).hasPSM()){
                 peptideSampleTable.getItems().add(run);
             }
 

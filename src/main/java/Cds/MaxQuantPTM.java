@@ -1,5 +1,7 @@
 package Cds;
 
+import javafx.scene.paint.Color;
+
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,11 +31,38 @@ public class MaxQuantPTM extends PTM{
                 ptms.add(new MaxQuantPTM(mod, pos, 2, true));
                 charOffset+=mod.length();
             }
-        }else{
-            //ptms.add(new PTM("None", 0, true));
         }
 
-
         return ptms;
+    }
+
+    public String getShape(){
+        if(residue.contains("Oxidation (M)")){
+            return "triangle";
+        }else if(residue.contains("Acetyl (Protein N-term)")){
+            return "triangle";
+        }else{
+            return "square";
+        }
+    }
+
+    public Color getColor(){
+        if(residue.contains("Oxidation (M)")){
+            return Color.BLUE;
+        }else if(residue.contains("Acetyl (Protein N-term)")){
+            return Color.GREEN;
+        }else{
+            return Color.BLACK;
+        }
+    }
+
+    public String getName(){
+        if(residue.contains("Oxidation (M)")){
+            return "Oxidation of M";
+        }else if(residue.contains("Acetyl (Protein N-term)")){
+            return "Acetylation of Protein N-terminal";
+        }else{
+            return "Unknown modification";
+        }
     }
 }

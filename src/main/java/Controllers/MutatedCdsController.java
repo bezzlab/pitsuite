@@ -430,7 +430,7 @@ public class MutatedCdsController implements Initializable {
         }
 
 
-        addPeptides(cds, newAASeq);
+        addPeptides(cds, newAASeq, transcript);
 
     }
 
@@ -543,7 +543,7 @@ public class MutatedCdsController implements Initializable {
         translationTable.put("TGG","W");
     }
 
-    private void addPeptides(CDS cds, String alernativeCDS){
+    private void addPeptides(CDS cds, String alernativeCDS, Transcript transcript){
         peptidesPane.getChildren().clear();
         if(cds.getPeptides()!=null){
             for(Peptide peptide : cds.getPeptides()){
@@ -567,6 +567,34 @@ public class MutatedCdsController implements Initializable {
                             }
                         }
                     });
+                }
+            }
+
+            for(Map.Entry<Variation, Boolean> entry: selectedVariations.entrySet()) {
+                if(entry.getValue()) {
+                    for (Peptide peptide :entry.getKey().getPeptides(transcript.getTranscriptId())) {
+                        Pattern pattern = Pattern.compile(peptide.getSequence());
+                        Matcher matcher = pattern.matcher(alernativeCDS);
+                        while (matcher.find()) {
+                            int pepMatchAaPosStart = matcher.start();
+                            int pepMatchAaPosEnd = matcher.end() - 1;
+
+                            Rectangle r = new Rectangle();
+                            r.setWidth(letterWidth * 3 * (pepMatchAaPosEnd - pepMatchAaPosStart + 1));
+                            r.setHeight(100);
+                            r.setX(letterWidth * 3 * pepMatchAaPosStart);
+                            r.setFill(Color.rgb(100, 100, 100));
+                            peptidesPane.getChildren().add(r);
+
+                            r.setOnMouseClicked(mouseEvent -> {
+                                if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                                    if (mouseEvent.getClickCount() == 2) {
+                                        resultsController.showPeptideTab(peptide);
+                                    }
+                                }
+                            });
+                        }
+                    }
                 }
             }
         }

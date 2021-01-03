@@ -108,9 +108,9 @@ public class ConfidentBarChart extends Pane {
                     min=value;
                 }
             }
-            sd = Math.sqrt(sd);
-            sd/=(entry.getValue().size()-1);
 
+            sd/=(entry.getValue().size()-1);
+            sd = Math.sqrt(sd);
             double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
 
             if(average + confInterval > max){
@@ -198,8 +198,9 @@ public class ConfidentBarChart extends Pane {
             for(double value: entry.getValue()){
                 sd+=Math.pow(value-average, 2);
             }
-            sd = Math.sqrt(sd);
+
             sd/=(entry.getValue().size()-1);
+            sd = Math.sqrt(sd);
 
             double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
 

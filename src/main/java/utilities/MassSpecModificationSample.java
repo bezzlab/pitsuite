@@ -33,6 +33,9 @@ public class MassSpecModificationSample {
 
 
     public String ptmsToString(){
+
+        if(ptms.size()==0) return "None";
+
         StringBuilder sb = new StringBuilder();
         int i=0;
         for(PTM ptm: ptms){

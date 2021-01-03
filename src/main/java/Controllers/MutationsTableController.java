@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Config;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXTextField;
@@ -299,7 +300,8 @@ public class MutationsTableController implements Initializable {
                         String varRef = (String) mutationDoc.get("ref");
                         String chr = (String) mutationDoc.get("chr");
                         boolean hasPeptideEvidence = (boolean) mutationDoc.get("hasPeptideEvidence");
-                        Map<String, Map< String, Map<String, Double>>> conditions = (Map<String, Map<String, Map<String, Double>>>) mutationDoc.get("conditions");
+                        Map<String, Map< String, Map<String, Double>>> conditions =
+                                (Map<String, Map<String, Map<String, Double>>>) mutationDoc.get("condition");
 
                         int varAltLength = varAlt.length();
                         int varRefLength = varRef.length();
@@ -366,7 +368,7 @@ public class MutationsTableController implements Initializable {
                         }
 
                         Variation tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
-                                (JSONObject) mutationDoc.get("transcriptsPos"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type);
+                                (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type);
 
                         mutations.add(tmpVarBasicInfo);
                     }
@@ -510,7 +512,7 @@ public class MutationsTableController implements Initializable {
     }
 
     private void drawSampleFilterSliders(){
-        Set<String> conditions = parentController.getConfig().getConditions();
+        Set<String> conditions = Config.getConditions();
 
         conditionFilterCheckboxes = new ArrayList<>();
         minSamplesConditionFilterSliders = new ArrayList<>();
@@ -529,7 +531,7 @@ public class MutationsTableController implements Initializable {
 
             conditionFilterCheckboxes.add(conditionEnabledCheckbox);
 
-            int nbSamples = parentController.getConfig().getSamplesInCondition(condition).size();
+            int nbSamples = Config.getSamplesInCondition(condition).size();
             RangeSlider slider = new RangeSlider();
             slider.setMax(nbSamples);
             slider.setLowValue(0);

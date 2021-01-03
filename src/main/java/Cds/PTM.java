@@ -1,5 +1,7 @@
 package Cds;
 
+import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -7,10 +9,10 @@ import java.util.regex.Pattern;
 
 public class PTM {
 
-    private String residue;
-    private int pos;
-    private double massShift;
-    private boolean assigned;
+    protected String residue;
+    protected int pos;
+    protected double massShift;
+    protected boolean assigned;
 
     public PTM(String residue, double massShift, boolean assigned) {
         this.residue = residue;
@@ -100,4 +102,13 @@ public class PTM {
             }
         }
     }
+
+    public String getShape() {
+        return null;
+    }
+
+    public Color getColor() {
+        return null;
+    }
+
 }

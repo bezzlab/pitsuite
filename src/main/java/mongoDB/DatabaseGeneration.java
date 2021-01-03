@@ -379,8 +379,8 @@ public class DatabaseGeneration {
             currDocument.put("hasPeptideEvidence", jsonObject.get("hasPeptideEvidence"));
             currDocument.put("inCDS", jsonObject.get("inCDS"));
             currDocument.put("silent", jsonObject.get("silent"));
-            currDocument.put("conditions", jsonObject.get("conditions"));
-            currDocument.put("transcriptsPos", jsonObject.get("transcriptsPos"));
+            currDocument.put("condition", jsonObject.get("condition"));
+            currDocument.put("transcripts", jsonObject.get("transcripts"));
             genesDocsToDBList.add(currDocument);
         }
 

@@ -161,9 +161,7 @@ public class CDS {
         boolean startFound=false;
         boolean endFound=false;
 
-        int i = 0;
         for(Exon exon: transcript.getExons()){
-            i++;
             if(genomicStart>=exon.getStart() && genomicStart<=exon.getEnd()){
                 transcriptStart += genomicStart-exon.getStart()+1;
                 startFound=true;
@@ -179,15 +177,8 @@ public class CDS {
         }
 
 
-//        if(getGenomicPos(transcript).getKey()>genomicStart){
-//            startOffset = getTranscriptWithCdsPos(transcript).getKey();
-//        }
-
-        System.out.println(i);
-        i=0;
 
         for(Exon exon: transcript.getExons()){
-            i++;
             if(genomicEnd>=exon.getStart() && genomicEnd<=exon.getEnd()){
                 transcriptEnd += genomicEnd-exon.getStart()+1;
                 endFound=true;
@@ -199,7 +190,6 @@ public class CDS {
                 transcriptEnd+=exon.getEnd()-exon.getStart()+1;
             }
         }
-        System.out.println(i);
 
 
         transcriptStart = transcriptStart - transcript.getStartGenomCoord();
@@ -211,16 +201,17 @@ public class CDS {
 
 
         int cdsStart = transcriptStart / 3;
-        int cdsEnd = (transcriptStart + rnaLength) / 3 + 1;
+        int cdsEnd = (transcriptStart + rnaLength) / 3;
 
 
-        if(startFound && cdsEnd > 0){
-            System.out.println(transcriptStart / 3 +" "+(transcriptStart + rnaLength) / 3 + 1+" "+sequence.length());
+        if(startFound && cdsEnd > 0 & cdsStart < sequence.length()){
             String subseq;
             if(strand.equals("+")){
-                subseq = sequence.substring(transcriptStart / 3, (transcriptStart + rnaLength) / 3 + 1);
+                subseq = sequence.substring(transcriptStart / 3, Math.min(sequence.length(),
+                        (transcriptStart + rnaLength) / 3 + 1));
             }else{
-                subseq = new StringBuilder(sequence).reverse().substring(transcriptStart / 3, (transcriptStart + rnaLength) / 3);
+                String revSeq = new StringBuilder(sequence).reverse().toString();
+                subseq = revSeq.substring(transcriptStart / 3, Math.min((transcriptStart + rnaLength) / 3 + 1, revSeq.length()));
             }
 
 

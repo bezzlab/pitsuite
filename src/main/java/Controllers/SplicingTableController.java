@@ -815,6 +815,7 @@ public class SplicingTableController extends Controller {
     private void addPeptideToRepresentation(String splicingEventKey, Group group, double xstart, double xend,
                                             double leftExonXstart, double leftExonXend, double rightExonXstart, double rightExonXend){
 
+        representationChartsBox.getChildren().clear();
         NitriteCollection splicingEventsCollection = db.getCollection("eventPeptides");
 
         // get domains
@@ -894,7 +895,7 @@ public class SplicingTableController extends Controller {
                 }
             }
 
-            representationChartsBox.getChildren().clear();
+
 
             if(doc.containsKey("proteinCorrectedRatios") &&
                     doc.get("proteinCorrectedRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){

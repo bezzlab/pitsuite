@@ -184,5 +184,16 @@ public class Peptide {
         return run.getName();
     }
 
+    public boolean hasNonZeroIntensities(){
+        for (Double intensity: intensities.values()) {
+            if(intensity>0) return true;
+        }
+        return false;
+    }
+
+    public boolean hasPSM(){
+        return psms.size()>0;
+    }
+
 
 }

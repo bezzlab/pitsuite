@@ -15,6 +15,7 @@ import javafx.animation.PauseTransition;
 import javafx.application.HostServices;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -36,6 +37,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -687,18 +689,10 @@ public class GeneBrowserController implements Initializable {
 
 
 
-            JSONObject transcripts = tmpDoc.get("transcriptsPos", JSONObject.class);
-            Long varPos = (Long) tmpDoc.get("refPos");
-            String varAlt = (String) tmpDoc.get("alt");
-            String varRef = (String) tmpDoc.get("ref");
-            boolean hasPeptideEvidence = (boolean) tmpDoc.get("hasPeptideEvidence");
-            Map<String, Map<String, Map<String, Double>>> conditions = (Map<String, Map<String, Map<String, Double>>>) tmpDoc.get("conditions");
+            Variation variation = new Variation(tmpDoc);
 
-            Variation variation = new Variation(gene.getSymbol(), chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence,
-                    conditions, transcripts, (boolean) tmpDoc.get("inCDS"), (boolean) tmpDoc.get("silent"));
-
-            for(Object obj: transcripts.keySet()){
-                transcriptHashMap.get(obj).addVariation(variation);
+            for(String transcriptId: variation.getTranscriptIds()){
+                transcriptHashMap.get(transcriptId).addVariation(variation);
             }
             variations.add(variation);
 
@@ -927,7 +921,7 @@ public class GeneBrowserController implements Initializable {
                 bedPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
             }
         });
-        pauseTransition.play(); 
+        pauseTransition.play();
 
         if (viewType.equals("transcripts")) {
             displayTranscriptCentricViewExonsOrSeq();
@@ -1367,48 +1361,86 @@ public class GeneBrowserController implements Initializable {
                     int pepStartCoordInView = Math.max(startGenomCoord, pepStartCoord);
                     int pepEndCoordInView = Math.min(endGenomCoord, pepEndCoord);
 
-                    double totalSizeInView = endGenomCoord - startGenomCoord;
+                    double totalSizeInView = endGenomCoord - startGenomCoord + 1;
 
                     pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
                     pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
-                    pepGroup.getChildren().add(pepRect);
+
+                    if(pepRect.getWidth()>0) {
+                        pepGroup.getChildren().add(pepRect);
+
+
+                        for (PSM psm : peptide.getPsms()) {
+                            HashSet<PTM> ptms = psm.getModifications();
+
+
+                            for (PTM ptm : ptms) {
+
+                                Tooltip tooltipTranscId = new Tooltip(ptm.getName());
+                                tooltipTranscId.setShowDelay(Duration.ONE);
+                                tooltipTranscId.setFont(Font.font("monospace", fontSize));
 
 
 
-                    for(PSM psm: peptide.getPsms()){
-                        HashSet<PTM> ptms = psm.getModifications();
-                        for(PTM ptm: ptms){
-                            Rectangle rect = new Rectangle();
-                            if(cds.getStrand().equals("+")){
-                                rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView+3*(ptm.getPos()-1),
-                                        startGenomCoord, totalSizeInView)));
-                            }else{
-                                rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView
-                                                +3*(peptide.getSequence().length()-ptm.getPos())-1,
-                                        startGenomCoord, totalSizeInView)));
-                                rect.setWidth(rectanglesAreaWidth * (getProportion(pepStartCoordInView
-                                                +3*(peptide.getSequence().length()-ptm.getPos()+1)-1,
-                                        pepStartCoordInView
-                                                +3*(peptide.getSequence().length()-ptm.getPos())-1, totalSizeInView)));
+                                if(ptm.getShape().equals("triangle")){
+
+                                    Polygon polygon = new Polygon();
+                                    if (cds.getStrand().equals("+")) {
+                                        double X = rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (ptm.getPos() - 1)+1.5,
+                                                startGenomCoord, totalSizeInView));
+
+                                        polygon.getPoints().addAll(X+10, height,
+                                                X, height+20.0,
+                                                X+20, height+20.0);
+
+
+
+                                    } else {
+                                        double X = rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (peptide.getSequence().length()-
+                                                        ptm.getPos() - 1)+0.75,
+                                                startGenomCoord, totalSizeInView));
+
+                                        polygon.getPoints().addAll(X+10, height,
+                                                X, height+20.0,
+                                                X+20, height+20.0);
+                                    }
+                                    polygon.setFill(ptm.getColor());
+
+                                    pepGroup.getChildren().add(polygon);
+                                    Tooltip.install(polygon, tooltipTranscId);
+
+
+
+                                }else if(ptm.getShape().equals("square")){
+                                    Rectangle rect = new Rectangle();
+                                    if (cds.getStrand().equals("+")) {
+                                        rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (ptm.getPos() - 1)+0.75,
+                                                startGenomCoord, totalSizeInView)));
+
+
+                                    } else {
+                                    rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView
+                                                    + 3 * (peptide.getSequence().length() - ptm.getPos()) - 1,
+                                            startGenomCoord, totalSizeInView)));
+
+                                    }
+
+                                    rect.setWidth(20);
+                                    rect.setHeight(20);
+                                    rect.setHeight(height);
+                                    rect.setFill(ptm.getColor());
+
+                                    pepGroup.getChildren().add(rect);
+                                    Tooltip.install(rect, tooltipTranscId);
+                                }
 
                             }
-
-                            //rect.setWidth(20);
-                            rect.setHeight(20);
-                            rect.setY(height+5);
-                            rect.setFill(Color.RED);
-                            pepGroup.getChildren().add(rect);
                         }
                     }
-
-
 
                 }
             }
             peptideSeqsRuns.get(pepSeq).add(Config.getMainRun(peptide.getRunName()));
-
-
-
 
         }
 
@@ -1457,265 +1489,266 @@ public class GeneBrowserController implements Initializable {
             int endPosition = (int) geneSlider.getHighValue();
             HBox box = drawExonsHBox(transcript.getTranscriptId(), transcript, startPosition, endPosition); // exons
 
-            box.setOnMouseClicked(event -> {
-                drawerController.showtranscript(transcript);
-                event.consume();
-                drawer.open();
-                drawer.toFront();
-            });
+            if(box!=null){
+                box.setOnMouseClicked(event -> {
+                    drawerController.showtranscript(transcript);
+                    event.consume();
+                    drawer.open();
+                    drawer.toFront();
+                });
 
 
-
-
-
-            if (showCdsInGeneBrowserBool && transcript.getHasCds() && viewType.equals("transcripts")) {
-                drawCdsForSpecificTranscript(transcript, box);
+                if (showCdsInGeneBrowserBool && transcript.getHasCds() && viewType.equals("transcripts")) {
+                    drawCdsForSpecificTranscript(transcript, box);
+                }
             }
 
-
         }
-
 
     }
 
 
-    /**
-     *
-     * @return
-     */
     private HBox drawExonsHBox(String transcriptId, Transcript transcript,
                                int startGenomPosition, int endGenomPosition) {
-        HBox exonsHBox = new HBox();
-        Pane exonPane = new Pane();
-        exonPane.setId("exonPane");
-        Group group = new Group();
-
-        Text transcIdText = new Text(transcriptId);
-        transcIdText.setFont(Font.font("monospace", fontSize));
 
 
-        double rectanglesMaxWidth = representationWidthFinal;
-        double exonHeight = transcIdText.getLayoutBounds().getHeight();
 
 
-        // color depends on transcript has coding sequences (cds)
-        Color exonsColour = Color.rgb(0, 0, 0);
-        Color intronsColour = Color.rgb(0, 0, 0);
+        if((transcript.getStartGenomCoord()>startGenomPosition && transcript.getStartGenomCoord()<endGenomPosition) ||
+                (transcript.getEndGenomCoord()>startGenomPosition && transcript.getEndGenomCoord()<endGenomPosition) ||
+                (startGenomPosition>transcript.getStartGenomCoord()&& endGenomPosition<transcript.getEndGenomCoord())) {
 
-        if (transcript.getStartGenomCoord() < geneMinimumCoordinate || transcript.getEndGenomCoord() > geneMaximumCoordinate) {
-            if (transcript.getHasCds()) {
-                exonsColour = Color.rgb(50, 168, 82);
-                intronsColour = Color.rgb(50, 168, 82, 0.5);
+
+            HBox exonsHBox = new HBox();
+            Pane exonPane = new Pane();
+            exonPane.setId("exonPane");
+            Group group = new Group();
+
+            Text transcIdText = new Text(transcriptId);
+            transcIdText.setFont(Font.font("monospace", fontSize));
+
+
+            double rectanglesMaxWidth = representationWidthFinal;
+            double exonHeight = transcIdText.getLayoutBounds().getHeight();
+
+
+            // color depends on transcript has coding sequences (cds)
+            Color exonsColour = Color.rgb(0, 0, 0);
+            Color intronsColour = Color.rgb(0, 0, 0);
+
+            if (transcript.getStartGenomCoord() < geneMinimumCoordinate || transcript.getEndGenomCoord() > geneMaximumCoordinate) {
+                if (transcript.getHasCds()) {
+                    exonsColour = Color.rgb(50, 168, 82);
+                    intronsColour = Color.rgb(50, 168, 82, 0.5);
+                } else {
+                    exonsColour = Color.rgb(168, 50, 121, 1);
+                    intronsColour = Color.rgb(168, 50, 121, 0.5);
+                }
             } else {
-                exonsColour = Color.rgb(168, 50, 121, 1);
-                intronsColour = Color.rgb(168, 50, 121, 0.5);
-            }
-        } else {
-            if (transcript.getHasCds()) {
-                exonsColour = Color.rgb(0, 102, 255, 1);
-                intronsColour = Color.rgb(0, 102, 255, 0.5);
-            } else {
-                exonsColour = Color.rgb(255, 26, 26, 1);
-                intronsColour = Color.rgb(255, 26, 26, 0.5);
+                if (transcript.getHasCds()) {
+                    exonsColour = Color.rgb(0, 102, 255, 1);
+                    intronsColour = Color.rgb(0, 102, 255, 0.5);
+                } else {
+                    exonsColour = Color.rgb(255, 26, 26, 1);
+                    intronsColour = Color.rgb(255, 26, 26, 0.5);
+                }
+
             }
 
-        }
+
+            // add tooltip: display transcId when hover
+            String selectedCondition = conditionsGeneBrowserCombobox.getValue();
+            Double avgTPM = transcriptHashMap.get(transcriptId).getAverageTPMByCondition(selectedCondition);
+            String tooltipTranscIdString = "Average TPM (" + selectedCondition + "): " + avgTPM;
+            Tooltip tooltipTranscId = new Tooltip(tooltipTranscIdString);
+            tooltipTranscId.setShowDelay(Duration.ONE);
+            tooltipTranscId.setFont(Font.font("monospace", fontSize));
+            Tooltip.install(exonPane, tooltipTranscId);
 
 
-        // add tooltip: display transcId when hover
-        String selectedCondition = conditionsGeneBrowserCombobox.getValue();
-        Double avgTPM = transcriptHashMap.get(transcriptId).getAverageTPMByCondition(selectedCondition);
-        String tooltipTranscIdString = "Average TPM (" + selectedCondition + "): " + avgTPM;
-        Tooltip tooltipTranscId = new Tooltip(tooltipTranscIdString);
-        tooltipTranscId.setShowDelay(Duration.ONE);
-        tooltipTranscId.setFont(Font.font("monospace", fontSize));
-        Tooltip.install(exonPane, tooltipTranscId);
-
-
-
-        // default colour
-        exonsHBox.setStyle("-fx-background-color:  transparent;");
-        // add listeners
-        //   hover listener
-        exonsHBox.hoverProperty().addListener((observableValue, aBoolean, t1) -> {
-            if (exonsHBox.isHover()) {
-                exonsHBox.setStyle("-fx-background-color: #ffffb3;");
-            } else {
-                exonsHBox.setStyle("-fx-background-color: transparent;");
-            }
-        });
-
-
-
-        double seqTotalSize = (double) endGenomPosition - startGenomPosition;
-
-
-        // get exons list and sort it by start
-        ArrayList<Exon> exonsList = transcript.getExons();
-
-
-
-        // introns-exons representation
-
-        int tmpLastPos = 0;
-        int tmpExonEndPosition;
-        int tmpExonStartPosition;
-
-        // start exons
-        for (int i = 0; i < exonsList.size(); i++) {
-            Exon exon = exonsList.get(i);
-
-            // Rectangle for the exons
-            Rectangle exonRectangle = new Rectangle();
-            exonRectangle.setFill(exonsColour);
-            exonRectangle.setStroke(Color.TRANSPARENT);
-            exonRectangle.setHeight(exonHeight);
-
-            //Rectangle for the introns
-            Rectangle intronRectangle = new Rectangle();
-            intronRectangle.setFill(Color.TRANSPARENT);
-            intronRectangle.setStroke(intronsColour);
-            intronRectangle.setHeight(1);
-
-
-            exonRectangle.setOnMouseClicked(mouseEvent -> {
-                if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
-                    geneSlider.setLowValue(exon.getStart() - 15);
-                    geneSlider.setHighValue(exon.getEnd() + 15);
-                    displayExonSplicingInformation("chr1", 1111, 2222);
+            // default colour
+            exonsHBox.setStyle("-fx-background-color:  transparent;");
+            // add listeners
+            //   hover listener
+            exonsHBox.hoverProperty().addListener((observableValue, aBoolean, t1) -> {
+                if (exonsHBox.isHover()) {
+                    exonsHBox.setStyle("-fx-background-color: #ffffb3;");
+                } else {
+                    exonsHBox.setStyle("-fx-background-color: transparent;");
                 }
             });
 
 
-            if (exon.getEnd() > startGenomPosition) { // if
-                if (i == 0) {
-                    if (exon.getStart() <= startGenomPosition) {
-                        tmpLastPos = startGenomPosition;
-                    } else if (exon.getStart() > startGenomPosition && exon.getStart() < endGenomPosition) {
-                        tmpLastPos = startGenomPosition;
-                    } else if (exon.getStart() >= endGenomPosition) {
-                        tmpLastPos = endGenomPosition;
-                    }
-
-                } else {
-                    if (exon.getStart() <= startGenomPosition) {
-                        tmpLastPos = startGenomPosition;
-                    } else if (exonsList.get(i - 1).getEnd() <= startGenomPosition) {
-                        tmpLastPos = startGenomPosition;
-                    } else if (exonsList.get(i - 1).getEnd() > startGenomPosition && exonsList.get(i - 1).getEnd() < endGenomPosition) {
-                        tmpLastPos = exonsList.get(i - 1).getEnd();
-                    } else if (exonsList.get(i - 1).getEnd() >= endGenomPosition) {
-                        tmpLastPos = endGenomPosition;
-                    }
-                }
-
-                if (exon.getStart() >= endGenomPosition) {
-                    tmpExonStartPosition = endGenomPosition;
-                } else tmpExonStartPosition = Math.max(exon.getStart(), startGenomPosition);
-
-                tmpExonEndPosition = Math.min(exon.getEnd(), endGenomPosition);
+            double seqTotalSize = (double) endGenomPosition - startGenomPosition;
 
 
-                if (i == 0) {
-
-                    exonRectangle.setX(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, tmpLastPos, seqTotalSize)));
-                } else {
-                    //intron
-                    intronRectangle.setY(exonHeight / 2.0);
-                    intronRectangle.setX(rectanglesMaxWidth * (getProportion(tmpLastPos, startGenomPosition, seqTotalSize)));
-                    intronRectangle.setWidth(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, tmpLastPos, seqTotalSize)));
-                    group.getChildren().add(intronRectangle);
-                    // exon
-                    exonRectangle.setX(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, startGenomPosition, seqTotalSize)));
-                }
-                exonRectangle.setWidth(rectanglesMaxWidth * (getProportion(tmpExonEndPosition, tmpExonStartPosition, seqTotalSize)));
-                group.getChildren().add(exonRectangle);
-            }
-        }
+            // get exons list and sort it by start
+            ArrayList<Exon> exonsList = transcript.getExons();
 
 
-        // mutations detected in cond
-        double qualThreshold = Double.parseDouble(minQualFilterGeneBrowserTextField.getText());
-        String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
+            // introns-exons representation
 
-        //   cond        sample       af/qual  value
-        Map<String, Map< String, Map<String, Double>>> tmpConditions;
+            int tmpLastPos = 0;
+            int tmpExonEndPosition;
+            int tmpExonStartPosition;
 
-        // mutations: represented as black bars
-        for (Variation variation : transcript.getVariations()) {
-            int varGenomCoord = variation.getRefPos();
+            // start exons
+            for (int i = 0; i < exonsList.size(); i++) {
+                Exon exon = exonsList.get(i);
 
-            tmpConditions = variation.getConditions();
-            if (!tmpConditions.keySet().contains(conditionToSortBy)) { // filter by condition
-                continue;
-            }
+                // Rectangle for the exons
+                Rectangle exonRectangle = new Rectangle();
+                exonRectangle.setFill(exonsColour);
+                exonRectangle.setStroke(Color.TRANSPARENT);
+                exonRectangle.setHeight(exonHeight);
 
-            boolean qualGteThreshold = false;
-            Map< String, Map<String, Double>> sampleVariationMap =  tmpConditions.get(conditionToSortBy);
-            for (Map<String, Double> sampleVariation : sampleVariationMap.values() ){
-                if (sampleVariation.get("qual") >= qualThreshold){
-                    qualGteThreshold = true;
-                }
-            }
-
-            if (!qualGteThreshold) {
-                continue;
-            }
-
-            if (varGenomCoord >= startGenomPosition && varGenomCoord <= endGenomPosition) {
+                //Rectangle for the introns
+                Rectangle intronRectangle = new Rectangle();
+                intronRectangle.setFill(Color.TRANSPARENT);
+                intronRectangle.setStroke(intronsColour);
+                intronRectangle.setHeight(1);
 
 
-                Rectangle variationRectangle = new Rectangle();
-                variationRectangle.setFill(Color.BLACK);
-                variationRectangle.setStroke(Color.TRANSPARENT);
-                variationRectangle.setHeight(exonHeight);
-                variationRectangle.setWidth(2);
-                variationRectangle.setX(rectanglesMaxWidth * (getProportion(varGenomCoord, startGenomPosition, seqTotalSize)));
-
-                // add click behavior
-                variationRectangle.setOnMouseClicked(mouseEvent -> {
+                exonRectangle.setOnMouseClicked(mouseEvent -> {
                     if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
-                        // to filter table //TODO:!!
-//                        transcIDVarTableTextField.setText(transcriptId);
-//                        seqPosVarTableTextField.setText(String.valueOf(variation.getPositionInTranscript(transcript.getTranscriptId())));
+                        geneSlider.setLowValue(exon.getStart() - 15);
+                        geneSlider.setHighValue(exon.getEnd() + 15);
+                        displayExonSplicingInformation("chr1", 1111, 2222);
                     }
                 });
 
 
-                group.getChildren().add(variationRectangle);
+                if (exon.getEnd() > startGenomPosition) {
+                    if (i == 0) {
+                        if (exon.getStart() <= startGenomPosition) {
+                            tmpLastPos = startGenomPosition;
+                        } else if (exon.getStart() > startGenomPosition && exon.getStart() < endGenomPosition) {
+                            tmpLastPos = startGenomPosition;
+                        } else if (exon.getStart() >= endGenomPosition) {
+                            tmpLastPos = endGenomPosition;
+                        }
 
+                    } else {
+                        if (exon.getStart() <= startGenomPosition) {
+                            tmpLastPos = startGenomPosition;
+                        } else if (exonsList.get(i - 1).getEnd() <= startGenomPosition) {
+                            tmpLastPos = startGenomPosition;
+                        } else if (exonsList.get(i - 1).getEnd() > startGenomPosition && exonsList.get(i - 1).getEnd() < endGenomPosition) {
+                            tmpLastPos = exonsList.get(i - 1).getEnd();
+                        } else if (exonsList.get(i - 1).getEnd() >= endGenomPosition) {
+                            tmpLastPos = endGenomPosition;
+                        }
+                    }
+
+                    if (exon.getStart() >= endGenomPosition) {
+                        tmpExonStartPosition = endGenomPosition;
+                    } else tmpExonStartPosition = Math.max(exon.getStart(), startGenomPosition);
+
+                    tmpExonEndPosition = Math.min(exon.getEnd(), endGenomPosition);
+
+
+                    if (i == 0) {
+
+                        exonRectangle.setX(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, tmpLastPos, seqTotalSize)));
+                    } else {
+                        //intron
+                        intronRectangle.setY(exonHeight / 2.0);
+                        intronRectangle.setX(rectanglesMaxWidth * (getProportion(tmpLastPos, startGenomPosition, seqTotalSize)));
+                        intronRectangle.setWidth(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, tmpLastPos, seqTotalSize)));
+                        group.getChildren().add(intronRectangle);
+                        // exon
+                        exonRectangle.setX(rectanglesMaxWidth * (getProportion(tmpExonStartPosition, startGenomPosition, seqTotalSize)));
+                    }
+                    exonRectangle.setWidth(rectanglesMaxWidth * (getProportion(tmpExonEndPosition, tmpExonStartPosition, seqTotalSize)));
+                    group.getChildren().add(exonRectangle);
+                }
             }
+
+
+            // mutations detected in cond
+            double qualThreshold = Double.parseDouble(minQualFilterGeneBrowserTextField.getText());
+            String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
+
+            //   cond        sample       af/qual  value
+            Map<String, Map<String, Map<String, Double>>> tmpConditions;
+
+            // mutations: represented as black bars
+            for (Variation variation : transcript.getVariations()) {
+                int varGenomCoord = variation.getRefPos();
+
+                tmpConditions = variation.getConditions();
+                if (!tmpConditions.keySet().contains(conditionToSortBy)) { // filter by condition
+                    continue;
+                }
+
+                boolean qualGteThreshold = false;
+                Map<String, Map<String, Double>> sampleVariationMap = tmpConditions.get(conditionToSortBy);
+                for (Map<String, Double> sampleVariation : sampleVariationMap.values()) {
+                    if (sampleVariation.get("qual") >= qualThreshold) {
+                        qualGteThreshold = true;
+                    }
+                }
+
+                if (!qualGteThreshold) {
+                    continue;
+                }
+
+                if (varGenomCoord >= startGenomPosition && varGenomCoord <= endGenomPosition) {
+
+
+                    Rectangle variationRectangle = new Rectangle();
+                    variationRectangle.setFill(Color.BLACK);
+                    variationRectangle.setStroke(Color.TRANSPARENT);
+                    variationRectangle.setHeight(exonHeight);
+                    variationRectangle.setWidth(2);
+                    variationRectangle.setX(rectanglesMaxWidth * (getProportion(varGenomCoord, startGenomPosition, seqTotalSize)));
+
+                    // add click behavior
+                    variationRectangle.setOnMouseClicked(mouseEvent -> {
+                        if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
+                            // to filter table //TODO:!!
+//                        transcIDVarTableTextField.setText(transcriptId);
+//                        seqPosVarTableTextField.setText(String.valueOf(variation.getPositionInTranscript(transcript.getTranscriptId())));
+                        }
+                    });
+
+
+                    group.getChildren().add(variationRectangle);
+
+                }
+            }
+
+
+            // rectangle that signals the limit of the genes area
+            Rectangle limitRectangle = new Rectangle();
+            limitRectangle.setFill(Color.rgb(240, 240, 240));
+            limitRectangle.setX(rectanglesMaxWidth + 1);
+            limitRectangle.setWidth(geneExonsSeqsVBox.getWidth() - (rectanglesMaxWidth + 1));
+            limitRectangle.setHeight(exonPane.getPrefHeight());
+            group.getChildren().add(limitRectangle);
+
+            // add transcript ID
+
+
+            transcIdText.setX(rectanglesMaxWidth + 5);
+            transcIdText.setY(0);
+
+
+            exonPane.getChildren().add(group);
+            //exonPane.setPadding(new Insets( (int) Math.round(representationHeightFinal*0.01), 0, 0, 0));
+            exonsHBox.getChildren().add(exonPane);
+
+            exonsHBox.getChildren().add(transcIdText);
+
+            VBox.setMargin(exonsHBox, new Insets((int) Math.round(representationHeightFinal * 0.02), 0, 0, 0));
+            geneExonsSeqsVBox.getChildren().add(exonsHBox);
+
+            return exonsHBox;
         }
-
-
-        // rectangle that signals the limit of the genes area
-        Rectangle limitRectangle = new Rectangle();
-        limitRectangle.setFill(Color.rgb(240, 240, 240));
-        limitRectangle.setX(rectanglesMaxWidth + 1);
-        limitRectangle.setWidth(geneExonsSeqsVBox.getWidth() - (rectanglesMaxWidth + 1));
-        limitRectangle.setHeight(exonPane.getPrefHeight());
-        group.getChildren().add(limitRectangle);
-
-        // add transcript ID
-
-
-        transcIdText.setX(rectanglesMaxWidth + 5);
-        transcIdText.setY(0);
-
-
-
-        exonPane.getChildren().add(group);
-        //exonPane.setPadding(new Insets( (int) Math.round(representationHeightFinal*0.01), 0, 0, 0));
-        exonsHBox.getChildren().add(exonPane);
-
-        exonsHBox.getChildren().add(transcIdText);
-
-        VBox.setMargin(exonsHBox, new Insets( (int) Math.round(representationHeightFinal*0.02), 0, 0, 0));
-        geneExonsSeqsVBox.getChildren().add(exonsHBox);
-
-        return exonsHBox;
+        return null;
 
     }
+
 
 
     private void drawAlignedSequencesVBox() {
@@ -1728,17 +1761,17 @@ public class GeneBrowserController implements Initializable {
 
             String strand = transcript.getStrand();
 
-            HBox seqHBox = getSequencesHBox(transcript.getTranscriptId(), transcript, strand, formatedSeq);
+            Pane seqHBox = getSequencesHBox(transcript.getTranscriptId(), transcript, strand, formatedSeq);
+            if(seqHBox!=null){
+                // draw sequences
+                geneExonsSeqsVBox.getChildren().add(seqHBox);
 
-
-
-            // draw sequences
-            geneExonsSeqsVBox.getChildren().add(seqHBox);
-
-            // draw cds
-            if (showCdsInGeneBrowserBool && transcript.getHasCds() && viewType.equals("transcripts")) {
-                drawCdsForSpecificTranscript(transcript, seqHBox);
+                // draw cds
+                if (showCdsInGeneBrowserBool && transcript.getHasCds() && viewType.equals("transcripts")) {
+                    drawCdsForSpecificTranscript(transcript, seqHBox);
+                }
             }
+
         }
 
     }
@@ -1819,183 +1852,205 @@ public class GeneBrowserController implements Initializable {
     /**
      *
      */
-    public HBox getSequencesHBox(String transcriptId, Transcript transcript, String strand, String formatedSequence) {
+    public Pane getSequencesHBox(String transcriptId, Transcript transcript, String strand, String formatedSequence) {
         int startSeqPos = (int) geneSlider.getLowValue() - geneViewerMinimumCoordinate;
         int charNum = (int) (geneSlider.getHighValue() - geneSlider.getLowValue());
 
 
-
-        double vboxWidth = representationWidthFinal;
-        double rectanglesMaxWidth = representationWidthFinal;
-
-
-        String subSeq = formatedSequence.substring(startSeqPos, startSeqPos + charNum);
-
-        ArrayList<Integer> varFormatedSubseqPos = new ArrayList<>();
-
-        // mutations detected in cond
-        double qualThreshold = Double.parseDouble(minQualFilterGeneBrowserTextField.getText());
-        String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
+        if((transcript.getStartGenomCoord()>geneSlider.getLowValue()  && transcript.getStartGenomCoord()<geneSlider.getHighValue() ) ||
+                (transcript.getEndGenomCoord()>geneSlider.getLowValue()  && transcript.getEndGenomCoord()<geneSlider.getHighValue() ) ||
+                (geneSlider.getLowValue() >transcript.getStartGenomCoord()&& geneSlider.getHighValue() <transcript.getEndGenomCoord())) {
 
 
-        for (Variation variation : transcript.getVariations()) {
-            int varGenomCoord = variation.getRefPos();
-            if (varGenomCoord >= geneSlider.getLowValue() && varGenomCoord <= geneSlider.getHighValue()) {
-                varFormatedSubseqPos.add(varGenomCoord - (int) geneSlider.getLowValue());
+            double vboxWidth = representationWidthFinal;
+            double rectanglesMaxWidth = representationWidthFinal;
+
+
+            String subSeq = formatedSequence.substring(startSeqPos, startSeqPos + charNum);
+
+            ArrayList<Integer> varFormatedSubseqPos = new ArrayList<>();
+
+            // mutations detected in cond
+            double qualThreshold = Double.parseDouble(minQualFilterGeneBrowserTextField.getText());
+            String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
+
+
+            for (Variation variation : transcript.getVariations()) {
+                int varGenomCoord = variation.getRefPos();
+                if (varGenomCoord >= geneSlider.getLowValue() && varGenomCoord <= geneSlider.getHighValue()) {
+                    varFormatedSubseqPos.add(varGenomCoord - (int) geneSlider.getLowValue());
+                }
             }
-        }
 
-        HBox seqHBox = new HBox();
-        seqHBox.setStyle("-fx-background-color:  transparent;");
+            HBox seqHBox = new HBox();
+            seqHBox.setStyle("-fx-background-color:  transparent;");
 
-        // add click behavior
-        seqHBox.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 2) {
-                // to filter table
+            // add click behavior
+            seqHBox.setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 2) {
+                    // to filter table
 //                transcIDVarTableTextField.setText(transcriptId); //TODO:!!
 //                displayCds(transcriptId); // TODO: change this !!
-            }
-        });
+                }
+            });
 
-        // add listeners
-        //   hover listener
-        seqHBox.hoverProperty().addListener((observableValue, aBoolean, t1) -> {
-            if (seqHBox.isHover()) {
-                seqHBox.setStyle("-fx-background-color: #ffffb3;");
+            // add listeners
+            //   hover listener
+            seqHBox.hoverProperty().addListener((observableValue, aBoolean, t1) -> {
+                if (seqHBox.isHover()) {
+                    seqHBox.setStyle("-fx-background-color: #ffffb3;");
 
-            } else {
-                seqHBox.setStyle("-fx-background-color: transparent;");
-            }
-        });
-
-
+                } else {
+                    seqHBox.setStyle("-fx-background-color: transparent;");
+                }
+            });
 
 
-        Group group = new Group();
+            Pane group = new Pane();
 
-        final double width = rectanglesMaxWidth / charNum;
-        double height=0;
+            final double width = rectanglesMaxWidth / charNum;
+            int height = (int) Math.round(representationHeightFinal * 0.02);
+            double currentX = 0;
 
 
+            for (int i = 0; i < subSeq.length(); i++) {
 
-        for (int i = 0; i < subSeq.length(); i++) {
+                String nucl = subSeq.substring(i, i + 1);
 
-            String nucl = subSeq.substring(i, i + 1);
+                Text t = new Text(nucl);
+                t.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
+                t.setX((i + 0.5) * width - t.getLayoutBounds().getWidth()/2);
+                t.setY(t.getLayoutBounds().getHeight());
 
-            Text t = new Text(nucl);
-            t.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
-            t.setX((i + (double) 1 / 2) * width);
-            t.setTextAlignment(TextAlignment.CENTER);
+                //t.setTextAlignment(TextAlignment.CENTER);
 
 //            t.setY(-2);
 //            t.setLayoutX(width);
 //            t.setLayoutY(height);
-            height = t.getLayoutBounds().getHeight();
 
 
 
-            Rectangle r = new Rectangle();
-            r.setX(i * width);
-            r.setY(-height);
-            r.setWidth(width);
-            r.setHeight(height);
+                Rectangle r = new Rectangle();
+                r.setX(i * width);
+
+                r.setWidth(width);
+                r.setHeight(height);
+
+                currentX+=width;
 
 
-            String nuclUpper = nucl.toUpperCase();
-            if (varFormatedSubseqPos.contains(i)) {
-                t.setFont(Font.font(null, FontWeight.BOLD, fontSize + 3));
+                String nuclUpper = nucl.toUpperCase();
+                if (varFormatedSubseqPos.contains(i)) {
+                    t.setFont(Font.font(null, FontWeight.BOLD, fontSize + 3));
 
-                int finalI = i;
-
-                t.setOnMouseClicked(mouseEvent -> {
-                    System.out.println("AAAAAAAAAAAAAAAAAAAADDDDDDDDDDDDDDD");
-                    mouseEvent.consume();
-                    if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
-                        int genomCoord = finalI + (int) geneSlider.getLowValue();
+                    int finalI = i;
+                    EventHandler<MouseEvent> eventHandler = mouseEvent -> {
+                        mouseEvent.consume();
+                        if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
+                            int genomCoord = finalI + (int) geneSlider.getLowValue();
 //                        transcIDVarTableTextField.setText(transcriptId);   //TODO:!!
 //                        genomeStartCoordVarTableSpinner.getValueFactory().setValue(genomCoord);
 //                        genomeEndCoordVarTableSpinner.getValueFactory().setValue(genomCoord);
 
-                        for(CDS cds: transcript.getCdss()){
+                            for (CDS cds : transcript.getCdss()) {
 
-                            Pair<Integer, Integer> genomicPosCds = cds.getGenomicPos(transcript);
-                            if(finalI+1+startSeqPos+geneViewerMinimumCoordinate>=genomicPosCds.getKey() &&
-                                    finalI+1+startSeqPos+geneViewerMinimumCoordinate<genomicPosCds.getValue()){
+                                Pair<Integer, Integer> genomicPosCds = cds.getGenomicPos(transcript);
+                                if (finalI + 1 + startSeqPos + geneViewerMinimumCoordinate >= genomicPosCds.getKey() &&
+                                        finalI + 1 + startSeqPos + geneViewerMinimumCoordinate < genomicPosCds.getValue()) {
 
-                                String sub = formatedSequence.substring(0, finalI+startSeqPos+1);
+                                    String sub = formatedSequence.substring(0, finalI + startSeqPos + 1);
 
-                                mutatedCdsController.showCds(cds,
-                                        finalI+startSeqPos-sub.length()+
-                                                sub.replaceAll("-", "").replaceAll(" ", "").length()
-                                                -cds.getTranscriptsWithCdsPos().get(transcript).getKey());
+                                    mutatedCdsController.showCds(cds,
+                                            finalI + startSeqPos - sub.length() +
+                                                    sub.replaceAll("-", "").replaceAll(" ", "").length()
+                                                    - cds.getTranscriptsWithCdsPos().get(transcript).getKey());
 
-                                extraInfoTitledPane.setExpanded(true);
-                                infoTitleTabs.getSelectionModel().select(1);
-                                break;
+                                    extraInfoTitledPane.setExpanded(true);
+                                    infoTitleTabs.getSelectionModel().select(1);
+                                    break;
+                                }
+
+
                             }
-
-
                         }
+                    };
+
+                    r.setOnMouseClicked(eventHandler);
+                    t.setOnMouseClicked(eventHandler);
+
+                    EventHandler<MouseEvent> onMouseIn = mouseEvent -> {
+                        ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.HAND);
+                    };
+                    EventHandler<MouseEvent> onMouseOut = mouseEvent -> {
+                        ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.DEFAULT);
+                    };
+                    r.setOnMouseEntered(onMouseIn);
+                    t.setOnMouseEntered(onMouseIn);
+
+
+
+                    r.setOnMouseExited(onMouseOut);
+                    t.setOnMouseExited(onMouseOut);
+
+
+
+                    if (nuclUpper.equals("A")) {
+                        r.setFill(Color.rgb(51, 51, 255, 1));
+                    } else if (nuclUpper.equals("G")) {
+                        r.setFill(Color.rgb(255, 0, 0, 1));
+                    } else if (nuclUpper.equals("C")) {
+                        r.setFill(Color.rgb(119, 119, 60, 1));
+                    } else if (nuclUpper.equals("T")) {
+                        r.setFill(Color.rgb(255, 102, 172, 1));
+                    } else if (nucl.equals("-")) {
+                        r.setFill(Color.LIGHTGRAY);
+                        r.setOpacity(0.3);
+                    } else {
+                        r.setFill(Color.TRANSPARENT);
+                    }
+                } else {
+                    t.setFont(Font.font(null, fontSize));
+                    if (nuclUpper.equals("A")) {
+                        r.setFill(Color.rgb(51, 51, 255, 0.3));
+                    } else if (nuclUpper.equals("G")) {
+                        r.setFill(Color.rgb(255, 0, 0, 0.3));
+                    } else if (nuclUpper.equals("C")) {
+                        r.setFill(Color.rgb(119, 119, 60, 0.3));
+                    } else if (nuclUpper.equals("T")) {
+                        r.setFill(Color.rgb(255, 102, 172, 0.3));
+                    } else if (nucl.equals("-")) {
+                        r.setFill(Color.LIGHTGRAY);
+                        r.setOpacity(0.3);
+                    } else {
+                        r.setFill(Color.TRANSPARENT);
                     }
 
-                });
+                }
 
 
-                if (nuclUpper.equals("A")) {
-                    r.setFill(Color.rgb(51, 51, 255, 1));
-                } else if (nuclUpper.equals("G")) {
-                    r.setFill(Color.rgb(255, 0, 0, 1));
-                } else if (nuclUpper.equals("C")) {
-                    r.setFill(Color.rgb(119, 119, 60, 1));
-                } else if (nuclUpper.equals("T")) {
-                    r.setFill(Color.rgb(255, 102, 172, 1));
-                } else if (nucl.equals("-")) {
-                    r.setFill(Color.LIGHTGRAY);
-                } else {
-                    r.setFill(Color.TRANSPARENT);
-                }
-            } else {
-                t.setFont(Font.font(null, fontSize));
-                if (nuclUpper.equals("A")) {
-                    r.setFill(Color.rgb(51, 51, 255, 0.3));
-                } else if (nuclUpper.equals("G")) {
-                    r.setFill(Color.rgb(255, 0, 0, 0.3));
-                } else if (nuclUpper.equals("C")) {
-                    r.setFill(Color.rgb(119, 119, 60, 0.3));
-                } else if (nuclUpper.equals("T")) {
-                    r.setFill(Color.rgb(255, 102, 172, 0.3));
-                } else if (nucl.equals("-")) {
-                    r.setFill(Color.LIGHTGRAY);
-                } else {
-                    r.setFill(Color.TRANSPARENT);
-                }
+
+
+                group.getChildren().add(r);
+                group.getChildren().add(t);
 
             }
 
-            r.toBack();
-            t.toFront();
 
-            group.getChildren().add(r);
-            group.getChildren().add(t);
+            // add transcript ID
+            Text transcIdText = new Text(transcriptId);
+            transcIdText.setFont(Font.font("monospace", fontSize));
+            transcIdText.setY(transcIdText.getLayoutBounds().getHeight());
+            transcIdText.setX(currentX + 5);
+            group.getChildren().add(transcIdText);
 
+            //group.setStyle("-fx-background-color: green");
+//            transcIdText.setStyle("-fx-background-color: blue");
+
+            //seqHBox.getChildren().add(group);
+            //seqHBox.getChildren().add(transcIdText);
+            return group;
         }
-
-        // rectangle that signals the limit of the genes area
-        Rectangle limitRectangle = new Rectangle();
-        limitRectangle.setFill(Color.rgb(240, 240, 240));
-        limitRectangle.setX(rectanglesMaxWidth + 1);
-        limitRectangle.setWidth(vboxWidth - (rectanglesMaxWidth + 1));
-        limitRectangle.setHeight(height);
-        group.getChildren().add(limitRectangle);
-
-        // add transcript ID
-        Text transcIdText = new Text(transcriptId);
-        transcIdText.setFont(Font.font("monospace", fontSize));
-        transcIdText.setX(rectanglesMaxWidth + 5);
-
-        seqHBox.getChildren().add(group);
-        seqHBox.getChildren().add(transcIdText);
-        return seqHBox;
+        return null;
     }
 
 
@@ -2112,7 +2167,7 @@ public class GeneBrowserController implements Initializable {
 
 
 
-    private void drawCdsForSpecificTranscript(Transcript transcript, HBox transcriptBox) {
+    private void drawCdsForSpecificTranscript(Transcript transcript, Pane transcriptBox) {
 
         String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
 
@@ -2175,7 +2230,7 @@ public class GeneBrowserController implements Initializable {
 
         int height = (int) Math.round(representationHeightFinal * 0.02);
         cdsHBox.setPrefHeight(height);
-        pepHBox.setPrefHeight(height);
+        //pepHBox.setPrefHeight(height);
 
         Pane cdsPane = new Pane();
         Group cdsGroup = new Group();
@@ -2193,163 +2248,168 @@ public class GeneBrowserController implements Initializable {
 
 
         Pair<Integer, Integer> cdsSeqStartEndCoord = cds.getTranscriptWithCdsPos(transcript);
+
+
+
+
         boolean hasPfam = cds.hasPfam();
         String cdsSeq = cds.getSequence();
         Pair<Integer, Integer> cdsGenomicCoords = cds.getGenomicPos(transcript);
 
-        int cdsStartGenomCoord = cdsGenomicCoords.getKey();
-        int cdsEndGenomCoord = cdsGenomicCoords.getValue();
+        if((cdsGenomicCoords.getKey()>startGenomCoord && cdsGenomicCoords.getKey()<endGenomCoord) ||
+                (cdsGenomicCoords.getValue()>startGenomCoord && cdsGenomicCoords.getValue()<endGenomCoord) ||
+                (startGenomCoord>cdsGenomicCoords.getKey() && endGenomCoord<cdsGenomicCoords.getValue())) {
 
-        // rectangle that represents the gene. Position, and add to group.
-        Rectangle cdsRectangle = new Rectangle();
-        cdsRectangle.setHeight(height - 1);
+            int cdsStartGenomCoord = cdsGenomicCoords.getKey();
+            int cdsEndGenomCoord = cdsGenomicCoords.getValue();
 
-        // tooltip for cds
-        Tooltip cdsToolTip = new Tooltip("CDS");
-        cdsToolTip.setShowDelay(Duration.millis(500));
-        cdsToolTip.setFont(Font.font(fontSize));
-        cdsToolTip.setShowDuration(Duration.seconds(4));
-        Tooltip.install(cdsRectangle, cdsToolTip);
+            // rectangle that represents the gene. Position, and add to group.
+            Rectangle cdsRectangle = new Rectangle();
+            cdsRectangle.setHeight(height - 1);
 
-        // on click action
-        cdsRectangle.setOnMouseClicked(mouseEvent -> {
-            if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-                displayCdsTab(cdsSeq);
+            // tooltip for cds
+            Tooltip cdsToolTip = new Tooltip("CDS");
+            cdsToolTip.setShowDelay(Duration.millis(500));
+            cdsToolTip.setFont(Font.font(fontSize));
+            cdsToolTip.setShowDuration(Duration.seconds(4));
+            Tooltip.install(cdsRectangle, cdsToolTip);
+
+            // on click action
+            cdsRectangle.setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                    displayCdsTab(cdsSeq);
+                }
+            });
+
+            //  color depending on having peptides
+            if (cds.getPeptides().size() > 0) {
+                cdsRectangle.setFill(Color.rgb(217, 33, 122));
+            } else {
+                cdsRectangle.setFill(Color.rgb(217, 33, 122, 0.5));
             }
-        });
-
-        //  color depending on having peptides
-        if (cds.getPeptides().size() > 0) {
-            cdsRectangle.setFill(Color.rgb(217, 33, 122));
-        } else {
-            cdsRectangle.setFill(Color.rgb(217, 33, 122, 0.5));
-        }
-        cdsRectangle.setStroke(Color.BLACK);
-        cdsRectangle.setStrokeWidth(3);
+            cdsRectangle.setStroke(Color.BLACK);
+            cdsRectangle.setStrokeWidth(3);
 
 
-        int tmpStartGeneCoord = Math.max(cdsStartGenomCoord, startGenomCoord) - 1;
-        int tmpEndGeneCoord = Math.min(cdsEndGenomCoord, endGenomCoord);
+            int tmpStartGeneCoord = Math.max(cdsStartGenomCoord, startGenomCoord) - 1;
+            int tmpEndGeneCoord = Math.min(cdsEndGenomCoord, endGenomCoord);
 
-        double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
-        double X = rectanglesAreaWidth * getProportion(tmpStartGeneCoord, startGenomCoord, length);
+            double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
+            double X = rectanglesAreaWidth * getProportion(tmpStartGeneCoord, startGenomCoord, length);
 
-        cdsRectangle.setX(X);
-        cdsRectangle.setWidth(width);
+            cdsRectangle.setX(X);
+            cdsRectangle.setWidth(width);
 
-        cdsGroup.getChildren().add(cdsRectangle);
-
-
-        if (hasPfam) {
+            cdsGroup.getChildren().add(cdsRectangle);
 
 
-            for (Pfam pfam : cds.getPfams()) {
-                Rectangle pfamRectangle = new Rectangle();
-                pfamRectangle.setHeight(height);
-
-                pfamRectangle.setFill(Color.rgb(153, 255, 153));
-                pfamRectangle.setStroke(Color.WHITE);
-
-                Pair<Integer, Integer> cdsTranscriptCoord = cds.getTranscriptWithCdsPos(transcript);
-                int pfamStartCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaStart() - 1) * 3) -1 ; // -1 since are 1 indexed
-                int pfamEndCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaEnd() - 1) * 3) + 2; // -1 since are 1 indexed
+            if (hasPfam) {
 
 
+                for (Pfam pfam : cds.getPfams()) {
+                    Rectangle pfamRectangle = new Rectangle();
+                    pfamRectangle.setHeight(height);
 
-                pfamStartCoord = transcript.genomCoordFromSeqPos(pfamStartCoord);
-                pfamEndCoord = transcript.genomCoordFromSeqPos(pfamEndCoord);
+                    pfamRectangle.setFill(Color.rgb(153, 255, 153));
+                    pfamRectangle.setStroke(Color.WHITE);
 
-                pfamRectangle.setOnMouseClicked(event -> {
-                    drawerController.showPfam(pfam);
-                    event.consume();
-                    drawer.open();
-                    drawer.toFront();
-                });
+                    Pair<Integer, Integer> cdsTranscriptCoord = cds.getTranscriptWithCdsPos(transcript);
+                    int pfamStartCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaStart() - 1) * 3) - 1; // -1 since are 1 indexed
+                    int pfamEndCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaEnd() - 1) * 3) + 2; // -1 since are 1 indexed
 
 
-                int pfamStartCoordInView = Math.max(startGenomCoord, pfamStartCoord);
-                int pfamEndCoordInView = Math.min(endGenomCoord, pfamEndCoord);
+                    pfamStartCoord = transcript.genomCoordFromSeqPos(pfamStartCoord);
+                    pfamEndCoord = transcript.genomCoordFromSeqPos(pfamEndCoord);
 
-                double totalSizeInView = endGenomCoord - startGenomCoord;
+                    pfamRectangle.setOnMouseClicked(event -> {
+                        drawerController.showPfam(pfam);
+                        event.consume();
+                        drawer.open();
+                        drawer.toFront();
+                    });
 
-                pfamRectangle.setX(rectanglesAreaWidth * (getProportion(pfamStartCoordInView, startGenomCoord, totalSizeInView)));
-                pfamRectangle.setWidth(rectanglesAreaWidth * (getProportion(pfamEndCoordInView, pfamStartCoordInView, totalSizeInView)));
-                cdsGroup.getChildren().add(pfamRectangle);
 
-                // Tooltip for pfam domain
-                Tooltip pfamToolTip = new Tooltip(pfam.getDesc());
-                pfamToolTip.setShowDelay(Duration.ZERO);
-                pfamToolTip.setFont(Font.font(fontSize));
-                Tooltip.install(pfamRectangle, pfamToolTip);
-                pfamToolTip.setShowDuration(Duration.seconds(4));
+                    int pfamStartCoordInView = Math.max(startGenomCoord, pfamStartCoord);
+                    int pfamEndCoordInView = Math.min(endGenomCoord, pfamEndCoord);
 
+                    double totalSizeInView = endGenomCoord - startGenomCoord;
+
+                    pfamRectangle.setX(rectanglesAreaWidth * (getProportion(pfamStartCoordInView, startGenomCoord, totalSizeInView)));
+                    pfamRectangle.setWidth(rectanglesAreaWidth * (getProportion(pfamEndCoordInView, pfamStartCoordInView, totalSizeInView)));
+                    cdsGroup.getChildren().add(pfamRectangle);
+
+                    // Tooltip for pfam domain
+                    Tooltip pfamToolTip = new Tooltip(pfam.getDesc());
+                    pfamToolTip.setShowDelay(Duration.ZERO);
+                    pfamToolTip.setFont(Font.font(fontSize));
+                    Tooltip.install(pfamRectangle, pfamToolTip);
+                    pfamToolTip.setShowDuration(Duration.seconds(4));
+
+                }
             }
-        }
 
 
-
-        // add cds
-        cdsPane.getChildren().add(cdsGroup);
-        cdsHBox.getChildren().add(cdsPane);
-        VBox.setMargin(cdsHBox, new Insets( (int) Math.round(representationHeightFinal*0.005), 0, 0, 0));
-        geneExonsSeqsVBox.getChildren().add(cdsHBox);
-
+            // add cds
+            cdsPane.getChildren().add(cdsGroup);
+            cdsHBox.getChildren().add(cdsPane);
+            //VBox.setMargin(cdsHBox, new Insets((int) Math.round(representationHeightFinal * 0.005), 0, 0, 0));
+            geneExonsSeqsVBox.getChildren().add(cdsHBox);
 
 
+            double offsetY = 0;
+            if (geneSlider.getHighValue() - geneSlider.getLowValue() <= 500) {
+                Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
 
-        double offsetY = 0;
-        if(geneSlider.getHighValue() - geneSlider.getLowValue() <= 500){
-            Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
+                if (pair != null) {
 
-            if(pair!=null){
+                    if (cds.getStrand().equals("-")) {
+                        Line arrowLine = new Line(X, 0.5 * height, X + width, 0.5 * height);
+                        arrowLine.setStrokeWidth(3);
+                        arrowLine.setStroke(new Color(0, 0, 0, 0.3));
 
-                if(cds.getStrand().equals("-")){
-                    Line arrowLine = new Line(X, 0.5 *height, X+width, 0.5 *height);
-                    arrowLine.setStrokeWidth(3);
-                    arrowLine.setStroke(new Color(0,0,0,0.3));
+                        Line arrowLine2 = new Line(X, 0.5 * height, X + 0.1 * width, 0);
+                        arrowLine2.setStrokeWidth(3);
+                        arrowLine2.setStroke(new Color(0, 0, 0, 0.3));
 
-                    Line arrowLine2 = new Line(X, 0.5 * height, X+0.1*width, 0);
-                    arrowLine2.setStrokeWidth(3);
-                    arrowLine2.setStroke(new Color(0,0,0,0.3));
+                        Line arrowLine3 = new Line(X, 0.5 * height, X + 0.1 * width, height);
+                        arrowLine3.setStrokeWidth(3);
+                        arrowLine3.setStroke(new Color(0, 0, 0, 0.3));
 
-                    Line arrowLine3 = new Line(X, 0.5 * height, X+0.1*width, height);
-                    arrowLine3.setStrokeWidth(3);
-                    arrowLine3.setStroke(new Color(0,0,0, 0.3));
+                        cdsGroup.getChildren().add(arrowLine);
+                        cdsGroup.getChildren().add(arrowLine2);
+                        cdsGroup.getChildren().add(arrowLine3);
 
-                    cdsGroup.getChildren().add(arrowLine);
-                    cdsGroup.getChildren().add(arrowLine2);
-                    cdsGroup.getChildren().add(arrowLine3);
+                    }
+
+                    String subseq = pair.getKey();
+                    int offset = pair.getValue()[0];
+                    for (int i = 0; i < subseq.length(); i++) {
+                        Text t = new Text(String.valueOf(subseq.charAt(i)));
+                        t.setFont(Font.font("monospace", fontSize));
+
+
+                        t.setX(X + (i * 3 + offset + pair.getValue()[1] + 0.5) *
+                                (rectanglesAreaWidth * ((double) subseq.length() * 3 / (endGenomCoord - startGenomCoord)) / (double) (subseq.length() * 3)) - t.getLayoutBounds().getWidth() / 2);
+                        t.setY(t.getLayoutBounds().getHeight());
+
+                        cdsGroup.getChildren().add(t);
+                    }
+
 
                 }
 
-                String subseq = pair.getKey();
-                int offset = pair.getValue()[0];
-                for (int i = 0; i < subseq.length(); i++) {
-                    Text t = new Text(String.valueOf(subseq.charAt(i)));
-                    t.setFont(Font.font("monospace", fontSize));
-
-
-                    t.setX(X + (i*3 + offset + pair.getValue()[1] + 0.5) *
-                            (rectanglesAreaWidth * ((double) subseq.length()*3/ (endGenomCoord-startGenomCoord))/(double) (subseq.length()*3)) - t.getLayoutBounds().getWidth()/2);
-                    t.setY(t.getLayoutBounds().getHeight());
-
-                    cdsGroup.getChildren().add(t);
-                }
-
-
             }
 
-        }
+            if (cds.getPeptides().size() > 0) {
 
-        if (cds.getPeptides().size() > 0) {
-
-            pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth);
-        }
-        // add peptides
-        if (pepGroup.getChildren().size() > 0 ) {
-            pepPane.getChildren().add(pepGroup);
-            pepHBox.getChildren().add(pepPane);
-            geneExonsSeqsVBox.getChildren().add(pepHBox);
+                pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth);
+            }
+            // add peptides
+            if (pepGroup.getChildren().size() > 0) {
+                pepPane.getChildren().add(pepGroup);
+                pepHBox.getChildren().add(pepPane);
+                geneExonsSeqsVBox.getChildren().add(pepHBox);
+            }
         }
 
 
@@ -2357,12 +2417,12 @@ public class GeneBrowserController implements Initializable {
     }
 
 
-    public Group drawRefDNA(){
+    public Pane drawRefDNA(){
         String seq = fastaIndex.getSequenceAt(chr, (int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
-        Group group = new Group();
+        Pane group = new Pane();
 
         final double width = representationWidthFinal / seq.length();
-        double height;
+        int height = (int) Math.round(representationHeightFinal * 0.02);
 
 
 
@@ -2374,15 +2434,13 @@ public class GeneBrowserController implements Initializable {
 
             Text t = new Text(nucl);
             t.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
-            t.setX((i + (double) 1 / 2) * width);
+            t.setX((i + 0.5) * width - t.getLayoutBounds().getWidth()/2);
             t.setTextAlignment(TextAlignment.CENTER);
+            t.setY(t.getLayoutBounds().getHeight());
 
-            height = t.getLayoutBounds().getHeight();
 
             Rectangle r = new Rectangle();
             r.setX(i * width);
-            //t.setY(2*height);
-            r.setY(-height);
             r.setWidth(width);
             r.setHeight(height);
 

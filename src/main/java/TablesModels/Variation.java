@@ -1,9 +1,14 @@
 package TablesModels;
 
 import Cds.CDS;
+import Cds.Peptide;
 import Cds.Transcript;
 import javafx.util.Pair;
+import org.dizitart.no2.Document;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import utilities.MSRun;
+
 
 import java.util.*;
 
@@ -19,6 +24,23 @@ public class Variation {
     private boolean inCDS;
     private boolean silent;
     private String type;
+    private JSONArray peptides;
+
+
+
+    public Variation(Document document){
+        transcripts = document.get("transcripts", JSONObject.class);
+        refPos = Math.toIntExact((Long) document.get("refPos"));
+        alt = (String) document.get("alt");
+        ref = (String) document.get("ref");
+        hasPeptideEvidence = (boolean) document.get("hasPeptideEvidence");
+        conditions = (Map<String, Map<String, Map<String, Double>>>) document.get("condition");
+
+        if(document.containsKey("peptides")){
+            peptides = document.get("peptides", JSONArray.class);
+        }
+
+    }
 
     public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence, Map<String,
             Map< String, Map<String, Double>>> conditions, boolean inCDS, boolean silent, String type) {
@@ -141,8 +163,19 @@ public class Variation {
     public String getAltAA(String transcriptID){
         return (String) ((JSONObject) transcripts.get(transcriptID)).get("aaAlt");
     }
-    public String getPeptides(String transcriptID){
-        return (String) ((JSONObject) transcripts.get(transcriptID)).get("peptides");
+    public ArrayList<Peptide> getPeptides(String transcriptID){
+        ArrayList<Peptide> parsedPeptides = new ArrayList<>();
+
+        if(peptides!=null){
+            for(Object o: peptides){
+                JSONObject peptideJson = (JSONObject) o;
+                parsedPeptides.add(new Peptide((String) peptideJson.get("peptide"),
+                        new MSRun((String) peptideJson.get("run"))));
+
+            }
+        }
+
+        return parsedPeptides;
     }
     public double getPeptideProb(String transcriptID){
         return (double) ((JSONObject) transcripts.get(transcriptID)).get("peptideProb");

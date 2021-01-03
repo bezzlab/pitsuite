@@ -29,10 +29,10 @@ public class Config {
         config = document;
     }
 
-    public Set<String> getConditions(){
+    public static Set<String> getConditions(){
         return config.getJSONObject("conditions").keySet();
     }
-    public Set<String> getSamplesInCondition(String condition){
+    public static Set<String> getSamplesInCondition(String condition){
         return config.getJSONObject("conditions").getJSONObject(condition).getJSONObject("samples").keySet();
     }
 

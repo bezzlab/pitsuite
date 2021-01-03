@@ -89,6 +89,7 @@ public class ResultsController implements Initializable {
 
     public void setStage(Stage stage){
         this.stage = stage;
+        ControllersBasket.setScene(stage.getScene());
 
 
     }

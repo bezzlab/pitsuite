@@ -34,8 +34,8 @@ public class ConfidentLineChart extends Pane {
     TreeMap<String, HashMap<String, ArrayList<Double>>> series = new TreeMap<>();
 
 
-    Double manualMin;
-    Double manualMax;
+    Double manualMin=null;
+    Double manualMax=null;
 
 
 
@@ -132,8 +132,9 @@ public class ConfidentLineChart extends Pane {
                         min = value;
                     }
                 }
-                sd = Math.sqrt(sd);
+
                 sd /= (entry.getValue().size() - 1);
+                sd = Math.sqrt(sd);
 
                 double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
 
@@ -258,20 +259,23 @@ public class ConfidentLineChart extends Pane {
                 for(double value: entry.getValue()){
                     sd+=Math.pow(value-average, 2);
                 }
-                sd = Math.sqrt(sd);
+
                 sd/=(entry.getValue().size()-1);
+                sd = Math.sqrt(sd);
 
                 double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
 
 
                 if(seriesIndex==0){
-                    intervalPath.getElements().add(new MoveTo(offsetX+barWidth/2, Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal)));
+                    intervalPath.getElements().add(new MoveTo(offsetX+barWidth/2, Math.max(0, Math.min(height, height - height * (average/max) +
+                            confInterval*pixelsPerVal))));
                 }else{
-                    intervalPath.getElements().add(new LineTo(offsetX+barWidth/2, Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal)));
+                    intervalPath.getElements().add(new LineTo(offsetX+barWidth/2, Math.max(0, Math.min(height, height - height * (average/max) +
+                            confInterval*pixelsPerVal))));
                 }
 
-                lowerInterval.add(Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal));
-                upperInterval.add(Math.min(height, height - height * (average/max) - confInterval*pixelsPerVal));
+                lowerInterval.add(Math.max(0, Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal)));
+                upperInterval.add(Math.max(0, Math.min(height, height - height * (average/max) - confInterval*pixelsPerVal)));
 
 
 
