@@ -6,6 +6,7 @@ import FileReading.AllGenesReader;
 import FileReading.FastaIndex;
 import Gene.Gene;
 import Singletons.ControllersBasket;
+import Singletons.Database;
 import TablesModels.BamFile;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
@@ -235,7 +236,6 @@ public class GeneBrowserController implements Initializable {
     private LinkedList<Variation> variations;
 
     private String viewType;
-    private Nitrite db;
 
     // private
 
@@ -518,11 +518,11 @@ public class GeneBrowserController implements Initializable {
      * So that when data is loaded, it can handle the first view of the tab
      */
     public void setParentControler(ResultsController parent, org.json.JSONObject settings, HostServices hostServices,
-                                   String databaseName, Nitrite db, AllGenesReader allGenesReader) {
+                                   String databaseName,  AllGenesReader allGenesReader) {
         parentController = parent;
         databaseProjectName = databaseName;
         this.hostServices = hostServices;
-        this.db = db;
+
         this.allGenesReader = allGenesReader;
         displayCdsGeneBrowserMenuItem.setDisable(true);
         showHideDepthGeneBrowserMenuItem.setDisable(true);
@@ -650,7 +650,7 @@ public class GeneBrowserController implements Initializable {
         findSeqField.setDisable(false);
 
 
-        NitriteCollection transcCollection = db.getCollection("allTranscripts");
+        NitriteCollection transcCollection = Database.getDb().getCollection("allTranscripts");
 
         Cursor transcriptsQueryResult = transcCollection.find(Filters.eq("gene", geneIdTextField.getText()));
         for (Document tpmDocResult : transcriptsQueryResult) {
@@ -672,14 +672,14 @@ public class GeneBrowserController implements Initializable {
 
 
         Thread bamThread = new Thread(() -> bamPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
-                representationWidthFinal, representationHeightFinal, db));
+                representationWidthFinal, representationHeightFinal, Database.getDb()));
         bamThread.start();
 
         Thread bedThread = new Thread(() -> bedPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
-                representationWidthFinal, representationHeightFinal, db));
+                representationWidthFinal, representationHeightFinal, Database.getDb()));
         bedThread.start();
 
-        NitriteCollection mutationsCollection = db.getCollection("mutations");
+        NitriteCollection mutationsCollection = Database.getDb().getCollection("mutations");
 
 
         variations = new LinkedList<>();
@@ -1514,9 +1514,9 @@ public class GeneBrowserController implements Initializable {
 
 
 
-        if((transcript.getStartGenomCoord()>startGenomPosition && transcript.getStartGenomCoord()<endGenomPosition) ||
-                (transcript.getEndGenomCoord()>startGenomPosition && transcript.getEndGenomCoord()<endGenomPosition) ||
-                (startGenomPosition>transcript.getStartGenomCoord()&& endGenomPosition<transcript.getEndGenomCoord())) {
+        if((transcript.getStartGenomCoord()>=startGenomPosition && transcript.getStartGenomCoord()<=endGenomPosition) ||
+                (transcript.getEndGenomCoord()>=startGenomPosition && transcript.getEndGenomCoord()<=endGenomPosition) ||
+                (startGenomPosition>=transcript.getStartGenomCoord()&& endGenomPosition<=transcript.getEndGenomCoord())) {
 
 
             HBox exonsHBox = new HBox();

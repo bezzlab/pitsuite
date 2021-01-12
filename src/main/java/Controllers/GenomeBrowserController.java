@@ -1,6 +1,7 @@
 package Controllers;
 
 import Gene.Gene;
+import Singletons.Database;
 import TablesModels.FoldChangeTableModel;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
@@ -108,7 +109,7 @@ public class GenomeBrowserController implements Initializable {
 
     private ResultsController parentController;
     private HashMap<String, ArrayList<String>> geneSymbolsThresholdsMap;
-    private Nitrite db;
+
 
 
 
@@ -187,15 +188,14 @@ public class GenomeBrowserController implements Initializable {
      * Used to set the parent, from the FXML Document Controller,
      * So that when data is loaded, it can handle the first view of the tab
      */
-    public void setParentControler(ResultsController parent, Nitrite db){
+    public void setParentControler(ResultsController parent){
         parentController = parent;
-        this.db = db;
 
         new Thread(() -> {
             chrMinMaxCoordsMap = new HashMap<>();
 
 
-            Set<String> collectionNames = db.listCollectionNames();
+            Set<String> collectionNames = Database.getDb().listCollectionNames();
 
             ArrayList<String> collectionsList = new ArrayList<>();
             for (String collection : collectionNames) {
@@ -209,7 +209,7 @@ public class GenomeBrowserController implements Initializable {
 
 
 
-            NitriteCollection chrCollection = db.getCollection("chromMap");
+            NitriteCollection chrCollection = Database.getDb().getCollection("chromMap");
 
             Cursor chrCursor = chrCollection.find();
 
@@ -560,7 +560,7 @@ public class GenomeBrowserController implements Initializable {
 
         //    generate the map for all the genes in a particular chromosome
 
-        NitriteCollection geneCollection = db.getCollection("allGenes");
+        NitriteCollection geneCollection = Database.getDb().getCollection("allGenes");
 
         Cursor geneMapResults = geneCollection.find(Filters.eq("chr", chromosome));
 
@@ -601,14 +601,15 @@ public class GenomeBrowserController implements Initializable {
             symbolList.add(gene.getSymbol());
         }
 
-        Cursor dgeFindIt = db.getCollection(dgeCollectionName).find(Filters.in("symbol", symbolList));
+        Cursor dgeFindIt = Database.getDb().getCollection(dgeCollectionName).find(Filters.in("symbol", symbolList));
 
         for (Document dgeDoc: dgeFindIt){
             String dgeSymbol = dgeDoc.get("symbol", String.class);
             double dgeFoldChange =  dgeDoc.get("foldChange", double.class);
             double dgePvalAdj =  dgeDoc.get("pvalAdj", double.class);
+            String type = dgeDoc.get("type", String.class);
 
-            FoldChangeTableModel tmpFoldChangeTable = new FoldChangeTableModel(dgeSymbol, dgeFoldChange, dgePvalAdj);
+            FoldChangeTableModel tmpFoldChangeTable = new FoldChangeTableModel(dgeSymbol, type, dgeFoldChange, dgePvalAdj);
             tmpFoldChangesLinkedList.add(tmpFoldChangeTable);
         }
 

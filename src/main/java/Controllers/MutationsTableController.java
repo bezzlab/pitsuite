@@ -2,6 +2,7 @@ package Controllers;
 
 import FileReading.AllGenesReader;
 import Singletons.Config;
+import Singletons.Database;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXTextField;
@@ -108,7 +109,7 @@ public class MutationsTableController implements Initializable {
     GridPane mainGrid;
 
     private String databaseProjectName;
-    private Nitrite db;
+
     private AllGenesReader allGenesReader;
 
 
@@ -202,11 +203,10 @@ public class MutationsTableController implements Initializable {
      * Used to set the parent, from the FXML Document Controller,
      * So that when data is loaded, it can handle the first view of the tab
      */
-    public void setParentControler(ResultsController parent, String databaseName, Nitrite db, AllGenesReader allGenesReader){
+    public void setParentControler(ResultsController parent, String databaseName,  AllGenesReader allGenesReader){
         parentController = parent;
         this.allGenesReader = allGenesReader;
         databaseProjectName = databaseName;
-        this.db = db;
 
 
         if(allGenesReader.getGenesLoadedProperty().get()){
@@ -233,7 +233,7 @@ public class MutationsTableController implements Initializable {
 
 
     /**
-     * Either sends a new query to the db or filters the table with a for loop
+     * Either sends a new query to the Database.getDb() or filters the table with a for loop
      * @param type type of function
      */
 
@@ -278,7 +278,7 @@ public class MutationsTableController implements Initializable {
 
 
                 long startTime = System.currentTimeMillis();
-                Cursor mutationsCursor = db.getCollection("mutations").find(and(filters.toArray(new Filter[]{})));
+                Cursor mutationsCursor = Database.getDb().getCollection("mutations").find(and(filters.toArray(new Filter[]{})));
                 long estimatedTime = System.currentTimeMillis() - startTime;
                 System.out.println(estimatedTime);
 
@@ -381,7 +381,7 @@ public class MutationsTableController implements Initializable {
                 Platform.runLater(() -> {
                     variantsTable.getItems().clear();
                     variantsTable.getItems().addAll(mutations);
-                    //ProVcf.generate("effefe", variantsTable.getItems(), db);
+                    //ProVcf.generate("effefe", variantsTable.getItems(), Database.getDb());
                     numberOfElementsInTableLabel.setText(mutations.size() + " ");
 
                     // set label that's below the table
@@ -621,22 +621,6 @@ public class MutationsTableController implements Initializable {
 
     private void drawUpsetPlot(ArrayList<Variation> rows){
         prepareUpsetPlot(rows);
-//        Thread thread = new Thread(this::prepareUpsetPlot);
-//        thread.start();
-//        try {
-//            thread.join();
-//            ImageView upsetViewer = new ImageView();
-//            upsetViewer.setImage(new Image("file:plots/upset.jpeg"));
-//
-//            if(upsetSampleSliderBox.getChildren().get(upsetSampleSliderBox.getChildren().size()-1).getClass()==ImageView.class){
-//                upsetSampleSliderBox.getChildren().remove(upsetSampleSliderBox.getChildren().size()-1);
-//            }
-//
-//            upsetSampleSliderBox.getChildren().add(upsetViewer);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
         Platform.runLater(() -> {
             ImageView upsetViewer = new ImageView();
             upsetViewer.setImage(new Image("file:plots/upset.jpeg"));

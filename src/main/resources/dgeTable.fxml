@@ -65,6 +65,7 @@
             <TableView fx:id="foldChangeTableView" stylesheets="@cssStyleSheets/styleSheet.css" GridPane.rowIndex="1">
                <columns>
                   <TableColumn fx:id="geneSymbolFoldChangeTableColumn" prefWidth="-1.0" text="Symbol" />
+                   <TableColumn fx:id="geneTypeFoldChangeTableColumn" prefWidth="-1.0" text="Type" />
                   <TableColumn fx:id="logFoldFoldChangeTableColumn" prefWidth="-1.0" text="Log2Fold" />
                   <TableColumn fx:id="pValFoldChangeTableColumn" minWidth="0.0" prefWidth="-1.0" text="P-Val" />
                   <TableColumn fx:id="hasPeptideColumn" prefWidth="-1.0" text="Peptide Evidence" />
@@ -122,6 +123,11 @@
                   <Tab text="GO">
                       <content>
                           <fx:include fx:id="goTerms" source="goTerms.fxml" />
+                      </content>
+                  </Tab>
+                  <Tab text="GSEA">
+                      <content>
+                          <fx:include fx:id="gsea" source="gsea.fxml" />
                       </content>
                   </Tab>
               </tabs>

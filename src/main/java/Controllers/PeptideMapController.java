@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Database;
 import javafx.application.HostServices;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -32,15 +33,15 @@ public class PeptideMapController {
     @FXML
     private TextField searchBox;
 
-    private Nitrite db;
+
 
 
 
     public void setParentControler(ResultsController parent, JSONObject settings, HostServices hostServices, String databaseName,
-                                   Nitrite db, AllGenesReader allGenesReader) {
+                                    AllGenesReader allGenesReader) {
         parentController = parent;
         databaseProjectName = databaseName;
-        this.db = db;
+
 
     }
 
@@ -48,8 +49,8 @@ public class PeptideMapController {
     public void search() {
 
 
-        NitriteCollection collection = db.getCollection("pepMap");
-        NitriteCollection geneCollection = db.getCollection("genMap");
+        NitriteCollection collection = Database.getDb().getCollection("pepMap");
+        NitriteCollection geneCollection = Database.getDb().getCollection("genMap");
 
         String peptide = searchBox.getText();
         Cursor results = collection.find(Filters.eq("peptide", peptide));
@@ -102,7 +103,7 @@ public class PeptideMapController {
         VBox vBox = new VBox(webView);
         vBox.setLayoutX(50);
         vBox.setLayoutY(100);
-        db.close();
+        Database.getDb().close();
         mainPane.getChildren().add(vBox);
 
     }

@@ -52,16 +52,16 @@ public class BrowserController implements Initializable {
      * So that when data is loaded, it can handle the first view of the tab
      */
     public void setParentControler(ResultsController parent, JSONObject settings, HostServices hostServices, String databaseName,
-                                   Nitrite db, AllGenesReader allGenesReader) {
+                                    AllGenesReader allGenesReader) {
         parentController = parent;
         databaseProjectName = databaseName;
         this.hostServices = hostServices;
-        setTabsParents(parent, settings, databaseProjectName, db, allGenesReader);
+        setTabsParents(parent, settings, databaseProjectName, allGenesReader);
     }
 
-    private void setTabsParents(ResultsController parent, JSONObject settings, String databaseProjectName, Nitrite db, AllGenesReader keggReader){
-        genomeBrowserController.setParentControler(parent, db);
-        geneBrowserController.setParentControler(parent, settings, hostServices, databaseProjectName, db, keggReader);
+    private void setTabsParents(ResultsController parent, JSONObject settings, String databaseProjectName, AllGenesReader keggReader){
+        genomeBrowserController.setParentControler(parent);
+        geneBrowserController.setParentControler(parent, settings, hostServices, databaseProjectName, keggReader);
     }
 
     public void geneBrowserDisplayGeneFromId(String gene, int position){

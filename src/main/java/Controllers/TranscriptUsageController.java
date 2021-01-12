@@ -3,6 +3,7 @@ package Controllers;
 import Cds.Exon;
 import Cds.Transcript;
 import FileReading.AllGenesReader;
+import Singletons.Database;
 import TablesModels.SplicingEventsTableModel;
 import TablesModels.TranscriptUsageTableModel;
 import com.jfoenix.controls.JFXCheckBox;
@@ -66,7 +67,6 @@ public class TranscriptUsageController extends Controller {
     private GoTermsController goTermsController;
 
     private ResultsController parentController;
-    private Nitrite db;
     private ConfidentLineChart confidentLineChart;
     private ConfidentBarChart transcriptExpressionBarchart;
 
@@ -133,12 +133,10 @@ public class TranscriptUsageController extends Controller {
     }
 
 
-    public void setParentControler(ResultsController parent, Nitrite db, AllGenesReader allGenesReader){
+    public void setParentControler(ResultsController parent,  AllGenesReader allGenesReader){
         parentController = parent;
-        this.db = db;
-
-
-        for(String collection: db.listCollectionNames()){
+        
+        for(String collection: Database.getDb().listCollectionNames()){
             if(collection.contains("transcriptUsageDPSI")){
                 comparisonSplicingCombobox.getItems().add(collection.replace("transcriptUsageDPSI_", ""));
             }
@@ -147,14 +145,14 @@ public class TranscriptUsageController extends Controller {
         if(allGenesReader.getGenesLoadedProperty().get()){
             Platform.runLater(() -> {
                 keggController.setParentController(this, allGenesReader);
-                goTermsController.setParentController(this, allGenesReader, db);
+                goTermsController.setParentController(this, allGenesReader, Database.getDb());
             });
         }else{
             allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
                 if (allGenesReader.getGenesLoadedProperty().get()) {
                     Platform.runLater(() -> {
                         keggController.setParentController(this, allGenesReader);
-                        goTermsController.setParentController(this, allGenesReader, db);
+                        goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     });
                 }
             });
@@ -194,7 +192,7 @@ public class TranscriptUsageController extends Controller {
 
 
             // get the info for the table
-            NitriteCollection splicingDPsiColl = db.getCollection("transcriptUsageDPSI_"+comparisonSplicingCombobox.getValue());
+            NitriteCollection splicingDPsiColl = Database.getDb().getCollection("transcriptUsageDPSI_"+comparisonSplicingCombobox.getValue());
 
             // filters
             List<Filter> filters = new ArrayList<>();
@@ -276,7 +274,7 @@ public class TranscriptUsageController extends Controller {
     }
 
     private void drawConfidentChart(String transcript, String gene){
-        NitriteCollection transcriptUsageCollection = db.getCollection("transcriptUsage");
+        NitriteCollection transcriptUsageCollection = Database.getDb().getCollection("transcriptUsage");
 
         Cursor cursor = transcriptUsageCollection.find(eq("geneName", gene));
 
@@ -347,7 +345,7 @@ public class TranscriptUsageController extends Controller {
 
         double offsetY = mainGrid.getHeight()*0.4 - rightTabPane.getTabMinHeight() + margin - t.getLayoutBounds().getHeight()/2;
 
-        NitriteCollection allTranscriptsCollection = db.getCollection("allTranscripts");
+        NitriteCollection allTranscriptsCollection = Database.getDb().getCollection("allTranscripts");
         Cursor cursor = allTranscriptsCollection.find(eq("gene", gene));
 
         HashMap<String, Transcript> transcripts = new HashMap<>();
@@ -406,7 +404,7 @@ public class TranscriptUsageController extends Controller {
 
         exonsPane.getChildren().remove(transcriptExpressionBarchart);
 
-        NitriteCollection transcriptUsageCollection = db.getCollection("transcriptCounts");
+        NitriteCollection transcriptUsageCollection = Database.getDb().getCollection("transcriptCounts");
 
         Document doc = transcriptUsageCollection.find(eq("transcript", transcript)).firstOrDefault();
         HashMap<String, Double> readCounts = doc.get("readCounts", HashMap.class);

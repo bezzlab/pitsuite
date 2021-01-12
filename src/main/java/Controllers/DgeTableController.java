@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Database;
 import TablesModels.FoldChangeTableModel;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
@@ -51,6 +52,8 @@ public class DgeTableController extends Controller {
     @FXML
     private TableColumn<FoldChangeTableModel, String > geneSymbolFoldChangeTableColumn;
     @FXML
+    private TableColumn<FoldChangeTableModel, String > geneTypeFoldChangeTableColumn;
+    @FXML
     private TableColumn<FoldChangeTableModel, Double > logFoldFoldChangeTableColumn;
     @FXML
     private TableColumn<FoldChangeTableModel, Double > pValFoldChangeTableColumn;
@@ -90,7 +93,8 @@ public class DgeTableController extends Controller {
     private KeggController keggController;
     @FXML
     GoTermsController goTermsController;
-    // parent controller
+    @FXML
+    private GSEAController gseaController;
 
 
     // fold change list to Table
@@ -102,7 +106,7 @@ public class DgeTableController extends Controller {
     private WebViewController proteinRnaFcScatter;
 
     private int fontSize;
-    private Nitrite db;
+
 
 
 
@@ -113,6 +117,7 @@ public class DgeTableController extends Controller {
 
         // fold Change Table: reflection for the getters
         geneSymbolFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("geneSymbol"));
+        geneTypeFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("type"));
         logFoldFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("logFoldChange"));
         pValFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("pVal"));
         hasPeptideColumn.setCellValueFactory( new PropertyValueFactory<>("hasPeptideEvidence"));
@@ -152,12 +157,13 @@ public class DgeTableController extends Controller {
         proteinFcColumn.setComparator(proteinFcComparator);
         proteinPvalColumn.setComparator(proteinPvalComparator);
 
-        geneSymbolFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
-        logFoldFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
-        pValFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
-        hasPeptideColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
-        proteinFcColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
-        proteinPvalColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(6));
+        geneSymbolFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        geneTypeFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        logFoldFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        pValFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        hasPeptideColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        proteinFcColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        proteinPvalColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
 
 
 
@@ -192,12 +198,12 @@ public class DgeTableController extends Controller {
             }
         };
 
-        SpinnerValueFactory<Double> pValValueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 1, 0.05, 0.0001);
+        SpinnerValueFactory<Double> pValValueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 1, 1, 0.0001);
         pValValueFactory.setConverter(doubleConverter);
         adjPValFilterFoldChangeSpinner.setValueFactory(pValValueFactory);
         adjPValFilterFoldChangeSpinner.setEditable(true);
 
-        SpinnerValueFactory<Double> folChangeValueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 7, 1, 0.01);
+        SpinnerValueFactory<Double> folChangeValueFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 7, 0, 0.01);
         foldFilterFoldChangeSpinner.setValueFactory(folChangeValueFactory);
         foldFilterFoldChangeSpinner.setEditable(true);
 
@@ -253,16 +259,17 @@ public class DgeTableController extends Controller {
      * So that when data is loaded, it can handle the first view of the tab
      */
 
-    public void setParentController(ResultsController parent, JSONObject settings, String databaseName, Nitrite db, AllGenesReader allGenesReader){
+    public void setParentController(ResultsController parent, JSONObject settings, String databaseName, AllGenesReader allGenesReader){
 
         super.setParentControler(parent, settings, databaseName);
-        this.db = db;
+
 
         allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
             if (allGenesReader.getGenesLoadedProperty().get()) {
                 Platform.runLater(() ->{
                     keggController.setParentController(this, allGenesReader);
-                    goTermsController.setParentController(this, allGenesReader, db);
+                    goTermsController.setParentController(this, allGenesReader, Database.getDb());
+                    gseaController.setParentController(this);
                 });
             }
         });
@@ -274,7 +281,7 @@ public class DgeTableController extends Controller {
 
 
             // set comparison combobox options
-            Set<String> collectionNames = db.listCollectionNames();
+            Set<String> collectionNames = Database.getDb().listCollectionNames();
 
             for ( String collNameString : collectionNames){
                 if (collNameString.contains("_dge")){
@@ -378,6 +385,7 @@ public class DgeTableController extends Controller {
         if(geneSymbolFilter.length()>0){
             filters.add(regex("symbol", "^.*" + geneSymbolFilter + ".*$"));
         }
+        //filters.add(eq("type", "lncRNA"));
 
         filters.add(and(lte("padj", pvalThreshold), not(
                 and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
@@ -395,7 +403,7 @@ public class DgeTableController extends Controller {
 
         }
 
-        Cursor dgeFindCursor = db.getCollection(dgeCollectionName).find(and(filters.toArray(new Filter[]{})));
+        Cursor dgeFindCursor = Database.getDb().getCollection(dgeCollectionName).find(and(filters.toArray(new Filter[]{})));
         boolean updateTableBool = true;
 
         if (dgeFindCursor.size() == 0) {
@@ -409,6 +417,11 @@ public class DgeTableController extends Controller {
             for (Document dgeDoc : dgeFindCursor) {
 
                 String dgeGeneSymbol = (String) dgeDoc.get("symbol");
+                String type = null;
+                if(dgeDoc.get("type")!=null){
+                    type = (String) dgeDoc.get("type");
+                }
+
 
                 if (keggController.isKeggLoaded()){
                     if (!keggController.isInKegg(dgeGeneSymbol)) {
@@ -422,7 +435,7 @@ public class DgeTableController extends Controller {
                 //boolean hasPeptideEvidence = (boolean) dgeDoc.get("hasPeptideEvidence");
                 boolean hasPeptideEvidence = false;
 
-                FoldChangeTableModel currFoldChange = new FoldChangeTableModel(dgeGeneSymbol, dgeFoldChange, dgePVal);
+                FoldChangeTableModel currFoldChange = new FoldChangeTableModel(dgeGeneSymbol, type, dgeFoldChange, dgePVal);
 
                 boolean addToTable=true;
 
@@ -463,6 +476,7 @@ public class DgeTableController extends Controller {
 
             protComparisonCombobox.getItems().clear();
             protComparisonCombobox.getItems().addAll(msRuns);
+
 
         }
 
@@ -717,7 +731,7 @@ public class DgeTableController extends Controller {
 
 
 
-        NitriteCollection pngHeatMapPathsCollection = db.getCollection("pngHeatMapPaths");
+        NitriteCollection pngHeatMapPathsCollection = Database.getDb().getCollection("pngHeatMapPaths");
 
         Document queryHeatMapDoc = new Document();
         queryHeatMapDoc.put("comparison", dgeComparisonString);
@@ -736,7 +750,7 @@ public class DgeTableController extends Controller {
 
     private void drawSelectedGeneReadCount(String gene){
 
-        NitriteCollection collection = db.getCollection("readCounts");
+        NitriteCollection collection = Database.getDb().getCollection("readCounts");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
         final CategoryAxis xAxis = new CategoryAxis();
@@ -751,6 +765,7 @@ public class DgeTableController extends Controller {
         ArrayList<XYChart.Series> allSeries = new ArrayList<>();
 
         ConfidentBarChart bc2 = new ConfidentBarChart();
+        bc2.setTitle("Normalised read counts");
 
         for(Document result: documents){
             JSONObject res = new JSONObject(result).getJSONObject("counts");
@@ -797,7 +812,7 @@ public class DgeTableController extends Controller {
 
 
 
-        NitriteCollection collection = db.getCollection("proteinQuant");
+        NitriteCollection collection = Database.getDb().getCollection("proteinQuant");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
         final CategoryAxis xAxisbarChart = new CategoryAxis();
@@ -827,25 +842,54 @@ public class DgeTableController extends Controller {
 
         boolean isSILAC = true;
 
+        ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
+        proteinConfidentBarChart.setMeanOrMedian("median");
+        proteinConfidentBarChart.setTitle("Differencial protein abundance");
+        proteinConfidentBarChart.setMin(0);
+        proteinConfidentBarChart.setReference("Nsi");
+
         for(Document result: documents){
 
 
             if(isSILAC){
 
-                JSONObject res = new JSONObject(result).getJSONObject("ratio");
-                int i = 0;
-                for (String conditionKey : res.keySet()) {
-                    double intensity = res.getDouble(conditionKey);
+                JSONObject res = new JSONObject(result).getJSONObject("peptides");
+                String reference = "Nsi";
 
-                    if (i + 1 > allSeriesAbundance.size()) {
-                        allSeriesAbundance.add(new XYChart.Series());
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
+                for(String peptide: res.keySet()){
+                    JSONObject peptideObj = res.getJSONObject(peptide);
+                    for(String subRun: peptideObj.keySet()){
+
+                        if(!groups.containsKey(subRun)){
+                            groups.put(subRun, new HashMap<>());
+                        }
+
+                        JSONObject subRunObj = peptideObj.getJSONObject(subRun);
+
+                        Set<String> conditions = subRunObj.keySet();
+                        for(String condition: conditions){
+                            if(!groups.get(subRun).containsKey(condition)){
+                                groups.get(subRun).put(condition, new ArrayList<>());
+                            }
+
+                            if(condition.equals("Nsi")){
+                                groups.get(subRun).get(condition).add(1.);
+                            }else{
+                                groups.get(subRun).get(condition)
+                                        .add(subRunObj.getDouble(condition)/subRunObj.getDouble("Nsi"));
+                            }
+                        }
                     }
-                    allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, intensity));
+
 
                 }
 
 
-                res = new JSONObject(result).getJSONObject("peptides");
+                proteinConfidentBarChart.addGroups(groups);
+
+
+
                 for (String Peptide : res.keySet()) {
 
                     XYChart.Series peptideSeries = new XYChart.Series();
@@ -904,9 +948,10 @@ public class DgeTableController extends Controller {
         for(XYChart.Series series: allSeriesAbundance){
             barChart.getData().add(series);
         }
-        HBox.setHgrow(barChart, Priority.ALWAYS);
-        selectedGeneCharts.getChildren().add(barChart);
+        HBox.setHgrow(proteinConfidentBarChart, Priority.ALWAYS);
 
+        selectedGeneCharts.getChildren().add(proteinConfidentBarChart);
+        proteinConfidentBarChart.draw();
 
         for(XYChart.Series series: allPeptidesSeries){
             lineChart.getData().add(series);
@@ -942,5 +987,9 @@ public class DgeTableController extends Controller {
         return foldChangeTableView.getItems();
     }
 
+    @Override
+    public String getSelectedComparison(){
+        return dgeComparisonCombobox.getValue().toString();
+    }
 
 }

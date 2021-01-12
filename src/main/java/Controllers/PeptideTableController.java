@@ -3,6 +3,7 @@ package Controllers;
 import Cds.PSM;
 import Cds.PTM;
 import Cds.Peptide;
+import Singletons.Database;
 import com.jfoenix.controls.JFXComboBox;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
@@ -102,7 +103,6 @@ public class PeptideTableController implements Initializable {
     private SpectrumViewerController spectrumViewerController;
 
     private ResultsController parentController;
-    private Nitrite db;
     private ArrayList<Peptide> allPeptides;
     private Peptide selectedPeptide;
     private Peptide peptideToFind;
@@ -296,9 +296,8 @@ public class PeptideTableController implements Initializable {
     }
 
 
-    public void setParentController(ResultsController parentController, Nitrite db){
+    public void setParentController(ResultsController parentController){
         this.parentController = parentController;
-        this.db = db;
         spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
 
 
@@ -321,8 +320,9 @@ public class PeptideTableController implements Initializable {
 
         new Thread(() -> {
 
-            selectedRun.load(db, Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                    this, peptideToFind, parentController.getConfig());
+            //TODO: uncomment
+//            selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
+//                    this, peptideToFind, parentController.getConfig());
 
 
             peptideTable.getItems().clear();
@@ -513,7 +513,7 @@ public class PeptideTableController implements Initializable {
 
 
         System.out.println("a");
-        NitriteCollection collection = db.getCollection("genePeptides");
+        NitriteCollection collection = Database.getDb().getCollection("genePeptides");
         System.out.println("b");
         Document doc = collection.find(and(eq("run", runCombobox.getSelectionModel().getSelectedItem()),
                 in("gene", genes.toArray(new Object[0])))).firstOrDefault();
@@ -579,7 +579,7 @@ public class PeptideTableController implements Initializable {
 
     private void getPeptideGenes(ArrayList<String> nodesJson, ArrayList<String> nodes, ArrayList<Pair<Integer, Integer>> links,
                                  ArrayList<String> genesFound, String peptide, boolean addTranscripts){
-        NitriteCollection collection = db.getCollection("peptideMap");
+        NitriteCollection collection = Database.getDb().getCollection("peptideMap");
         Document doc = collection.find(and(eq("run", runCombobox.getSelectionModel().getSelectedItem()), eq("peptide", peptide)))
                 .firstOrDefault();
 
@@ -657,7 +657,7 @@ public class PeptideTableController implements Initializable {
 
 
         if(parentController.getConfig().hasQuantification(runCombobox.getSelectionModel().getSelectedItem())){
-            NitriteCollection collection = db.getCollection("peptideQuant");
+            NitriteCollection collection = Database.getDb().getCollection("peptideQuant");
             Document doc = collection.find(Filters.eq("peptide", peptide)).firstOrDefault();
 
             final CategoryAxis xAxisbarChart = new CategoryAxis();
@@ -698,7 +698,7 @@ public class PeptideTableController implements Initializable {
 
     private void drawSelectedGeneReadCount(String gene){
 
-        NitriteCollection collection = db.getCollection("readCounts");
+        NitriteCollection collection = Database.getDb().getCollection("readCounts");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
         final CategoryAxis xAxis = new CategoryAxis();
@@ -741,7 +741,7 @@ public class PeptideTableController implements Initializable {
 
     private void drawSelectedGeneProteinQuant(String gene){
 
-        NitriteCollection collection = db.getCollection("proteinQuant");
+        NitriteCollection collection = Database.getDb().getCollection("proteinQuant");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
         final CategoryAxis xAxisbarChart = new CategoryAxis();
@@ -826,7 +826,7 @@ public class PeptideTableController implements Initializable {
         barChart.setTitle("Transcript Abundance");
 
 
-        NitriteCollection collection = db.getCollection("allTranscripts");
+        NitriteCollection collection = Database.getDb().getCollection("allTranscripts");
         Document doc = collection.find(Filters.eq("transcriptID", transcriptID)).firstOrDefault();
 
         HashMap<String, HashMap<String, Double>> tpm = (HashMap<String, HashMap<String, Double>>) doc.get("TPM");

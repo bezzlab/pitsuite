@@ -4,6 +4,7 @@ import javafx.fxml.Initializable;
 import org.json.JSONObject;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 public abstract class Controller implements Initializable {
@@ -23,5 +24,13 @@ public abstract class Controller implements Initializable {
 
     public void goToGeneBrowser(String gene){
         parentController.showGeneBrowser(gene);
+    }
+
+    public ArrayList<String> getSelectedGeneNames() {
+        return null;
+    }
+
+    public String getSelectedComparison(){
+        return "";
     }
 }

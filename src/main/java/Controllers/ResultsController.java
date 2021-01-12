@@ -4,6 +4,7 @@ package Controllers;
 import Cds.Peptide;
 import FileReading.AllGenesReader;
 import Singletons.ControllersBasket;
+import Singletons.Database;
 import TablesModels.BamFile;
 import export.ProVcf;
 import javafx.animation.KeyFrame;
@@ -147,7 +148,7 @@ public class ResultsController implements Initializable {
         try {
             Parent root = fxmlLoader1.load();
             dgeTableController = fxmlLoader1.getController();
-            dgeTableController.setParentController(this, settings, projectName, db, allGenesReader);
+            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
             resultsTabPane.getTabs().get(2).setContent(root);
         } catch(Exception e){
             e.printStackTrace();
@@ -162,7 +163,7 @@ public class ResultsController implements Initializable {
                 Parent root = fxmlLoader2.load();
 
                 splicingTableController = fxmlLoader2.getController();
-                splicingTableController.setParentControler(this, db, allGenesReader);
+                splicingTableController.setParentControler(this, allGenesReader);
                 resultsTabPane.getTabs().get(3).setContent(root);
             } catch(Exception e){
                 e.printStackTrace();
@@ -178,7 +179,7 @@ public class ResultsController implements Initializable {
                 try {
                     Parent root = fxmlLoader.load();
                     mutationsTableController = fxmlLoader.getController();
-                    mutationsTableController.setParentControler(this, projectName, db, allGenesReader);
+                    mutationsTableController.setParentControler(this, projectName, allGenesReader);
                     resultsTabPane.getTabs().get(0).setContent(root);
                 } catch(Exception e){
                     e.printStackTrace();
@@ -192,7 +193,7 @@ public class ResultsController implements Initializable {
                     Parent root = fxmlLoader2.load();
 
                     browserController = fxmlLoader2.getController();
-                    browserController.setParentControler(this, settings, hostServices, projectName, db, allGenesReader);
+                    browserController.setParentControler(this, settings, hostServices, projectName, allGenesReader);
                     resultsTabPane.getTabs().get(1).setContent(root);
                 } catch(Exception e){
                     e.printStackTrace();
@@ -206,7 +207,7 @@ public class ResultsController implements Initializable {
                     Parent root = fxmlLoader2.load();
 
                     peptideTableController = fxmlLoader2.getController();
-                    peptideTableController.setParentController(this, db);
+                    peptideTableController.setParentController(this);
                     resultsTabPane.getTabs().get(5).setContent(root);
                     ControllersBasket.setPeptideTableController(peptideTableController);
                 } catch(Exception e){
@@ -221,7 +222,7 @@ public class ResultsController implements Initializable {
 
                     transcriptUsageController = fxmlLoader2.getController();
 
-                    transcriptUsageController.setParentControler(this, db, allGenesReader);
+                    transcriptUsageController.setParentControler(this, allGenesReader);
 
                     resultsTabPane.getTabs().get(4).setContent(root);
                 } catch(Exception e){
@@ -242,6 +243,7 @@ public class ResultsController implements Initializable {
 
         this.projectName = FilenameUtils.getBaseName(Paths.get(path).getFileName().toString());
         db = Nitrite.builder().filePath(path).openOrCreate();
+        Database.setDb(db);
         loadConfig(path);
         settings = loadSettings();
         Settings.getInstance().setSetting(settings);

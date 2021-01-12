@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Database;
 import TablesModels.SplicingEventsTableModel;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
@@ -145,7 +146,6 @@ public class SplicingTableController extends Controller {
     // fold change list to Table
     private HashMap<String, SplicingEvent> exonSplicingMap; // map key = event key
     private DoughnutChart eventsTypeDoughnuts;
-    private Nitrite db;
     private String selectedEvent;
 
 
@@ -253,12 +253,10 @@ public class SplicingTableController extends Controller {
      * Used to set the parent, from the FXML Document Controller,
      * So that when data is loaded, it can handle the first view of the tab
      */
-    public void setParentControler(ResultsController parent, Nitrite db, AllGenesReader allGenesReader){
+    public void setParentControler(ResultsController parent, AllGenesReader allGenesReader){
         parentController = parent;
-        this.db = db;
-
-
-        for(String collection: db.listCollectionNames()){
+        
+        for(String collection: Database.getDb().listCollectionNames()){
             if(collection.contains("SplicingDPSI")){
                 comparisonSplicingCombobox.getItems().add(collection.replace("SplicingDPSI_", ""));
             }
@@ -267,14 +265,14 @@ public class SplicingTableController extends Controller {
         if(allGenesReader.getGenesLoadedProperty().get()){
             Platform.runLater(() -> {
                 keggController.setParentController(this, allGenesReader);
-                goTermsController.setParentController(this, allGenesReader, db);
+                goTermsController.setParentController(this, allGenesReader, Database.getDb());
             });
         }else{
             allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
                 if (allGenesReader.getGenesLoadedProperty().get()) {
                     Platform.runLater(() -> {
                         keggController.setParentController(this, allGenesReader);
-                        goTermsController.setParentController(this, allGenesReader, db);
+                        goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     });
                 }
             });
@@ -336,7 +334,7 @@ public class SplicingTableController extends Controller {
 
 
             // get the info for the table
-            NitriteCollection splicingDPsiColl = db.getCollection("SplicingDPSI_"+comparisonSplicingCombobox.getValue());
+            NitriteCollection splicingDPsiColl = Database.getDb().getCollection("SplicingDPSI_"+comparisonSplicingCombobox.getValue());
 
             // filters
             List<Filter> filters = new ArrayList<>();
@@ -520,8 +518,8 @@ public class SplicingTableController extends Controller {
 
 //        SplicingEvent splicingEvent = exonSplicingMap.get(splicingEventKey); // TODO: remove the map
         // open database
-        NitriteCollection splicingEventsCollection = db.getCollection("SplicingEvents_"+comparisonSplicingCombobox.getValue());
-        NitriteCollection splicingPsiCollection = db.getCollection("SplicingPsi");
+        NitriteCollection splicingEventsCollection = Database.getDb().getCollection("SplicingEvents_"+comparisonSplicingCombobox.getValue());
+        NitriteCollection splicingPsiCollection = Database.getDb().getCollection("SplicingPsi");
 
         // get domains
         Cursor splicingEventCursor = splicingEventsCollection.find(eq("event", splicingEventKey));
@@ -816,7 +814,7 @@ public class SplicingTableController extends Controller {
                                             double leftExonXstart, double leftExonXend, double rightExonXstart, double rightExonXend){
 
         representationChartsBox.getChildren().clear();
-        NitriteCollection splicingEventsCollection = db.getCollection("eventPeptides");
+        NitriteCollection splicingEventsCollection = Database.getDb().getCollection("eventPeptides");
 
         // get domains
         Document doc = splicingEventsCollection.find(eq("event", splicingEventKey)).firstOrDefault();

@@ -15,22 +15,23 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public class ConfidentBarChart extends Pane {
 
-    HBox mainPane = new HBox();
+    VBox mainPane = new VBox();
+    HBox mainDataPane = new HBox();
     VBox rightPane = new VBox();
+
 
 
     Pane dataPane = new Pane();
     Pane xAxisPane = new Pane();
     Pane yAxisPane = new Pane();
-    HashMap<String, ArrayList<Double>> series = new HashMap<>();
+    Pane titlePane = new Pane();
+    HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
 
     Double manualMin;
     Double manualMax;
@@ -40,9 +41,14 @@ public class ConfidentBarChart extends Pane {
     String xLegend;
     String yLegend;
 
+    String meanOrMedian = "mean";
+    String reference;
+
     String[] colors = {"#ee4035", "#f37736", "#fdf498", "#7bc043", "#0392cf",
     "#d11141","#00b159","#00aedb","#f37735","#ffc425",
     "#ebf4f6","bdeaee","#76b4bd","#58668b","#5e5656"};
+
+    String title;
 
 
 
@@ -50,80 +56,104 @@ public class ConfidentBarChart extends Pane {
 
     public ConfidentBarChart() {
 
-
-        mainPane.getChildren().add(yAxisPane);
+        mainDataPane.getChildren().add(yAxisPane);
 
         Separator separator1 = new Separator();
         separator1.setPrefWidth(30);
         separator1.setOrientation(Orientation.VERTICAL);
-        mainPane.getChildren().add(separator1);
+        mainDataPane.getChildren().add(separator1);
         rightPane.getChildren().add(dataPane);
         rightPane.getChildren().add(xAxisPane);
-        mainPane.getChildren().add(rightPane);
+        mainDataPane.getChildren().add(rightPane);
 
 
-        mainPane.prefWidthProperty().bind(this.widthProperty());
-        mainPane.prefHeightProperty().bind(this.heightProperty());
+        mainDataPane.prefWidthProperty().bind(this.widthProperty());
+        mainDataPane.prefHeightProperty().bind(this.heightProperty());
+
+        mainPane.getChildren().add(titlePane);
+        mainPane.getChildren().add(mainDataPane);
 
 
-        this.heightProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-                if(ConfidentBarChart.this.getWidth()>0){
-                    draw();
-                }
-
+        this.heightProperty().addListener((observable, oldValue, newValue) -> {
+            if(ConfidentBarChart.this.getWidth()>0){
+                draw();
             }
+
         });
 
     }
 
-    public void addSeries(String name, ArrayList<Double> values){
-        series.put(name, values);
+    public void addSeries(String name, String group, ArrayList<Double> values){
+        if(!groups.containsKey(group)){
+            groups.put(group, new HashMap<>());
+        }
+        groups.get(group).put(name, values);
     }
+
+    public void addSeries(String name, ArrayList<Double> values){
+        addSeries(name, "default", values);
+    }
+
+    public void addGroups(HashMap<String, HashMap<String, ArrayList<Double>>> groups){
+        this.groups = groups;
+    }
+
 
     public void draw(){
 
-
-
-
         clear();
 
+        double titleHeight = makeTitle();
 
         double max = Double.NEGATIVE_INFINITY;
         double min = Double.POSITIVE_INFINITY;
         double offsetX = 0;
 
 
-        for(Map.Entry<String, ArrayList<Double>> entry: series.entrySet()){
-            Double average = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
-            double sd = 0;
-            for(double value: entry.getValue()){
-                sd+=Math.pow(value-average, 2);
+        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+            for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
 
-                if(value>max){
-                    max=value;
+                Double agregatedValue;
+                if(meanOrMedian.equals("mean"))
+                    agregatedValue = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
+                 else{
+                    double[] values = entry.getValue().stream().mapToDouble(val -> val).toArray();
+                    Arrays.sort(values);
+                    if (values.length % 2 == 0)
+                        agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
+                    else
+                        agregatedValue = values[values.length/2];
                 }
-                if(value<min){
-                    min=value;
+
+
+                double sd = 0;
+                for (double value : entry.getValue()) {
+                    sd += Math.pow(value - agregatedValue, 2);
+
+                    if (value > max) {
+                        max = value;
+                    }
+                    if (value < min) {
+                        min = value;
+                    }
                 }
+
+                if(meanOrMedian.equals("mean")) {
+                    sd /= (entry.getValue().size() - 1);
+                    sd = Math.sqrt(sd);
+                    double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
+
+                    if (agregatedValue + confInterval > max) {
+                        max = agregatedValue + confInterval;
+                    }
+
+                    if (agregatedValue - confInterval < min) {
+                        min = Math.max(agregatedValue - confInterval, 0);
+                    }
+
+                }
+
             }
-
-            sd/=(entry.getValue().size()-1);
-            sd = Math.sqrt(sd);
-            double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
-
-            if(average + confInterval > max){
-                max = average + confInterval;
-            }
-
-            if(average - confInterval < min){
-                min = Math.max(average - confInterval, 0);
-            }
-
-
-
-
         }
 
 
@@ -134,13 +164,15 @@ public class ConfidentBarChart extends Pane {
             min = manualMin;
 
         double maxLabelHeight = 0;
-        for(Map.Entry<String, ArrayList<Double>> entry: series.entrySet()){
-            Text xLabel = new Text(entry.getKey());
-            xLabel.setFont(Font.font(17));
-            double labelHeight = xLabel.getLayoutBounds().getWidth();
+        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+            for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
+                Text xLabel = new Text(entry.getKey());
+                xLabel.setFont(Font.font(20));
+                double labelHeight = xLabel.getLayoutBounds().getWidth();
 
-            if(labelHeight>maxLabelHeight){
-                maxLabelHeight = labelHeight;
+                if (labelHeight > maxLabelHeight) {
+                    maxLabelHeight = labelHeight;
+                }
             }
         }
 
@@ -149,127 +181,162 @@ public class ConfidentBarChart extends Pane {
 
 
 
-        double yAxisWidth = makeYAxis(min, max, this.getHeight()-maxLabelHeight);
+        double yAxisWidth = makeYAxis(min, max, this.getHeight()-maxLabelHeight - titleHeight);
+        double groupLabelsWidth = 0;
+        if(groups.size()>1){
+            groupLabelsWidth = makeGroupLegend();
+        }
 
-        drawDashedLines(this.getWidth() - yAxisWidth,  this.getHeight()-maxLabelHeight);
-
-        double barWidth = (this.getWidth() - yAxisWidth) / series.size() - 20;
-
-        int i=0;
-
-        for(Map.Entry<String, ArrayList<Double>> entry: series.entrySet()){
-            Text xLabel = new Text(entry.getKey());
-            xLabel.setFont(Font.font(17));
-
-            double labelWidth = xLabel.getLayoutBounds().getWidth();
-
-
-            xLabel.setRotate(90);
-            //xLabel.setY(xLabel.getLayoutBounds().getHeight());
-
-            xLabel.setTranslateY(labelWidth/2+5);
-
-
-            xLabel.setX(offsetX + barWidth/2 - labelWidth/2 );
+        drawDashedLines(this.getWidth() - yAxisWidth,  this.getHeight()-maxLabelHeight - titleHeight);
 
 
 
-            xAxisPane.getChildren().add(xLabel);
+        double barWidth = (this.getWidth() - yAxisWidth - groupLabelsWidth);
+        barWidth-=20*(groups.size()-1);
+
+        int nbBars = 0;
+        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> entry: groups.entrySet()){
+            nbBars+=entry.getValue().size();
+        }
+        barWidth/=nbBars;
 
 
+        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+            for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
+                Text xLabel = new Text(entry.getKey());
+                xLabel.setFont(Font.font("monospace", 20));
 
-            offsetX+=barWidth+20;
-            i++;
+                double labelWidth = xLabel.getLayoutBounds().getWidth();
+
+
+                xLabel.setRotate(90);
+                //xLabel.setY(xLabel.getLayoutBounds().getHeight());
+
+                xLabel.setTranslateY(labelWidth / 2 + 5);
+
+
+                xLabel.setX(offsetX + barWidth / 2 - labelWidth / 2);
+
+
+                xAxisPane.getChildren().add(xLabel);
+
+
+                offsetX += barWidth + 20;
+            }
         }
 
 
 
-        double pixelsPerVal = (this.getHeight() - maxLabelHeight) /max;
-        double height = this.getHeight() - maxLabelHeight;
+        double pixelsPerVal = (this.getHeight() - maxLabelHeight - titleHeight) /max;
+        double height = this.getHeight() - maxLabelHeight - titleHeight;
         dataPane.setPrefHeight(height);
 
         offsetX = 0;
 
-        int seriesIndex = 0;
-        for(Map.Entry<String, ArrayList<Double>> entry: series.entrySet()){
-            Double average = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
 
-            double sd = 0;
-            for(double value: entry.getValue()){
-                sd+=Math.pow(value-average, 2);
+        int colorIndex = 0;
+        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+            for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
+
+                Double agregatedValue;
+                if(meanOrMedian.equals("mean"))
+                    agregatedValue = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
+                else{
+                    double[] values = entry.getValue().stream().mapToDouble(val -> val).toArray();
+                    Arrays.sort(values);
+                    if (values.length % 2 == 0)
+                        agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
+                    else
+                        agregatedValue = values[values.length/2];
+                }
+
+                double sd = 0;
+                for (double value : entry.getValue()) {
+                    sd += Math.pow(value - agregatedValue, 2);
+                }
+
+                sd /= (entry.getValue().size() - 1);
+                sd = Math.sqrt(sd);
+
+                double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
+
+
+                Rectangle rec = new Rectangle();
+                rec.setX(offsetX);
+                rec.setWidth(barWidth);
+
+                rec.setY(height - height * (agregatedValue / max));
+                rec.setHeight(height * (agregatedValue / max));
+
+
+
+                rec.setFill(Color.web(colors[colorIndex]));
+                dataPane.getChildren().add(rec);
+
+                if(meanOrMedian.equals("mean")) {
+                    Line intervalLine = new Line();
+                    intervalLine.setStartX(offsetX + barWidth / 2);
+                    intervalLine.setEndX(offsetX + barWidth / 2);
+
+                    intervalLine.setEndY(Math.min(height, height - height * (agregatedValue / max) + confInterval * pixelsPerVal));
+
+                    Line intervalLineHorizTop = new Line();
+                    intervalLineHorizTop.setStartX(offsetX + barWidth * 0.25);
+                    intervalLineHorizTop.setEndX(offsetX + barWidth * 0.75);
+
+
+                    Line intervalLineHorizBottom = new Line();
+                    intervalLineHorizBottom.setStartX(offsetX + barWidth * 0.25);
+                    intervalLineHorizBottom.setEndX(offsetX + barWidth * 0.75);
+                    intervalLineHorizBottom.setStartY(Math.min(height, height - height * (agregatedValue / max) + confInterval * pixelsPerVal));
+                    intervalLineHorizBottom.setEndY(Math.min(height, height - height * (agregatedValue / max) + confInterval * pixelsPerVal));
+
+                    if (manualMax != null && agregatedValue + confInterval > max) {
+                        intervalLine.setStartY(0);
+                        intervalLineHorizTop.setStartY(0);
+                        intervalLineHorizTop.setEndY(0);
+                    } else {
+                        intervalLine.setStartY(height - height * (agregatedValue / max) - confInterval * pixelsPerVal);
+                        intervalLineHorizTop.setStartY(height - height * (agregatedValue / max) - confInterval * pixelsPerVal);
+                        intervalLineHorizTop.setEndY(height - height * (agregatedValue / max) - confInterval * pixelsPerVal);
+                    }
+
+
+                    dataPane.getChildren().add(intervalLine);
+                    dataPane.getChildren().add(intervalLineHorizTop);
+                    dataPane.getChildren().add(intervalLineHorizBottom);
+                }
+
+                if(!entry.getKey().equals(reference)) {
+                    for (double value : entry.getValue()) {
+                        Circle c = new Circle();
+                        double radius = Math.min(barWidth / 8, 10);
+                        c.setRadius(radius);
+                        Random rand = new Random();
+                        double x = rand.nextDouble();
+                        x *= barWidth - 2 * radius;
+                        x += radius;
+
+                        c.setCenterX(offsetX + x);
+                        c.setCenterY(height - height * value / max);
+                        dataPane.getChildren().add(c);
+
+                    }
+                }
+
+                offsetX += barWidth;
+
+                if(groups.size()==1){
+                    colorIndex++;
+                    offsetX += 20;
+                }
+
+
             }
-
-            sd/=(entry.getValue().size()-1);
-            sd = Math.sqrt(sd);
-
-            double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
-
-
-
-
-            Rectangle rec = new Rectangle();
-            rec.setX(offsetX);
-            rec.setWidth(barWidth);
-
-            rec.setY(height - height * (average/max));
-            rec.setHeight(height * (average/max));
-            rec.setFill(Color.web(colors[seriesIndex]));
-
-            Line intervalLine = new Line();
-            intervalLine.setStartX(offsetX+barWidth/2);
-            intervalLine.setEndX(offsetX+barWidth/2);
-
-            intervalLine.setEndY(Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal));
-
-            Line intervalLineHorizTop = new Line();
-            intervalLineHorizTop.setStartX(offsetX+barWidth*0.25);
-            intervalLineHorizTop.setEndX(offsetX+barWidth*0.75);
-
-
-            Line intervalLineHorizBottom = new Line();
-            intervalLineHorizBottom.setStartX(offsetX+barWidth*0.25);
-            intervalLineHorizBottom.setEndX(offsetX+barWidth*0.75);
-            intervalLineHorizBottom.setStartY(Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal));
-            intervalLineHorizBottom.setEndY(Math.min(height, height - height * (average/max) + confInterval*pixelsPerVal));
-
-            if(manualMax!=null && average + confInterval>max){
-                intervalLine.setStartY(0);
-                intervalLineHorizTop.setStartY(0);
-                intervalLineHorizTop.setEndY(0);
-            }else{
-                intervalLine.setStartY(height - height * (average/max) - confInterval*pixelsPerVal);
-                intervalLineHorizTop.setStartY(height - height * (average/max) - confInterval*pixelsPerVal);
-                intervalLineHorizTop.setEndY(height - height * (average/max) - confInterval*pixelsPerVal);
+            if(groups.size()>1){
+                colorIndex++;
+                offsetX += 20;
             }
-
-            dataPane.getChildren().add(rec);
-            dataPane.getChildren().add(intervalLine);
-            dataPane.getChildren().add(intervalLineHorizTop);
-            dataPane.getChildren().add(intervalLineHorizBottom);
-
-            int valIndex = 0;
-            for(double value: entry.getValue()){
-                Circle c = new Circle();
-                double radius = Math.min(barWidth /8, 10);
-                c.setRadius(radius);
-                Random rand = new Random();
-                double x = rand.nextDouble();
-                x*=barWidth - 2 * radius;
-                x+=radius;
-
-                c.setCenterX(offsetX+x);
-                c.setCenterY(height - height * value /max);
-                dataPane.getChildren().add(c);
-                valIndex++;
-            }
-
-
-
-
-
-            offsetX+=barWidth+20;
-            seriesIndex++;
-
         }
 
         if(xLegend!=null){
@@ -342,9 +409,60 @@ public class ConfidentBarChart extends Pane {
         return yAxisWidth;
     }
 
+    private double makeGroupLegend(){
+        int i=0;
+
+        Pane container = new Pane();
+        Text t = new Text("T");
+        t.setFont(Font.font("monospace", 16));
+
+        double paneHeight = groups.size()*t.getLayoutBounds().getHeight() + (groups.size()-1)*10;
+        double offsetY = (this.getHeight()-paneHeight) / 2;
+
+        double maxWidth = 0;
+
+        for(String group: groups.keySet()){
+            Text groupText = new Text(group);
+            groupText.setFont(Font.font("monospace", 16));
+            Rectangle rectangle = new Rectangle();
+            rectangle.setWidth(20);
+            rectangle.setHeight(groupText.getLayoutBounds().getHeight());
+            rectangle.setFill(Color.web(colors[i]));
+
+            double width = 25 + groupText.getLayoutBounds().getWidth();
+            if(width>maxWidth)
+                maxWidth = width;
+
+            rectangle.setY(offsetY);
+            groupText.setY(offsetY);
+            groupText.setX(25);
+            groupText.setY(offsetY+groupText.getLayoutBounds().getHeight());
+
+            offsetY+=rectangle.getHeight()+10;
+            i++;
+
+            container.getChildren().add(rectangle);
+            container.getChildren().add(groupText);
+
+        }
+        mainDataPane.getChildren().add(container);
+        return maxWidth;
+    }
+
+    private double makeTitle(){
+        if(title!=null){
+            Text t = new Text(title);
+            t.setFont(Font.font("monospace", 20));
+           // t.setX(this.getWidth() - t.getLayoutBounds().getWidth() / 2);
+            titlePane.getChildren().add(t);
+            return t.getLayoutBounds().getHeight();
+        }
+        return 0.;
+    }
+
 
     public HBox getPane(){
-        return mainPane;
+        return mainDataPane;
     }
 
     public void setLegend(String x, String y){
@@ -360,7 +478,8 @@ public class ConfidentBarChart extends Pane {
 
     public void clear(){
         mainPane.getChildren().clear();
-        mainPane = new HBox();
+        mainDataPane.getChildren().clear();
+        mainDataPane = new HBox();
         xAxisPane = new Pane();
         dataPane = new Pane();
         yAxisPane = new Pane();
@@ -369,8 +488,11 @@ public class ConfidentBarChart extends Pane {
         rightPane.getChildren().add(dataPane);
         rightPane.getChildren().add(xAxisPane);
 
-        mainPane.getChildren().add(yAxisPane);
-        mainPane.getChildren().add(rightPane);
+        mainDataPane.getChildren().add(yAxisPane);
+        mainDataPane.getChildren().add(rightPane);
+
+        mainPane.getChildren().add(titlePane);
+        mainPane.getChildren().add(mainDataPane);
 
 
         this.getChildren().clear();
@@ -386,8 +508,11 @@ public class ConfidentBarChart extends Pane {
         }
     }
 
+    public void addAll(String group, HashMap<String, ArrayList<Double>> series){
+        groups.put(group, series);
+    }
     public void addAll(HashMap<String, ArrayList<Double>> series){
-        this.series = series;
+        groups.put("default", series);
     }
 
     public void setMin(double min){
@@ -504,6 +629,18 @@ public class ConfidentBarChart extends Pane {
         double newScale = 1;
         newScale = ((upperBound-lowerBound) == 0) ? -length : -(length / (upperBound - lowerBound));
         return newScale;
+    }
+
+    public void setMeanOrMedian(String val){
+        this.meanOrMedian = val;
+    }
+
+    public void setTitle(String title){
+        this.title = title;
+    }
+
+    public void setReference(String ref){
+        this.reference = ref;
     }
 
 
