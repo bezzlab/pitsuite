@@ -75,6 +75,8 @@ public class GeneBrowserController implements Initializable {
 
 
     @FXML
+    private Label currentPositionPane;
+    @FXML
     private TabPane infoTitleTabs;
     @FXML
     private CheckComboBox<String> transcriptsComboBox;
@@ -122,7 +124,7 @@ public class GeneBrowserController implements Initializable {
     private Pane verticalLineGeneBrowserPane;
 
     @FXML
-    private HBox geneHBoxSlider;
+    private Pane geneHBoxSlider;
 
     private RangeSlider geneSlider;
 
@@ -308,13 +310,21 @@ public class GeneBrowserController implements Initializable {
         geneBrowserMoveLeftButton.setDisable(true);
         geneBrowserMoveRightButton.setDisable(true);
 
+
+        Text t = new Text("1");
+        t.setFont(Font.font(16));
+
+
         browserGrid.heightProperty().addListener((observable, oldValue, newValue) -> {
             if(extraInfoTitledPane.isExpanded()){
                 extraInfoTitledPane.setPrefHeight(browserGrid.getHeight());
             }else{
                 geneBrowserScrollPane.setPrefHeight(browserGrid.getHeight()-40);
+
             }
         });
+
+
 
         FXMLLoader drawerFXML = new FXMLLoader(App.class.getResource("/drawerControllers/drawer.fxml"));
 
@@ -484,6 +494,11 @@ public class GeneBrowserController implements Initializable {
                 rec.setFill(new Color(0.418, 0.7344, 0.7773, 0.4));
                 selectionZoomRectanglePane.getChildren().add(rec);
             }
+
+            double position = xValue/representationWidthFinal * (geneSlider.getHighValue()-geneSlider.getLowValue())
+                    + geneSlider.getLowValue();
+
+            currentPositionPane.setText("Position: "+NumberFormat.getIntegerInstance().format((int) position));
         });
 
 
@@ -521,6 +536,8 @@ public class GeneBrowserController implements Initializable {
         });
 
         transcriptsComboBox.setPrefWidth(new Text("Include STRG transcripts").getLayoutBounds().getWidth()*1.2);
+
+
 
 
     }
@@ -676,7 +693,7 @@ public class GeneBrowserController implements Initializable {
             transcriptHashMap.put(transcript.getTranscriptId(), transcript);
 
             int transcStart = transcript.getStartGenomCoord();
-            int transcEnd = transcript.getEndGenomCoord();
+            int transcEnd = transcript.getEndGenomCoord()+1;
 
             // since some MSTRG transcripts have start-end coords that are above or below gene coordinates, need to obtain the max and min to display
             geneViewerMinimumCoordinate = Math.min(geneViewerMinimumCoordinate, transcStart);
@@ -792,8 +809,11 @@ public class GeneBrowserController implements Initializable {
             highValue = geneViewerMaximumCoordinate;
         }
 
-        geneHBoxSlider.setAlignment(Pos.CENTER);
-        geneSlider.prefWidthProperty().bind(geneHBoxSlider.widthProperty().multiply(0.8));
+
+        geneSlider.prefWidthProperty().bind(geneHBoxSlider.widthProperty().subtract(currentPositionPane.widthProperty())
+        .multiply(0.8));
+
+
         geneSlider.setMin(geneViewerMinimumCoordinate);
         geneSlider.setMax(geneViewerMaximumCoordinate);
 
@@ -804,9 +824,13 @@ public class GeneBrowserController implements Initializable {
 
         geneSlider.setShowTickLabels(true);
         geneSlider.setShowTickMarks(true);
+        geneSlider.layoutXProperty().bind(currentPositionPane.widthProperty().add(20));
 
-        // add slider
-        geneHBoxSlider.getChildren().clear();
+
+        if(geneHBoxSlider.getChildren().size()>1)
+            geneHBoxSlider.getChildren().remove(1);
+
+
         geneHBoxSlider.getChildren().add(geneSlider);
 
         // listeners for the slider
@@ -1718,7 +1742,7 @@ public class GeneBrowserController implements Initializable {
                         tmpExonStartPosition = endGenomPosition;
                     } else tmpExonStartPosition = Math.max(exon.getStart(), startGenomPosition);
 
-                    tmpExonEndPosition = Math.min(exon.getEnd(), endGenomPosition);
+                    tmpExonEndPosition = Math.min(exon.getEnd()+1, endGenomPosition);
 
 
                     if (i == 0) {
@@ -1931,9 +1955,9 @@ public class GeneBrowserController implements Initializable {
         int charNum = (int) (geneSlider.getHighValue() - geneSlider.getLowValue());
 
 
-        if((transcript.getStartGenomCoord()>=geneSlider.getLowValue()  && transcript.getStartGenomCoord()<geneSlider.getHighValue() ) ||
-                (transcript.getEndGenomCoord()>=geneSlider.getLowValue()  && transcript.getEndGenomCoord()<geneSlider.getHighValue() ) ||
-                (geneSlider.getLowValue() >=transcript.getStartGenomCoord() && geneSlider.getHighValue() <transcript.getEndGenomCoord())) {
+        if((transcript.getStartGenomCoord()>=geneSlider.getLowValue()  && transcript.getStartGenomCoord()<=geneSlider.getHighValue() ) ||
+                (transcript.getEndGenomCoord()>=geneSlider.getLowValue()  && transcript.getEndGenomCoord()<=geneSlider.getHighValue() ) ||
+                (geneSlider.getLowValue() >=transcript.getStartGenomCoord() && geneSlider.getHighValue() <=transcript.getEndGenomCoord())) {
 
 
             double rectanglesMaxWidth = representationWidthFinal;
@@ -2303,7 +2327,6 @@ public class GeneBrowserController implements Initializable {
 
         int height = (int) Math.round(representationHeightFinal * 0.02);
         cdsHBox.setPrefHeight(height);
-        //pepHBox.setPrefHeight(height);
 
         Pane cdsPane = new Pane();
         Group cdsGroup = new Group();

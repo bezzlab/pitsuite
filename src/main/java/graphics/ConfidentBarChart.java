@@ -36,7 +36,6 @@ public class ConfidentBarChart extends Pane {
     Double manualMin;
     Double manualMax;
 
-
     String xLegend;
     String yLegend;
 

@@ -24,6 +24,7 @@
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <?import org.controlsfx.control.CheckComboBox?>
+<?import javafx.scene.text.Font?>
 <AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.GeneBrowserController">
    <children>
       <JFXDrawer fx:id="drawer" defaultDrawerSize="600" direction="RIGHT" overLayVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
@@ -83,10 +84,20 @@
                   <Insets left="5.0" />
                </padding>
             </HBox>
-            <HBox fx:id="geneHBoxSlider" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="NEVER">
+            <Pane fx:id="geneHBoxSlider" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="NEVER">
                <VBox.margin>
                   <Insets bottom="10.0" top="10.0" />
-               </VBox.margin></HBox>
+               </VBox.margin>
+
+               <children>
+                  <Label fx:id="currentPositionPane" AnchorPane.bottomAnchor="0.0" AnchorPane.topAnchor="0.0" AnchorPane.leftAnchor="0.0">
+                     <font>
+                        <Font  size="18" />
+                     </font>
+                  </Label>
+               </children>
+            </Pane>
+
             <GridPane fx:id="browserGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
 
                <columnConstraints>
@@ -112,7 +123,6 @@
                               </VBox>
                            </children>
                         </AnchorPane>
-
                      </content>
                   </ScrollPane>
                   <TitledPane fx:id="extraInfoTitledPane" animated="false" expanded="false" text="Info" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
