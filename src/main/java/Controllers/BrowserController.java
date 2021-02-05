@@ -95,8 +95,8 @@ public class BrowserController implements Initializable {
         geneBrowserController.resize();
     }
 
-    public void setBrowserFiles(List<BamFile> bam, List<BioFile> bed){
-        geneBrowserController.setBrowserFiles(bam, bed);
+    public void onTrackFilesUpdated(){
+        geneBrowserController.onTrackFilesUpdated();
     }
 }
 

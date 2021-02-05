@@ -74,7 +74,6 @@ public class DatabaseGeneration {
 
                         Platform.runLater(() -> progressDialog.setText("Importing ChrMap"));
 
-                        chrMap();
 
 
                         break;
@@ -293,7 +292,12 @@ public class DatabaseGeneration {
             currDocument.put("chr", geneJsonReaderItemJson.getChr());
             currDocument.put("start", geneJsonReaderItemJson.getStart());
             currDocument.put("end", geneJsonReaderItemJson.getEnd());
-            currDocument.put("symbol", geneJsonReaderItemJson.getSymbol());
+            if(geneJsonReaderItemJson.getSymbol()!=null){
+                currDocument.put("symbol", geneJsonReaderItemJson.getSymbol());
+            }else{
+                currDocument.put("symbol", geneID);
+            }
+
             currDocument.put("transcripts", transcriptsIdsList);
             currDocument.put("kegg", geneJsonReaderItemJson.getKegg());
             currDocument.put("goTerms", geneJsonReaderItemJson.getGO());
@@ -538,39 +542,7 @@ public class DatabaseGeneration {
 
 
 
-    private void chrMap() {
-        Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
-        NitriteCollection allGenesCollection = db.getCollection("allGenes");
-        NitriteCollection chrCollection = db.getCollection("chromMap");
 
-        for (int i = 1; i < 24; i++) {
-            String test;
-            if(i == 22) {
-                test = "chr" + "X";
-            }
-
-            else if(i == 23) {
-                test = "chr" + "Y";
-            }
-
-            else {
-                test = "chr" + i;
-            }
-
-            Document currDocument = new Document();
-            org.dizitart.no2.Cursor minResults = allGenesCollection.find(Filters.eq("chr", test), org.dizitart.no2.FindOptions.sort("start", SortOrder.Ascending));
-            org.dizitart.no2.Cursor maxResults = allGenesCollection.find(Filters.eq("chr", test), org.dizitart.no2.FindOptions.sort("end", SortOrder.Descending));
-
-            currDocument.put("chromosome", "chr" + i);
-            currDocument.put("min", minResults.firstOrDefault().get("start"));
-            currDocument.put("max", maxResults.firstOrDefault().get("end"));
-
-            chrCollection.insert(currDocument);
-
-        }
-
-        db.close();
-    }
 
     private void peptideMapsParser(String filePath, String runName) {
 
@@ -734,6 +706,8 @@ public class DatabaseGeneration {
 
         JSONParser parser = new JSONParser();
 
+        boolean hasBlastName = false;
+
         try {
             Object obj = parser.parse(new FileReader(filePath.toString()));
 
@@ -748,8 +722,12 @@ public class DatabaseGeneration {
                 }
 
 
+
                 Document dgeDocument = new Document(gene);
                 dgeDocsToDBList.add(dgeDocument);
+                if(dgeDocument.containsKey("names")){
+                    hasBlastName = true;
+                }
 
 
             }
@@ -761,6 +739,10 @@ public class DatabaseGeneration {
             }
 
             dgeCollection.createIndex("symbol", IndexOptions.indexOptions(IndexType.Unique, false));
+            if(hasBlastName){
+                dgeCollection.createIndex("names", IndexOptions.indexOptions(IndexType.Fulltext, false));
+            }
+
 
             db.close();
 
@@ -926,9 +908,8 @@ public class DatabaseGeneration {
                 currDocument.put("event", values[1]);
                 currDocument.put("alternative_transcripts", values[2]);
                 currDocument.put("total_transcripts", total_transcripts);
-                currDocument.put("gene_id", values[6]);
-                currDocument.put("event_type", values[7]);
-                currDocument.put("pep_evidence", Boolean.valueOf(values[9]));
+                currDocument.put("event_type", values[6]);
+                currDocument.put("pep_evidence", Boolean.valueOf(values[8]));
                 currDocument.put("domains_in", domains_in);
                 currDocument.put("domains_out", domains_out);
 

@@ -5,6 +5,7 @@ import Cds.Peptide;
 import FileReading.AllGenesReader;
 import Singletons.ControllersBasket;
 import Singletons.Database;
+import Singletons.TrackFiles;
 import TablesModels.BamFile;
 import export.ProVcf;
 import javafx.animation.KeyFrame;
@@ -83,9 +84,6 @@ public class ResultsController implements Initializable {
     private JSONObject settings;
     private AllGenesReader allGenesReader;
     private Nitrite db;
-
-    private ObservableList<BioFile> extraFiles = null;
-
 
 
     public void setStage(Stage stage){
@@ -244,6 +242,7 @@ public class ResultsController implements Initializable {
         this.projectName = FilenameUtils.getBaseName(Paths.get(path).getFileName().toString());
         db = Nitrite.builder().filePath(path).openOrCreate();
         Database.setDb(db);
+        TrackFiles.reset();
         loadConfig(path);
         settings = loadSettings();
         Settings.getInstance().setSetting(settings);
@@ -366,7 +365,7 @@ public class ResultsController implements Initializable {
         try {
             root = fxmlLoader.load();
             BamMenuController controller = fxmlLoader.getController();
-            controller.setParentController(this, db, extraFiles);
+            controller.setParentController(this);
             controller.setStage(newWindow);
 
             Scene scene = new Scene(root, screenBounds.getWidth()/3, screenBounds.getHeight()/2);
@@ -412,8 +411,8 @@ public class ResultsController implements Initializable {
         splicingTableController.resize();
     }
 
-    public void setBrowserFiles(List<BamFile> bam, ArrayList<BioFile> bed){
-        browserController.setBrowserFiles(bam, bed);
+    public void onTrackFilesUpdated(){
+        browserController.onTrackFilesUpdated();
     }
 
     public void showPeptideTab(Peptide peptide){
@@ -426,9 +425,7 @@ public class ResultsController implements Initializable {
         ProVcf.generate("/media/esteban/data/outputVariationPeptide2/variants.provcf", mutationsTableController.getSelectedMutations(), db);
     }
 
-    public void setExtraFiles(ObservableList<BioFile> extraFiles){
-        this.extraFiles = extraFiles;
-    }
+
 
     public void closeProject(){
 

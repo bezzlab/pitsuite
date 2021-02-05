@@ -17,7 +17,12 @@ dge = json_data <- fromJSON(file=paste(output, "dge", comparison, "dge.json", se
 
 kegg = read.csv("/home/esteban/Documents/PIT_reference_guided/kegg/genes.list_KEGG_hsa_functional_classification.tsv", sep="\t")
 
+
+proteinPval = read.csv("/home/esteban/Documents/toolsTest/artsMS/output/results.txt", sep="\t")
+
 keggFc = list()
+
+
 
 for(gene in dge){
 
@@ -36,11 +41,16 @@ for(gene in dge){
         if("ms"%in% names(gene)){
           runsCount=0
           proteinLog2Fc = 0
-          for(run in names(gene[["ms"]])){
-            proteinLog2Fc = proteinLog2Fc + gene[["ms"]][[run]][["log2fc"]]
-            runsCount = runsCount+1
+
+          if(nrow(proteinPval[proteinPval["Protein"]==gene$symbol,])>0 &&
+             !is.na(proteinPval[proteinPval["Protein"]==gene$symbol, "pvalue"]) && proteinPval[proteinPval["Protein"]==gene$symbol, "pvalue"]<0.05){
+            for(run in names(gene[["ms"]])){
+              proteinLog2Fc = proteinLog2Fc + gene[["ms"]][[run]][["log2fc"]]
+              runsCount = runsCount+1
+            }
+            keggFc[[keggPath]][["protein"]] = c(keggFc[[keggPath]][["protein"]], -proteinPval[proteinPval["Protein"]==gene$symbol, "log2FC"])
           }
-          keggFc[[keggPath]][["protein"]] = c(keggFc[[keggPath]][["protein"]], proteinLog2Fc/runsCount)
+          
         }
       }
       
@@ -74,11 +84,13 @@ for(keggPath in names(keggFc)){
 }
 
 df = data.frame(rna=rnaFc, protein=proteinFc, geneRatios=geneRatios, pathway = keggNames)
-df = df[df["geneRatios"]>0.3,]
+#df = df[df["geneRatios"]>0.3,]
+
+
 
 
 ggplot(df, aes(x=rna, y=protein, color=geneRatios)) + geom_point() + scale_color_gradient(low="blue", high="red") + geom_label_repel(aes(label = pathway),
                                                                                                                          box.padding   = 0.35,
                                                                                                                          point.padding = 0.5,
-                                                                                                                         segment.color = 'grey50')
+                                                                                                                         segment.color = 'grey50') 
 

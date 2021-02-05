@@ -1,6 +1,8 @@
 package Controllers;
 
 import FileReading.Bed;
+import Singletons.Database;
+import Singletons.TrackFiles;
 import TablesModels.BamFile;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -54,28 +56,25 @@ public class BamMenuController implements Initializable {
     }
 
 
-    public void setParentController(ResultsController parentController, Nitrite db, ObservableList<BioFile> extraFiles){
+    public void setParentController(ResultsController parentController){
 
         this.parentController = parentController;
 
-
-
-        if(extraFiles==null){
-            Cursor bamPathsCollection = db.getCollection("bamPaths").find();
+        if(TrackFiles.getBamFiles()==null){
+            Cursor bamPathsCollection = Database.getDb().getCollection("bamPaths").find();
             for (Document bamFileDoc : bamPathsCollection) {
                 String bamCond = (String) bamFileDoc.get("condition");
                 String bamSample = (String) bamFileDoc.get("sample");
                 String bamPath = (String) bamFileDoc.get("bamPath");
 
-                bamTable.getItems().add(new BamFile(bamPath, bamCond, bamSample));
+                BamFile file = new BamFile(bamPath, bamCond, bamSample);
+
+                bamTable.getItems().add(file);
+                TrackFiles.addBam(file);
             }
         }else{
-            bamTable.getItems().addAll(extraFiles);
+            bamTable.getItems().addAll(TrackFiles.getBamFiles());
         }
-
-        parentController.setExtraFiles(bamTable.getItems());
-
-
 
         var columns = bamTable.getColumns();
 
@@ -113,16 +112,8 @@ public class BamMenuController implements Initializable {
 
     @FXML
     private void apply(){
-        ArrayList<BamFile> bam = new ArrayList<>();
-        ArrayList<BioFile> bed = new ArrayList<>();
-        for(BioFile file: bamTable.getItems()){
-            if(file.getPath().endsWith(".bed")){
-                bed.add(file);
-            }else{
-                bam.add((BamFile) file);
-            }
-        }
-        parentController.setBrowserFiles(bam, bed);
+
+        parentController.onTrackFilesUpdated();
     }
 
 
@@ -137,10 +128,18 @@ public class BamMenuController implements Initializable {
 
     @FXML
     private void addFile(){
-        bamTable.getItems().add(new BamFile(newFilePathField.getText(), newFileNameField.getText()));
+        BioFile file;
+        if(newFilePathField.getText().endsWith(".bam")){
+            file = new BamFile(newFilePathField.getText(), newFileNameField.getText());
+            TrackFiles.addBam((BamFile) file);
+        }else{
+            file = new Bed(newFilePathField.getText(), newFileNameField.getText());
+            TrackFiles.addBed((Bed) file);
+        }
+
+        bamTable.getItems().add(file);
         newFileNameField.setText("");
         newFilePathField.setText("");
-        parentController.setExtraFiles(bamTable.getItems());
     }
 
 }

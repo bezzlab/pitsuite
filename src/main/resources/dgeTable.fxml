@@ -130,6 +130,11 @@
                           <fx:include fx:id="gsea" source="gsea.fxml" />
                       </content>
                   </Tab>
+                  <Tab text="BLAST">
+                      <content>
+                          <fx:include fx:id="blast" source="blast.fxml" />
+                      </content>
+                  </Tab>
               </tabs>
             </TabPane>
 

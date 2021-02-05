@@ -7,8 +7,9 @@ import java.util.HashMap;
 
 public class FastaIndex {
 
-    HashMap<String, Long> chromosomes;
-    String path;
+    private HashMap<String, Long> chromosomes;
+    private String path;
+    private int nucleotidesPerLine;
 
 
     public FastaIndex(String path){
@@ -33,6 +34,18 @@ public class FastaIndex {
 
                 line = br.readLine();
             }
+
+            try(BufferedReader br2 = new BufferedReader(new FileReader(path))) {
+                br2.readLine();
+                line = br2.readLine();
+                nucleotidesPerLine = line.length();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -42,9 +55,14 @@ public class FastaIndex {
     public String getSequenceAt(String chr, int start, int end){
 
 
-        long positionToRead = chromosomes.get(chr) + start - 1 + start/60;
-        int amountBytesToRead = (int) (end - start  + (end - start + positionToRead % 61) / 60);
+        long positionToRead = chromosomes.get(chr) + start - 1 + start/nucleotidesPerLine;
+        int amountBytesToRead = (int) (end - start  +
+                (start%nucleotidesPerLine +  end-start)     / nucleotidesPerLine);
         //int amountBytesToRead = (int) (end - start );
+
+
+
+
         try {
             RandomAccessFile f = new RandomAccessFile(new File(path),"r");
             byte[] b = new byte[amountBytesToRead];

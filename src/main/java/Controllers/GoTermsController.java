@@ -164,14 +164,19 @@ public class GoTermsController extends Controller {
             geneGoTermsLabel.setText(geneSymbol);
             new Thread(() -> {
                 Document geneDoc = db.getCollection("allGenes" ).find(eq("symbol", geneSymbol)).firstOrDefault();
-                ArrayList<String> goOfGeneList = (ArrayList<String>) geneDoc.get("goTerms");
-                if (goOfGeneList != null) {
-                    for (String goTerm: goOfGeneList){
-                        Platform.runLater(()-> {
-                            goTermsOfAGeneTable.getItems().add(new GoTerm(goTerm, allGenesReader.getGoTermsMap().get(goTerm)));
-                        });
+
+
+                if(geneDoc.containsKey("goTerms")){
+                    ArrayList<String> goOfGeneList = (ArrayList<String>) geneDoc.get("goTerms");
+                    if (goOfGeneList != null) {
+                        for (String goTerm: goOfGeneList){
+                            Platform.runLater(()-> {
+                                goTermsOfAGeneTable.getItems().add(new GoTerm(goTerm, allGenesReader.getGoTermsMap().get(goTerm)));
+                            });
+                        }
                     }
                 }
+
             }).start();
 
         }

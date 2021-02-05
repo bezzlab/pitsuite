@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Config;
 import Singletons.Database;
 import TablesModels.FoldChangeTableModel;
 import com.jfoenix.controls.JFXComboBox;
@@ -95,6 +96,8 @@ public class DgeTableController extends Controller {
     GoTermsController goTermsController;
     @FXML
     private GSEAController gseaController;
+    @FXML
+    private BlastController blastController;
 
 
     // fold change list to Table
@@ -227,6 +230,8 @@ public class DgeTableController extends Controller {
                             }
 
                             keggController.setKeggGeneTable(rowData.getGeneSymbol());
+                            blastController.selectGene(rowData.getGeneSymbol());
+
 
 
                         } else if ( event.getClickCount() == 2 ) {
@@ -383,9 +388,15 @@ public class DgeTableController extends Controller {
 
         List<Filter> filters = new ArrayList<>(4);
         if(geneSymbolFilter.length()>0){
-            filters.add(regex("symbol", "^.*" + geneSymbolFilter + ".*$"));
+
+            if(!Config.isReferenceGuided()){
+                filters.add(or(regex("symbol", "^.*" + geneSymbolFilter + ".*$"),
+                        regex("names", "^.*" + geneSymbolFilter + ".*$")));
+            }else{
+                filters.add(regex("symbol", "^.*" + geneSymbolFilter + ".*$"));
+            }
         }
-        //filters.add(eq("type", "lncRNA"));
+//        filters.add(eq("type", "lncRNA"));
 
         filters.add(and(lte("padj", pvalThreshold), not(
                 and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
@@ -876,8 +887,12 @@ public class DgeTableController extends Controller {
                             if(condition.equals("Nsi")){
                                 groups.get(subRun).get(condition).add(1.);
                             }else{
-                                groups.get(subRun).get(condition)
-                                        .add(subRunObj.getDouble(condition)/subRunObj.getDouble("Nsi"));
+                                double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble("Nsi");
+                                if(ratio!=Double.POSITIVE_INFINITY){
+                                    groups.get(subRun).get(condition)
+                                            .add(ratio);
+                                }
+
                             }
                         }
                     }

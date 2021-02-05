@@ -52,12 +52,10 @@
                                     <Button mnemonicParsing="false" onMouseClicked="#filter" text="Filter" />
                                  </children>
                               </HBox>
-                              <HBox>
-                                 <children>
-                                    <JFXTextField fx:id="searchField" />
-                                    <Button mnemonicParsing="false" onMouseClicked="#addFilter" text="Add" />
-                                 </children>
-                              </HBox>
+                               <HBox>
+                                   <JFXTextField fx:id="searchField"/>
+                                   <Button mnemonicParsing="false" onMouseClicked="#addFilter" text="Add"/>
+                               </HBox>
                            </children>
                         </VBox>
                      </children>

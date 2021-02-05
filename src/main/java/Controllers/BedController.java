@@ -2,6 +2,7 @@ package Controllers;
 
 import Cds.Transcript;
 import FileReading.Bed;
+import Singletons.TrackFiles;
 import TablesModels.BamFile;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -31,12 +32,8 @@ public class BedController {
     private int currentStart, currentEnd;
     private Nitrite db;
 
-    public void setBedFiles(List<BioFile> files){
-        this.files = new ArrayList<>();
-        for(BioFile file: files){
-            this.files.add(new Bed(file.getPath()));
-        }
-
+    public void onTrackFilesUpdated(){
+        this.files = TrackFiles.getBedFiles();
     }
 
     public void showGene(String chrId, int geneStart, int geneEnd, double representationWidthFinal, double representationHeightFinal, Nitrite db){

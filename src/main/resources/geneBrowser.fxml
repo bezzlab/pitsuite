@@ -23,6 +23,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
+<?import org.controlsfx.control.CheckComboBox?>
 <AnchorPane stylesheets="@cssStyleSheets/styleSheet.css" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.GeneBrowserController">
    <children>
       <JFXDrawer fx:id="drawer" defaultDrawerSize="600" direction="RIGHT" overLayVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
@@ -53,6 +54,7 @@
                   <JFXTextField fx:id="minQualFilterGeneBrowserTextField" HBox.hgrow="NEVER" />
                   <JFXTextField fx:id="findSeqField" disable="true" promptText="Search sequence" />
                   <Button fx:id="findSeqButton" disable="true" mnemonicParsing="false" onMouseClicked="#findSequence" text="Find" />
+                  <CheckComboBox fx:id="transcriptsComboBox" HBox.hgrow="NEVER"/>
                   <Label fx:id="seqSearchMatchIndexLabel" />
                   <HBox alignment="CENTER_RIGHT" spacing="5.0" HBox.hgrow="SOMETIMES">
                      <children>

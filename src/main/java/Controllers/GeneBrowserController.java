@@ -16,6 +16,7 @@ import javafx.animation.PauseTransition;
 import javafx.application.HostServices;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -32,6 +33,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -46,6 +48,8 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import org.controlsfx.control.CheckComboBox;
+import org.controlsfx.control.IndexedCheckModel;
 import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.textfield.TextFields;
 import org.dizitart.no2.Cursor;
@@ -71,7 +75,9 @@ public class GeneBrowserController implements Initializable {
 
 
     @FXML
-    public TabPane infoTitleTabs;
+    private TabPane infoTitleTabs;
+    @FXML
+    private CheckComboBox<String> transcriptsComboBox;
     @FXML
     private JFXTextField findSeqField;
     @FXML
@@ -279,6 +285,10 @@ public class GeneBrowserController implements Initializable {
     private String sequenceSearched;
     private ArrayList<Integer> sequenceSearchestarts;
     private int currentSequenceSearchMatchIndex;
+    
+    private String previousGene;
+    private int previousStart;
+    private int previousEnd;
 
 
 
@@ -482,8 +492,8 @@ public class GeneBrowserController implements Initializable {
             //geneBrowserScrollPane.setOnMousePressed(mouseEvent -> {
             if(mouseEvent.getTarget().getClass()!=Rectangle.class && mouseEvent.getTarget().getClass()!=Text.class &&
                     !(mouseEvent.getTarget().getClass()==Pane.class && ((Pane) mouseEvent.getTarget()).getId()!=null &&
-                            ((Pane) mouseEvent.getTarget()).getId().equals("exonPane"))){
-                System.out.println(mouseEvent.getTarget().getClass());
+                            ((Pane) mouseEvent.getTarget()).getId().equals("exonPane")) &&
+                    mouseEvent.getX()<representationWidthFinal){
                 if(!isSelectedZoomRegion){
                     selectingRegionStart = mouseEvent.getX();
                 }
@@ -510,6 +520,8 @@ public class GeneBrowserController implements Initializable {
 
         });
 
+        transcriptsComboBox.setPrefWidth(new Text("Include STRG transcripts").getLayoutBounds().getWidth()*1.2);
+
 
     }
 
@@ -528,6 +540,7 @@ public class GeneBrowserController implements Initializable {
         showHideDepthGeneBrowserMenuItem.setDisable(true);
         cdsCentricViewMenuItem.setDisable(true);
         transcriptCentricViewMenuItem.setDisable(true);
+
 
         fastaIndex = new FastaIndex(Config.getFastaPath());
 
@@ -640,6 +653,7 @@ public class GeneBrowserController implements Initializable {
 
         cdss = new HashMap<>();
 
+
         geneMinimumCoordinate = gene.getStartCoordinate();
         geneMaximumCoordinate = gene.getEndCoordinate();
 
@@ -649,8 +663,11 @@ public class GeneBrowserController implements Initializable {
         findSeqButton.setDisable(false);
         findSeqField.setDisable(false);
 
+        transcriptsComboBox.getItems().clear();
+        transcriptsComboBox.getItems().add("Include USTRG transcripts");
 
         NitriteCollection transcCollection = Database.getDb().getCollection("allTranscripts");
+
 
         Cursor transcriptsQueryResult = transcCollection.find(Filters.eq("gene", geneIdTextField.getText()));
         for (Document tpmDocResult : transcriptsQueryResult) {
@@ -665,19 +682,58 @@ public class GeneBrowserController implements Initializable {
             geneViewerMinimumCoordinate = Math.min(geneViewerMinimumCoordinate, transcStart);
             geneViewerMaximumCoordinate = Math.max(geneViewerMaximumCoordinate, transcEnd);
 
+            transcriptsComboBox.getItems().add(transcript.getTranscriptId());
+
         }
+
+
+
+        ListChangeListener<String> changeListener = new ListChangeListener<String>() {
+            @Override
+            public void onChanged(Change<? extends String> c) {
+
+                c.next();
+                if((c.getAddedSubList().size()>0 &&  c.getAddedSubList().get(0).equals("Include USTRG transcripts")) ||
+                        (c.getRemoved().size()>0 &&  c.getRemoved().get(0).equals("Include USTRG transcripts"))) {
+
+                    transcriptsComboBox.getCheckModel().getCheckedItems().removeListener(this);
+                    for (int i = 0; i < transcriptsComboBox.getItems().size(); i++) {
+                        if (transcriptsComboBox.getItems().get(i).startsWith("USTRG")) {
+                            if (transcriptsComboBox.getCheckModel().isChecked("Include USTRG transcripts")) {
+                                transcriptsComboBox.getCheckModel().check(i);
+                            } else {
+                                transcriptsComboBox.getCheckModel().clearCheck(i);
+                            }
+                        }
+                    }
+                    transcriptsComboBox.getCheckModel().getCheckedItems().addListener(this);
+                }
+                transcriptOrCdsCentricView();
+            }
+        };
+
+
+        transcriptsComboBox.checkModelProperty().get().checkAll();
+
+        transcriptsComboBox.getCheckModel().getCheckedItems().addListener(changeListener);
+
+
+
+
 
         getMaxTranscriptIdWidth();
 
+        Thread bamThread = null;
 
+        if(previousGene==null || !previousGene.equals(geneId) || previousStart!=start || previousEnd!=end) {
+            bamThread = new Thread(() -> bamPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
+                    representationWidthFinal, representationHeightFinal, Database.getDb()));
+            bamThread.start();
 
-        Thread bamThread = new Thread(() -> bamPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
-                representationWidthFinal, representationHeightFinal, Database.getDb()));
-        bamThread.start();
-
-        Thread bedThread = new Thread(() -> bedPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
-                representationWidthFinal, representationHeightFinal, Database.getDb()));
-        bedThread.start();
+            Thread bedThread = new Thread(() -> bedPaneController.showGene(chr, geneViewerMinimumCoordinate, geneViewerMaximumCoordinate,
+                    representationWidthFinal, representationHeightFinal, Database.getDb()));
+            bedThread.start();
+        }
 
         NitriteCollection mutationsCollection = Database.getDb().getCollection("mutations");
 
@@ -866,7 +922,8 @@ public class GeneBrowserController implements Initializable {
 
 
         try {
-            bamThread.join();
+            if(bamThread!=null)
+                bamThread.join();
             // set combobox options and listeners
             setConditionsCombobox(); // exons are drawn by this one. Uses transcriptHashMap
         } catch (InterruptedException e) {
@@ -906,6 +963,10 @@ public class GeneBrowserController implements Initializable {
 
             dialog.showAndWait();
         });
+
+        previousGene=geneId;
+        previousStart=start;
+        previousEnd=end;
     }
 
 
@@ -915,11 +976,17 @@ public class GeneBrowserController implements Initializable {
         filterTranscripts();
 
         PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.2));
+
+        int newStart = (int) geneSlider.getLowValue();
+        int newEnd = (int) geneSlider.getHighValue();
+
         pauseTransition.setOnFinished(event -> {
-            if (showDepthInGeneBrowserBool) {
-                bamPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
-                bedPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
+            if (showDepthInGeneBrowserBool && (newStart!=previousStart || newEnd!=previousEnd)) {
+                bamPaneController.show(newStart, newEnd);
+                bedPaneController.show(newStart, newEnd);
             }
+            previousStart = (int) geneSlider.getLowValue();
+            previousEnd = (int) geneSlider.getHighValue();
         });
         pauseTransition.play();
 
@@ -928,6 +995,8 @@ public class GeneBrowserController implements Initializable {
         } else if (viewType.equals("cds")) {
             //displayCdsCentricView();
         }
+
+
 
 
     }
@@ -979,8 +1048,13 @@ public class GeneBrowserController implements Initializable {
             Collections.reverse(transcIDconditionAverageTPM);
 
             // get transcript ids sorted by average tpm
+
+
+
             for (Pair<Transcript, Double> transcIDAvgPair : transcIDconditionAverageTPM) {
-                displayedTranscripts.add(transcIDAvgPair.getKey());
+                if(transcriptsComboBox.getCheckModel().isChecked(transcIDAvgPair.getKey().getTranscriptId())){
+                    displayedTranscripts.add(transcIDAvgPair.getKey());
+                }
             }
         }
 
@@ -1857,12 +1931,11 @@ public class GeneBrowserController implements Initializable {
         int charNum = (int) (geneSlider.getHighValue() - geneSlider.getLowValue());
 
 
-        if((transcript.getStartGenomCoord()>geneSlider.getLowValue()  && transcript.getStartGenomCoord()<geneSlider.getHighValue() ) ||
-                (transcript.getEndGenomCoord()>geneSlider.getLowValue()  && transcript.getEndGenomCoord()<geneSlider.getHighValue() ) ||
-                (geneSlider.getLowValue() >transcript.getStartGenomCoord()&& geneSlider.getHighValue() <transcript.getEndGenomCoord())) {
+        if((transcript.getStartGenomCoord()>=geneSlider.getLowValue()  && transcript.getStartGenomCoord()<geneSlider.getHighValue() ) ||
+                (transcript.getEndGenomCoord()>=geneSlider.getLowValue()  && transcript.getEndGenomCoord()<geneSlider.getHighValue() ) ||
+                (geneSlider.getLowValue() >=transcript.getStartGenomCoord() && geneSlider.getHighValue() <transcript.getEndGenomCoord())) {
 
 
-            double vboxWidth = representationWidthFinal;
             double rectanglesMaxWidth = representationWidthFinal;
 
 
@@ -2555,9 +2628,9 @@ public class GeneBrowserController implements Initializable {
         }
 
     }
-    public void setBrowserFiles(List<BamFile> bam, List<BioFile> bed){
-        bamPaneController.setBamFiles(bam);
-        bedPaneController.setBedFiles(bed);
+    public void onTrackFilesUpdated(){
+        bamPaneController.onTrackFilesUpdated();
+        bedPaneController.onTrackFilesUpdated();
     }
 
     @FXML

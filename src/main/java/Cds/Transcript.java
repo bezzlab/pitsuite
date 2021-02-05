@@ -1,5 +1,6 @@
 package Cds;
 
+import Singletons.Config;
 import TablesModels.Variation;
 import javafx.util.Pair;
 import org.dizitart.no2.Document;
@@ -53,7 +54,11 @@ public class Transcript {
     public Transcript(Document document) {
         transcriptId = document.get("transcriptID", String.class);
         seq = document.get("seq", String.class);
-        chr = document.get("chr", String.class);
+        if(Config.isReferenceGuided()){
+            chr = document.get("chr", String.class);
+        }else{
+            chr = document.get("gene", String.class);
+        }
         start = document.get("start", Long.class).intValue();
         end = document.get("end", Long.class).intValue();
         exons = (ArrayList<Exon>) document.get("exons");
@@ -69,7 +74,13 @@ public class Transcript {
     public Transcript(Document document, HashMap<String, CDS> allCds){
         transcriptId = document.get("transcriptID", String.class);
         seq = document.get("seq", String.class);
-        chr = document.get("chr", String.class);
+
+        if(Config.isReferenceGuided()){
+            chr = document.get("chr", String.class);
+        }else{
+            chr = document.get("gene", String.class);
+        }
+
         start = document.get("start", Long.class).intValue();
         end = document.get("end", Long.class).intValue();
         exons = (ArrayList<Exon>) document.get("exons");

@@ -42,9 +42,8 @@ public class ConfidentLineChart extends Pane {
     String xLegend;
     String yLegend;
 
-    String[] colors = {"#ee4035", "#f37736", "#fdf498", "#7bc043", "#0392cf",
-            "#d11141","#00b159","#00aedb","#f37735","#ffc425",
-            "#ebf4f6","bdeaee","#76b4bd","#58668b","#5e5656"};
+    String[] colors = {"#aaf0d1","#ffa474","#bc5d58","#b2ec5d","#17806d","#fcb4d5","#e3256b","#bab86c","#fce883",
+            "#cda4de","#8e4585","#1f75fe","#1a4876","#fe4eda","#c8385a","#ff7538"};
 
     ArrayList<String> xCategories = new ArrayList<>();
 

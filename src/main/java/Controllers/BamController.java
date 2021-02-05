@@ -2,6 +2,9 @@ package Controllers;
 
 import Cds.Exon;
 import Cds.Transcript;
+import Singletons.ColorPalette;
+import Singletons.Config;
+import Singletons.TrackFiles;
 import TablesModels.BamFile;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMRecordIterator;
@@ -20,6 +23,9 @@ import javafx.scene.Group;
 import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -65,6 +71,7 @@ public class BamController implements Initializable {
     }
 
 
+
     public void showGene(String chrId, int geneStart, int geneEnd, double representationWidthFinal, double representationHeightFinal, Nitrite db){
 
         this.db = db;
@@ -78,30 +85,28 @@ public class BamController implements Initializable {
 
     }
 
-    public void setBamFiles(List<BamFile> files){
-
-        ArrayList<BamFile> newFiles = new ArrayList<>(files);
+    public void onTrackFilesUpdated(){
 
 
-        for (BamFile file : newFiles) {
+        for (BamFile file : TrackFiles.getBamFiles()) {
+            if(file.isSelected()){
+                if (selectedFiles!= null && selectedFiles.contains(file) && file.getDepth()==null) {
+                    file.setDepth(selectedFiles.stream()
+                            .filter(previousFile -> file.getPath().equals(previousFile.getPath()))
+                            .findAny().get().getDepth());
+                } else {
+                    try {
+                        if(chr!=null)
+                            file.setDepth(getGeneRnaDepth(file.getPath(), chr, geneStart, geneEnd));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
 
-
-            if (selectedFiles!= null && selectedFiles.contains(file) && file.getDepth()==null) {
-                file.setDepth(selectedFiles.stream()
-                        .filter(previousFile -> file.getPath().equals(previousFile.getPath()))
-                        .findAny().get().getDepth());
-            } else {
-                try {
-                    if(chr!=null)
-                        file.setDepth(getGeneRnaDepth(file.getPath(), chr, geneStart, geneEnd));
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
-
             }
         }
 
-        this.selectedFiles = newFiles;
+        this.selectedFiles = TrackFiles.getBamFiles();
         if(chr!=null){
             drawDepth(currentStart, currentEnd);
         }
@@ -127,22 +132,27 @@ public class BamController implements Initializable {
                 String bamCond = (String) bamFileDoc.get("condition");
                 String bamSample = (String) bamFileDoc.get("sample");
                 String bamPath = (String) bamFileDoc.get("bamPath");
-                selectedFiles.add(new BamFile(bamPath, bamCond, bamSample));
+                BamFile file = new BamFile(bamPath, bamCond, bamSample);
+                selectedFiles.add(file);
+                TrackFiles.addBam(file);
 
             }
         }
 
         // read bam file
         for (BamFile file: selectedFiles) {
-            Thread t = new Thread(() -> {
-                try {
-                    file.setDepth(getGeneRnaDepth(file.getPath(), chrId, geneStart, geneEnd));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            t.start();
-            threads.add(t);
+            if(file.isSelected()){
+                Thread t = new Thread(() -> {
+                    try {
+                        file.setDepth(getGeneRnaDepth(file.getPath(), chrId, geneStart, geneEnd));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                t.start();
+                threads.add(t);
+            }
+
 
         }
 
@@ -160,6 +170,8 @@ public class BamController implements Initializable {
 
 
     private int[] getGeneRnaDepth(String filePath, String chrId, int geneStart, int geneEnd) throws IOException {
+
+        long startTime = System.currentTimeMillis();
 
         int[] depthList = new int[geneEnd-geneStart+1];
 
@@ -183,6 +195,9 @@ public class BamController implements Initializable {
         sli.close();
         samReader.close();
 
+        long estimatedTime = System.currentTimeMillis() - startTime;
+        //System.out.println("getDepth: "+estimatedTime);
+
 
         return depthList;
     }
@@ -190,11 +205,15 @@ public class BamController implements Initializable {
 
     private void drawDepth(int start, int end) {
 
+
+
         mainBox.getChildren().clear();
 
 
         int indexStart = start - geneStart;
         int indexEnd = end - geneStart;
+
+        ArrayList<String> conditions = new ArrayList<String>(Config.getConditions());
 
 
 
@@ -208,6 +227,8 @@ public class BamController implements Initializable {
 
                 new Thread(() -> {
                     // get values for the graph, if distance is high, the values are accumulated
+
+
                     int[] depthList = file.getDepth();
 
 
@@ -257,6 +278,8 @@ public class BamController implements Initializable {
                     boolean finalIsAccumulated = isAccumulated;
 
                     Platform.runLater(() -> {
+                        long startTime = System.currentTimeMillis();
+
 
                         HBox areaPlotHBox = new HBox();
 
@@ -287,6 +310,8 @@ public class BamController implements Initializable {
 
                         XYChart.Series seriesDepth = new XYChart.Series();
 
+
+
                         if (finalIsAccumulated) { // accumulated
                             for (int i = 0; i < depthListFinal.length; i++) {
                                 seriesDepth.getData().add(new XYChart.Data(indexes.get(i), depthListFinal[i]));
@@ -294,7 +319,7 @@ public class BamController implements Initializable {
                         } else {
                             for (int i = indexStart; i <= indexEnd; i++) {
                                 seriesDepth.getData().add(new XYChart.Data(i, depthList[i]));
-                            }
+                                }
                         }
 
 
@@ -312,6 +337,9 @@ public class BamController implements Initializable {
                         ac.setVerticalGridLinesVisible(false);
                         ac.setCreateSymbols(false);
 
+                        seriesDepth.getNode().lookup(".chart-series-area-fill")
+                                .setStyle("-fx-fill: "+ ColorPalette.getColor(conditions.indexOf(file.getCondition())));
+
 
                         Pane plotPane = new Pane();
                         plotPane.setPrefHeight(representationHeightFinal* 0.05);
@@ -327,9 +355,28 @@ public class BamController implements Initializable {
 
                         areaPlotHBox.getChildren().add(plotPane);
 
+                        Image eyeImage = new Image("visibility.png");
+                        Button hideButton = new Button();
+                        ImageView imageView = new ImageView(eyeImage);
 
-                        condSampleText.setLayoutY(condSampleText.getBoundsInLocal().getHeight() * 1.5);
+                        imageView.setFitHeight(condSampleText.getBoundsInLocal().getHeight()*1.2);
+                        imageView.setPreserveRatio(true);
 
+                        hideButton.setGraphic(imageView);
+                        hideButton.setOnMouseClicked(event -> {
+                            event.consume();
+                            file.setSelected(false);
+                            mainBox.getChildren().remove(areaPlotHBox);
+                        });
+
+
+//                        condSampleText.setLayoutY(representationHeightFinal* 0.05/2 -
+//                                condSampleText.getLayoutBounds().getHeight()/2);
+
+                        HBox.setMargin(condSampleText, new Insets(representationHeightFinal* 0.05/2,0,0,0));
+                        HBox.setMargin(hideButton, new Insets(representationHeightFinal* 0.05/2 ,0,0,0));
+
+                        areaPlotHBox.getChildren().add(hideButton);
                         areaPlotHBox.getChildren().add(condSampleText);
 
                         VBox.setVgrow(areaPlotHBox, Priority.ALWAYS);
@@ -337,6 +384,9 @@ public class BamController implements Initializable {
                         mainBox.getChildren().add(areaPlotHBox);
 
                         VBox.setMargin(areaPlotHBox, new Insets(0,0,0,0));
+
+                        long estimatedTime = System.currentTimeMillis() - startTime;
+                        //System.out.println("drawDepth: "+estimatedTime);
 
                         try {
                             junctionThread.join();
@@ -442,6 +492,7 @@ public class BamController implements Initializable {
 
     public void drawSashami(BamFile file, int start, int end, int geneViewerMinimumCoordinate, double boxHeight, HBox container, AreaChart<Number, Number> ac){
 
+        long startTime = System.currentTimeMillis();
 
         int max = Arrays.stream(file.getDepth()).summaryStatistics().getMax();
 
@@ -741,6 +792,8 @@ public class BamController implements Initializable {
         container.setPrefHeight(boxHeight-textHeight);
 
         file.setJunctionsGraphicGroup(junctionsGraphicGroup);
+        long estimatedTime = System.currentTimeMillis() - startTime;
+        //System.out.println("sashimi: "+estimatedTime);
     }
 
     public void setFontSize(double fontSize){

@@ -1,16 +1,19 @@
 package FileReading;
 
+import utilities.BioFile;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class Bed {
+public class Bed extends BioFile {
 
     ArrayList<Bedrow> rows = new ArrayList<>();
 
 
-    public Bed(String path){
+    public Bed(String path, String name){
+        super(path, name);
         read(path);
     }
 

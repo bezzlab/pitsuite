@@ -139,7 +139,12 @@ public class Config {
     }
 
     public static String getFastaPath(){
-        return config.getString("reference_fasta");
+        if(isReferenceGuided()){
+            return config.getString("reference_fasta");
+        }else{
+            return config.get("output")+"/trinity_genes.fasta";
+        }
+
     }
 
     public static boolean isCombinedRun(String run){
@@ -189,6 +194,10 @@ public class Config {
             }
         }
         return runName;
+    }
+
+    public static boolean isReferenceGuided(){
+        return config.has("reference_fasta");
     }
 }
 
