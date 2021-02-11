@@ -903,7 +903,7 @@ public class SplicingTableController extends Controller {
 
                 BarChart<String,Number> bc =
                         new BarChart<>(xAxis, yAxis);
-                bc.setTitle("Differential gene expression");
+                bc.setTitle("Differential protein splicing");
                 bc.setLegendVisible(false);
 
                 XYChart.Series proteinCorrectedRatiosSeries = new XYChart.Series<>();

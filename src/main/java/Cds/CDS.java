@@ -126,7 +126,7 @@ public class CDS {
         }
 
 
-        return new Pair<>(start, end);
+        return new Pair<>(start, end-1);
     }
 
     public void addPeptide(String sequence, String mod, double probability, String run, String condition, String sample){
@@ -211,7 +211,8 @@ public class CDS {
                         (transcriptStart + rnaLength) / 3 + 1));
             }else{
                 String revSeq = new StringBuilder(sequence).reverse().toString();
-                subseq = revSeq.substring(transcriptStart / 3, Math.min((transcriptStart + rnaLength) / 3 + 1, revSeq.length()));
+                subseq = revSeq.substring(transcriptStart / 3, Math.min((transcriptStart + rnaLength) / 3 + 1,
+                        revSeq.length()));
             }
 
 

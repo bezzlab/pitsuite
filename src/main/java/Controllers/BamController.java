@@ -213,7 +213,7 @@ public class BamController implements Initializable {
         int indexStart = start - geneStart;
         int indexEnd = end - geneStart;
 
-        ArrayList<String> conditions = new ArrayList<String>(Config.getConditions());
+        ArrayList<String> conditions = new ArrayList<>(Config.getConditions());
 
 
 
@@ -734,6 +734,9 @@ public class BamController implements Initializable {
                     l1.setStrokeWidth(2);
                     l2.setStrokeWidth(2);
                     l3.setStrokeWidth(2);
+                    l1.setFill(Color.rgb(0,0,0,0.6));
+                    l2.setFill(Color.rgb(0,0,0,0.6));
+                    l3.setFill(Color.rgb(0,0,0,0.6));
 
                     EventHandler inEvent = event -> {
                         l1.setStroke(Color.RED);

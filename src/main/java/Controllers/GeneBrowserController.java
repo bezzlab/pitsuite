@@ -1001,13 +1001,10 @@ public class GeneBrowserController implements Initializable {
 
         PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.2));
 
-        int newStart = (int) geneSlider.getLowValue();
-        int newEnd = (int) geneSlider.getHighValue();
-
         pauseTransition.setOnFinished(event -> {
-            if (showDepthInGeneBrowserBool && (newStart!=previousStart || newEnd!=previousEnd)) {
-                bamPaneController.show(newStart, newEnd);
-                bedPaneController.show(newStart, newEnd);
+            if (showDepthInGeneBrowserBool && ((int) geneSlider.getLowValue()!=previousStart || (int) geneSlider.getHighValue()!=previousEnd)) {
+                bamPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
+                bedPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
             }
             previousStart = (int) geneSlider.getLowValue();
             previousEnd = (int) geneSlider.getHighValue();
@@ -1403,142 +1400,202 @@ public class GeneBrowserController implements Initializable {
 
     private Group getPepGroup (CDS cds, Transcript transcript, double height, int startGenomCoord, int endGenomCoord,
                                double rectanglesAreaWidth){
+
+
         Group pepGroup = new Group();
+
+
         HashMap<String, HashSet<String>> peptideSeqsRuns = new HashMap<>();
 
-        for (Peptide peptide : cds.getPeptides() ) {
+        for (Peptide peptide : cds.getPeptides()) {
+
+
             String pepSeq = peptide.getSequence();
-            if(!peptideSeqsRuns.containsKey(pepSeq)) {
+            if (!peptideSeqsRuns.containsKey(pepSeq)) {
 
                 peptideSeqsRuns.put(pepSeq, new HashSet<>());
 
                 Pair<Integer, Integer> peptideGenomicPos = getPepPos(pepSeq, cds, transcript);
 
                 if (peptideGenomicPos != null) {
-                    int pepStartCoord = peptideGenomicPos.getKey();
-                    int pepEndCoord = peptideGenomicPos.getValue();
-
-                    Rectangle pepRect = new Rectangle();
-                    pepRect.setHeight(height);
-
-                    pepRect.setOnMouseClicked(mouseEvent -> {
-                        if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-                            if (mouseEvent.getClickCount() == 2) {
-
-                                if(peptideSeqsRuns.get(pepSeq).size()>1){
-                                    ChoiceDialog d = new ChoiceDialog(peptideSeqsRuns.get(pepSeq).iterator().next(),
-                                            peptideSeqsRuns.get(pepSeq).toArray());
 
 
-                                    d.showAndWait();
-                                    ControllersBasket.getResultsController().moveToTab(5);
-                                    ControllersBasket.getPeptideTableController()
-                                            .findPeptideInTable(pepSeq, (String) d.getSelectedItem());
-                                }else{
-                                    ControllersBasket.getResultsController().moveToTab(5);
-                                    ControllersBasket.getPeptideTableController()
-                                            .findPeptideInTable(pepSeq, peptideSeqsRuns.get(pepSeq).iterator().next());
+                    for (int i = 0; i < transcript.getExons().size(); i++) {
 
+                        Exon exon = transcript.getExons().get(i);
+
+                        int peptideRectangleStart = 0, peptideRectangleEnd = 0;
+
+                        if ((exon.getStart() >= startGenomCoord && exon.getStart() <= endGenomCoord) ||
+                                (exon.getEnd() >= startGenomCoord && exon.getEnd() <= endGenomCoord)) {
+
+                            if(exon.getStart() <= peptideGenomicPos.getKey() && exon.getEnd() >= peptideGenomicPos.getValue()) {
+                                peptideRectangleStart = Math.max(peptideGenomicPos.getKey(), startGenomCoord) - 1;
+                                peptideRectangleEnd = Math.min(peptideGenomicPos.getValue() + 1, endGenomCoord);
+                            }else if (exon.getStart() <= peptideGenomicPos.getKey() && exon.getEnd() <= peptideGenomicPos.getValue()) {
+                                peptideRectangleStart = Math.max(peptideGenomicPos.getKey(), startGenomCoord) - 1;
+                                peptideRectangleEnd = Math.min(exon.getEnd() + 1, endGenomCoord);
+                            } else if (exon.getStart() <= peptideGenomicPos.getValue() && exon.getEnd() >= peptideGenomicPos.getValue()) {
+                                peptideRectangleStart = Math.max(exon.getStart(), startGenomCoord) - 1;
+                                peptideRectangleEnd = Math.min(peptideGenomicPos.getValue(), endGenomCoord);
+                            } else if (exon.getStart() >= peptideGenomicPos.getKey() && exon.getEnd() <= peptideGenomicPos.getValue()) {
+                                peptideRectangleStart = Math.max(exon.getStart() + 2, startGenomCoord) - 1;
+                                peptideRectangleEnd = Math.min(exon.getEnd() + 1, endGenomCoord);
+                            }
+
+                            if (peptideRectangleStart != peptideRectangleEnd) {
+
+
+                                Rectangle pepRect = new Rectangle();
+                                pepRect.setHeight(height);
+
+                                pepRect.setOnMouseClicked(mouseEvent -> {
+                                    if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                                        if (mouseEvent.getClickCount() == 2) {
+
+                                            if (peptideSeqsRuns.get(pepSeq).size() > 1) {
+                                                ChoiceDialog d = new ChoiceDialog(peptideSeqsRuns.get(pepSeq).iterator().next(),
+                                                        peptideSeqsRuns.get(pepSeq).toArray());
+
+
+                                                d.showAndWait();
+                                                ControllersBasket.getResultsController().moveToTab(5);
+                                                ControllersBasket.getPeptideTableController()
+                                                        .findPeptideInTable(pepSeq, (String) d.getSelectedItem());
+                                            } else {
+                                                ControllersBasket.getResultsController().moveToTab(5);
+                                                ControllersBasket.getPeptideTableController()
+                                                        .findPeptideInTable(pepSeq, peptideSeqsRuns.get(pepSeq).iterator().next());
+
+                                            }
+                                        }
+                                    }
+                                });
+
+                                // tooltip for peptides
+                                Tooltip pepToolTip = new Tooltip("Peptide");
+                                pepToolTip.setShowDelay(Duration.millis(500));
+                                pepToolTip.setFont(Font.font(fontSize));
+                                pepToolTip.setShowDuration(Duration.seconds(4));
+                                Tooltip.install(pepRect, pepToolTip);
+
+                                pepRect.setFill(Color.rgb(193, 154, 0, 1));
+                                pepRect.setStroke(Color.rgb(193, 154, 0));
+                                pepRect.setStrokeWidth(2);
+
+
+                                int pepStartCoordInView = Math.max(startGenomCoord, peptideRectangleStart+1);
+                                int pepEndCoordInView = Math.min(endGenomCoord, peptideRectangleEnd);
+
+                                double totalSizeInView = endGenomCoord - startGenomCoord + 1;
+
+                                pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
+                                pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
+
+                                if (pepRect.getWidth() > 0) {
+                                    pepGroup.getChildren().add(pepRect);
+
+
+                                    for (PSM psm : peptide.getPsms()) {
+                                        HashSet<PTM> ptms = psm.getModifications();
+
+
+                                        for (PTM ptm : ptms) {
+
+                                            Tooltip tooltipTranscId = new Tooltip(ptm.getName());
+                                            tooltipTranscId.setShowDelay(Duration.ONE);
+                                            tooltipTranscId.setFont(Font.font("monospace", fontSize));
+
+
+                                            if (ptm.getShape().equals("triangle")) {
+
+                                                Polygon polygon = new Polygon();
+                                                if (cds.getStrand().equals("+")) {
+                                                    double X = rectanglesAreaWidth * (getProportion(peptideRectangleStart + 3 * (ptm.getPos() - 1) + 1.5,
+                                                            startGenomCoord, totalSizeInView));
+
+                                                    polygon.getPoints().addAll(X + 10, height,
+                                                            X, height + 20.0,
+                                                            X + 20, height + 20.0);
+
+
+                                                } else {
+                                                    double X = rectanglesAreaWidth * (getProportion(peptideRectangleStart + 3 * (peptide.getSequence().length() -
+                                                                    ptm.getPos() - 1) + 0.75,
+                                                            startGenomCoord, totalSizeInView));
+
+                                                    polygon.getPoints().addAll(X + 10, height,
+                                                            X, height + 20.0,
+                                                            X + 20, height + 20.0);
+                                                }
+                                                polygon.setFill(ptm.getColor());
+
+                                                pepGroup.getChildren().add(polygon);
+                                                Tooltip.install(polygon, tooltipTranscId);
+
+
+                                            } else if (ptm.getShape().equals("square")) {
+                                                Rectangle rect = new Rectangle();
+                                                if (cds.getStrand().equals("+")) {
+                                                    rect.setX(rectanglesAreaWidth * (getProportion(peptideRectangleStart + 3 * (ptm.getPos() - 1) + 0.75,
+                                                            startGenomCoord, totalSizeInView)));
+
+
+                                                } else {
+                                                    rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView
+                                                                    + 3 * (peptide.getSequence().length() - ptm.getPos()) - 1,
+                                                            startGenomCoord, totalSizeInView)));
+
+                                                }
+
+                                                rect.setWidth(20);
+                                                rect.setHeight(20);
+                                                rect.setHeight(height);
+                                                rect.setFill(ptm.getColor());
+
+                                                pepGroup.getChildren().add(rect);
+                                                Tooltip.install(rect, tooltipTranscId);
+                                            }
+
+                                        }
+                                    }
                                 }
                             }
                         }
-                    });
 
-                    // tooltip for peptides
-                    Tooltip pepToolTip = new Tooltip("Peptide");
-                    pepToolTip.setShowDelay(Duration.millis(500));
-                    pepToolTip.setFont(Font.font(fontSize));
-                    pepToolTip.setShowDuration(Duration.seconds(4));
-                    Tooltip.install(pepRect, pepToolTip);
-
-                    pepRect.setFill(Color.rgb(255, 33, 26, 0.5));
-                    pepRect.setStroke(Color.BLACK);
-                    pepRect.setWidth(3);
-
-
-                    int pepStartCoordInView = Math.max(startGenomCoord, pepStartCoord);
-                    int pepEndCoordInView = Math.min(endGenomCoord, pepEndCoord);
-
-                    double totalSizeInView = endGenomCoord - startGenomCoord + 1;
-
-                    pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
-                    pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
-
-                    if(pepRect.getWidth()>0) {
-                        pepGroup.getChildren().add(pepRect);
-
-
-                        for (PSM psm : peptide.getPsms()) {
-                            HashSet<PTM> ptms = psm.getModifications();
-
-
-                            for (PTM ptm : ptms) {
-
-                                Tooltip tooltipTranscId = new Tooltip(ptm.getName());
-                                tooltipTranscId.setShowDelay(Duration.ONE);
-                                tooltipTranscId.setFont(Font.font("monospace", fontSize));
-
-
-
-                                if(ptm.getShape().equals("triangle")){
-
-                                    Polygon polygon = new Polygon();
-                                    if (cds.getStrand().equals("+")) {
-                                        double X = rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (ptm.getPos() - 1)+1.5,
-                                                startGenomCoord, totalSizeInView));
-
-                                        polygon.getPoints().addAll(X+10, height,
-                                                X, height+20.0,
-                                                X+20, height+20.0);
-
-
-
-                                    } else {
-                                        double X = rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (peptide.getSequence().length()-
-                                                        ptm.getPos() - 1)+0.75,
-                                                startGenomCoord, totalSizeInView));
-
-                                        polygon.getPoints().addAll(X+10, height,
-                                                X, height+20.0,
-                                                X+20, height+20.0);
-                                    }
-                                    polygon.setFill(ptm.getColor());
-
-                                    pepGroup.getChildren().add(polygon);
-                                    Tooltip.install(polygon, tooltipTranscId);
-
-
-
-                                }else if(ptm.getShape().equals("square")){
-                                    Rectangle rect = new Rectangle();
-                                    if (cds.getStrand().equals("+")) {
-                                        rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoord + 3 * (ptm.getPos() - 1)+0.75,
-                                                startGenomCoord, totalSizeInView)));
-
-
-                                    } else {
-                                    rect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView
-                                                    + 3 * (peptide.getSequence().length() - ptm.getPos()) - 1,
-                                            startGenomCoord, totalSizeInView)));
-
-                                    }
-
-                                    rect.setWidth(20);
-                                    rect.setHeight(20);
-                                    rect.setHeight(height);
-                                    rect.setFill(ptm.getColor());
-
-                                    pepGroup.getChildren().add(rect);
-                                    Tooltip.install(rect, tooltipTranscId);
-                                }
-
+                        if(exon.getStart()<=peptideGenomicPos.getKey() && exon.getEnd()>=peptideGenomicPos.getKey()
+                                && exon.getEnd()+1<peptideGenomicPos.getValue()){
+                            Exon nextExon = transcript.getExons().get(i+1);
+                            if(nextExon.getStart()<=peptideGenomicPos.getValue() && nextExon.getEnd()>=peptideGenomicPos.getValue()){
+                                peptideRectangleStart = exon.getEnd();
+                                peptideRectangleEnd = peptideGenomicPos.getValue();
+                            }else{
+                                peptideRectangleStart = exon.getEnd();
+                                peptideRectangleEnd = nextExon.getEnd();
                             }
+
+                            Rectangle pepRect = new Rectangle();
+                            pepRect.setFill(Color.rgb(193, 154, 0, 0.4));
+                            pepRect.setHeight(height/8);
+                            pepRect.setY(height/2-pepRect.getHeight()/2);
+                            int pepStartCoordInView = Math.max(startGenomCoord, peptideRectangleStart);
+                            int pepEndCoordInView = Math.min(endGenomCoord, peptideRectangleEnd);
+
+                            double totalSizeInView = endGenomCoord - startGenomCoord + 1;
+                            pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
+                            pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
+
+                            if (pepRect.getWidth() > 0) {
+                                pepGroup.getChildren().add(pepRect);
+                            }
+
                         }
                     }
 
                 }
             }
             peptideSeqsRuns.get(pepSeq).add(Config.getMainRun(peptide.getRunName()));
+
 
         }
 
@@ -2343,60 +2400,224 @@ public class GeneBrowserController implements Initializable {
         cdsHBox.setPrefWidth(rectanglesAreaWidth);
 
 
-        Pair<Integer, Integer> cdsSeqStartEndCoord = cds.getTranscriptWithCdsPos(transcript);
-
-
-
-
         boolean hasPfam = cds.hasPfam();
         String cdsSeq = cds.getSequence();
         Pair<Integer, Integer> cdsGenomicCoords = cds.getGenomicPos(transcript);
 
         if((cdsGenomicCoords.getKey()>startGenomCoord && cdsGenomicCoords.getKey()<endGenomCoord) ||
                 (cdsGenomicCoords.getValue()>startGenomCoord && cdsGenomicCoords.getValue()<endGenomCoord) ||
-                (startGenomCoord>cdsGenomicCoords.getKey() && endGenomCoord<cdsGenomicCoords.getValue())) {
+                (startGenomCoord>cdsGenomicCoords.getKey() && endGenomCoord<cdsGenomicCoords.getValue()) ||
+                (cdsGenomicCoords.getKey()<startGenomCoord && cdsGenomicCoords.getValue()>startGenomCoord) ||
+                (cdsGenomicCoords.getKey()<endGenomCoord && cdsGenomicCoords.getValue()>endGenomCoord)) {
 
             int cdsStartGenomCoord = cdsGenomicCoords.getKey();
             int cdsEndGenomCoord = cdsGenomicCoords.getValue();
 
-            // rectangle that represents the gene. Position, and add to group.
-            Rectangle cdsRectangle = new Rectangle();
-            cdsRectangle.setHeight(height - 1);
 
-            // tooltip for cds
-            Tooltip cdsToolTip = new Tooltip("CDS");
-            cdsToolTip.setShowDelay(Duration.millis(500));
-            cdsToolTip.setFont(Font.font(fontSize));
-            cdsToolTip.setShowDuration(Duration.seconds(4));
-            Tooltip.install(cdsRectangle, cdsToolTip);
+            for (int i = 0; i < transcript.getExons().size(); i++) {
+                Exon exon = transcript.getExons().get(i);
 
-            // on click action
-            cdsRectangle.setOnMouseClicked(mouseEvent -> {
-                if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-                    displayCdsTab(cdsSeq);
+                int cdsRectangleStart=0, cdsRectangleEnd=0;
+
+
+                if(((exon.getStart()>=cdsStartGenomCoord && exon.getStart()<=cdsEndGenomCoord) ||
+                        (exon.getEnd()>=cdsStartGenomCoord && exon.getEnd()<=cdsEndGenomCoord)) &&
+                        ((exon.getStart()>=startGenomCoord && exon.getStart()<=endGenomCoord) ||
+                                (exon.getEnd()>=startGenomCoord && exon.getEnd()<=endGenomCoord)) ||
+                        (exon.getStart()<=cdsStartGenomCoord && exon.getEnd()>=cdsStartGenomCoord
+                                && exon.getStart()<=cdsEndGenomCoord && exon.getEnd()>=cdsEndGenomCoord) ||
+                        (exon.getStart()<=startGenomCoord && startGenomCoord<=exon.getEnd() &&
+                                exon.getStart()<=endGenomCoord && endGenomCoord<=exon.getEnd()   )) {
+                    if (exon.getStart() <= cdsStartGenomCoord) {
+
+                        cdsRectangleStart = Math.max(cdsStartGenomCoord+1, startGenomCoord);
+                        if (exon.getEnd() <= cdsEndGenomCoord) {
+                            cdsRectangleEnd = Math.min(exon.getEnd()+1, endGenomCoord);
+                        } else {
+                            cdsRectangleEnd = Math.min(cdsEndGenomCoord+1, endGenomCoord);
+                        }
+                    } else {
+                        cdsRectangleStart = Math.max(exon.getStart()+1, startGenomCoord);
+                        if (exon.getEnd() <= cdsEndGenomCoord) {
+                            cdsRectangleEnd = Math.min(exon.getEnd()+1, endGenomCoord);
+                        } else {
+                            cdsRectangleEnd = Math.min(cdsEndGenomCoord+1, endGenomCoord);
+                        }
+
+                    }
                 }
-            });
 
-            //  color depending on having peptides
-            if (cds.getPeptides().size() > 0) {
-                cdsRectangle.setFill(Color.rgb(217, 33, 122));
-            } else {
-                cdsRectangle.setFill(Color.rgb(217, 33, 122, 0.5));
+
+
+                    if (cdsRectangleStart != cdsRectangleEnd) {
+
+                        Rectangle cdsRectangle = new Rectangle();
+                        cdsRectangle.setHeight(height - 1);
+
+                        Tooltip cdsToolTip = new Tooltip("CDS");
+                        cdsToolTip.setShowDelay(Duration.millis(500));
+                        cdsToolTip.setFont(Font.font(fontSize));
+                        cdsToolTip.setShowDuration(Duration.seconds(4));
+                        Tooltip.install(cdsRectangle, cdsToolTip);
+
+                        cdsRectangle.setOnMouseClicked(mouseEvent -> {
+                            if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                                displayCdsTab(cdsSeq);
+                            }
+                        });
+
+                        //  color depending on having peptides
+                        if (cds.getPeptides().size() > 0) {
+                            cdsRectangle.setFill(Color.rgb(217, 33, 122));
+                        } else {
+                            cdsRectangle.setFill(Color.rgb(217, 33, 122, 0.5));
+                        }
+                        cdsRectangle.setStroke(Color.BLACK);
+                        cdsRectangle.setStrokeWidth(2);
+
+
+                        int tmpStartGeneCoord = Math.max(cdsRectangleStart, startGenomCoord) - 1;
+                        int tmpEndGeneCoord = Math.min(cdsRectangleEnd, endGenomCoord);
+
+                        double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
+                        double X = rectanglesAreaWidth * getProportion(tmpStartGeneCoord, startGenomCoord, length);
+
+                        cdsRectangle.setX(X);
+                        cdsRectangle.setWidth(width);
+
+                        cdsGroup.getChildren().add(cdsRectangle);
+
+
+
+
+
+                        double offsetY = 0;
+                        if (geneSlider.getHighValue() - geneSlider.getLowValue() <= 500) {
+                            Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
+
+                            if (pair != null) {
+
+                                if (cds.getStrand().equals("-")) {
+                                    Line arrowLine = new Line(X, 0.5 * height, X + width, 0.5 * height);
+                                    arrowLine.setStrokeWidth(3);
+                                    arrowLine.setStroke(new Color(0, 0, 0, 0.3));
+
+                                    Line arrowLine2 = new Line(X, 0.5 * height, X + 0.1 * width, 0);
+                                    arrowLine2.setStrokeWidth(3);
+                                    arrowLine2.setStroke(new Color(0, 0, 0, 0.3));
+
+                                    Line arrowLine3 = new Line(X, 0.5 * height, X + 0.1 * width, height);
+                                    arrowLine3.setStrokeWidth(3);
+                                    arrowLine3.setStroke(new Color(0, 0, 0, 0.3));
+
+                                    cdsGroup.getChildren().add(arrowLine);
+                                    cdsGroup.getChildren().add(arrowLine2);
+                                    cdsGroup.getChildren().add(arrowLine3);
+
+                                }
+
+                                String subseq = pair.getKey();
+                                int offset = pair.getValue()[0];
+                                for (int j = 0; j < subseq.length(); j++) {
+                                    Text t = new Text(String.valueOf(subseq.charAt(j)));
+                                    t.setFont(Font.font("monospace", fontSize));
+
+
+                                    t.setX(X + (j * 3 + offset + pair.getValue()[1] + 0.5) *
+                                            (rectanglesAreaWidth * ((double) subseq.length() * 3 / (endGenomCoord - startGenomCoord)) / (double) (subseq.length() * 3)) - t.getLayoutBounds().getWidth() / 2);
+                                    t.setY(t.getLayoutBounds().getHeight());
+
+                                    cdsGroup.getChildren().add(t);
+                                }
+
+
+                            }
+
+                        }
+                    }
+
+                cdsRectangleStart = 0;
+                cdsRectangleEnd = 0;
+
+
+                if(exon.getEnd()<cdsEndGenomCoord && exon.getEnd()>=cdsStartGenomCoord){
+                    Exon nextExon = transcript.getExons().get(i+1);
+
+
+
+
+                    if((nextExon.getStart()>startGenomCoord && nextExon.getStart()<=endGenomCoord) || (
+                            exon.getStart()>= startGenomCoord && nextExon.getEnd()<=endGenomCoord
+                            )){
+                        cdsRectangleStart = Math.max(startGenomCoord, exon.getEnd()+1);
+                        cdsRectangleEnd = Math.min(nextExon.getStart(), endGenomCoord);
+                    }else if((exon.getStart()>=startGenomCoord && exon.getStart()<=endGenomCoord) || (
+                            exon.getEnd()>=startGenomCoord && exon.getEnd()<=endGenomCoord
+                    )){
+                        cdsRectangleStart = Math.max(startGenomCoord, exon.getEnd()+1);
+                        cdsRectangleEnd = endGenomCoord;
+                    }else if(exon.getEnd()<=startGenomCoord && nextExon.getStart()>=endGenomCoord){
+                        cdsRectangleStart = startGenomCoord;
+                        cdsRectangleEnd = endGenomCoord;
+                    }
+
+                }
+
+
+
+                if(cdsRectangleStart!=cdsRectangleEnd){
+                    Rectangle cdsRectangleBetweenExons = new Rectangle();
+                    cdsRectangleBetweenExons.setHeight(height / 8.);
+
+
+                    Tooltip cdsToolTipBetweenExons = new Tooltip("CDS");
+                    cdsToolTipBetweenExons.setShowDelay(Duration.millis(500));
+                    cdsToolTipBetweenExons.setFont(Font.font(fontSize));
+                    cdsToolTipBetweenExons.setShowDuration(Duration.seconds(4));
+                    Tooltip.install(cdsRectangleBetweenExons, cdsToolTipBetweenExons);
+
+                    cdsRectangleBetweenExons.setOnMouseClicked(mouseEvent -> {
+                        if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                            displayCdsTab(cdsSeq);
+                        }
+                    });
+
+                    //  color depending on having peptides
+                    if (cds.getPeptides().size() > 0) {
+                        cdsRectangleBetweenExons.setFill(Color.rgb(0, 0, 0, 0.2));
+                    } else {
+                        cdsRectangleBetweenExons.setFill(Color.rgb(0, 0, 0, 0.1));
+                    }
+
+
+                    cdsRectangleBetweenExons.setY(height / 8.);
+                    cdsRectangleBetweenExons.setY(height/2.-cdsRectangleBetweenExons.getHeight()/2);
+
+
+                    double width = rectanglesAreaWidth * Math.abs(getProportion(cdsRectangleEnd, cdsRectangleStart, length));
+                    double X = rectanglesAreaWidth * getProportion(cdsRectangleStart, startGenomCoord, length);
+
+                    cdsRectangleBetweenExons.setX(X);
+                    cdsRectangleBetweenExons.setWidth(width);
+
+                    cdsGroup.getChildren().add(cdsRectangleBetweenExons);
+                }
+
+
+
             }
-            cdsRectangle.setStroke(Color.BLACK);
-            cdsRectangle.setStrokeWidth(3);
+
+            if (cds.getPeptides().size() > 0) {
+
+                pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth);
+            }
+            // add peptides
+            if (pepGroup.getChildren().size() > 0) {
+                pepPane.getChildren().add(pepGroup);
+
+            }
 
 
-            int tmpStartGeneCoord = Math.max(cdsStartGenomCoord, startGenomCoord) - 1;
-            int tmpEndGeneCoord = Math.min(cdsEndGenomCoord, endGenomCoord);
-
-            double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
-            double X = rectanglesAreaWidth * getProportion(tmpStartGeneCoord, startGenomCoord, length);
-
-            cdsRectangle.setX(X);
-            cdsRectangle.setWidth(width);
-
-            cdsGroup.getChildren().add(cdsRectangle);
 
 
             if (hasPfam) {
@@ -2451,61 +2672,13 @@ public class GeneBrowserController implements Initializable {
             //VBox.setMargin(cdsHBox, new Insets((int) Math.round(representationHeightFinal * 0.005), 0, 0, 0));
             geneExonsSeqsVBox.getChildren().add(cdsHBox);
 
-
-            double offsetY = 0;
-            if (geneSlider.getHighValue() - geneSlider.getLowValue() <= 500) {
-                Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
-
-                if (pair != null) {
-
-                    if (cds.getStrand().equals("-")) {
-                        Line arrowLine = new Line(X, 0.5 * height, X + width, 0.5 * height);
-                        arrowLine.setStrokeWidth(3);
-                        arrowLine.setStroke(new Color(0, 0, 0, 0.3));
-
-                        Line arrowLine2 = new Line(X, 0.5 * height, X + 0.1 * width, 0);
-                        arrowLine2.setStrokeWidth(3);
-                        arrowLine2.setStroke(new Color(0, 0, 0, 0.3));
-
-                        Line arrowLine3 = new Line(X, 0.5 * height, X + 0.1 * width, height);
-                        arrowLine3.setStrokeWidth(3);
-                        arrowLine3.setStroke(new Color(0, 0, 0, 0.3));
-
-                        cdsGroup.getChildren().add(arrowLine);
-                        cdsGroup.getChildren().add(arrowLine2);
-                        cdsGroup.getChildren().add(arrowLine3);
-
-                    }
-
-                    String subseq = pair.getKey();
-                    int offset = pair.getValue()[0];
-                    for (int i = 0; i < subseq.length(); i++) {
-                        Text t = new Text(String.valueOf(subseq.charAt(i)));
-                        t.setFont(Font.font("monospace", fontSize));
+            pepHBox.getChildren().add(pepPane);
+            geneExonsSeqsVBox.getChildren().add(pepHBox);
 
 
-                        t.setX(X + (i * 3 + offset + pair.getValue()[1] + 0.5) *
-                                (rectanglesAreaWidth * ((double) subseq.length() * 3 / (endGenomCoord - startGenomCoord)) / (double) (subseq.length() * 3)) - t.getLayoutBounds().getWidth() / 2);
-                        t.setY(t.getLayoutBounds().getHeight());
-
-                        cdsGroup.getChildren().add(t);
-                    }
 
 
-                }
 
-            }
-
-            if (cds.getPeptides().size() > 0) {
-
-                pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth);
-            }
-            // add peptides
-            if (pepGroup.getChildren().size() > 0) {
-                pepPane.getChildren().add(pepGroup);
-                pepHBox.getChildren().add(pepPane);
-                geneExonsSeqsVBox.getChildren().add(pepHBox);
-            }
         }
 
 

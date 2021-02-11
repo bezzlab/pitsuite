@@ -5,5 +5,5 @@
         "browser": {"size": 21}
     },
     "tools": {"R": "/usr/bin/Rscript"},
-    "Browser": {"minSashimiReads": 9}
+    "Browser": {"minSashimiReads": 17}
 }
