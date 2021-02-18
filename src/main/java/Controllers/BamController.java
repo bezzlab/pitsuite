@@ -26,12 +26,9 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
+import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -44,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class BamController implements Initializable {
 
@@ -196,7 +194,7 @@ public class BamController implements Initializable {
         samReader.close();
 
         long estimatedTime = System.currentTimeMillis() - startTime;
-        //System.out.println("getDepth: "+estimatedTime);
+        System.out.println("getDepth: "+estimatedTime);
 
 
         return depthList;
@@ -251,7 +249,6 @@ public class BamController implements Initializable {
 
                     int[] depthListFinal = new int[(int) Math.ceil((double)(indexEnd-indexStart)/interval)];
 
-                    int nn = indexEnd - indexStart;
                     int ymax;
                     if (isAccumulated) {
 
@@ -273,13 +270,11 @@ public class BamController implements Initializable {
                         ymax = Arrays.stream(depthListFinal).summaryStatistics().getMax();
                     } else {
                         ymax = Arrays.stream(depthList).summaryStatistics().getMax();
+                        depthListFinal = Arrays.stream(depthList, indexStart, indexEnd).toArray();
                     }
 
-                    boolean finalIsAccumulated = isAccumulated;
-
+                    int[] finalDepthListFinal = depthListFinal;
                     Platform.runLater(() -> {
-                        long startTime = System.currentTimeMillis();
-
 
                         HBox areaPlotHBox = new HBox();
 
@@ -287,71 +282,43 @@ public class BamController implements Initializable {
                         condSampleText.setFont(Font.font("monospace", fontSize));
 
                         areaPlotHBox.setPrefWidth(representationWidthFinal);
-                        //VBox.setMargin(areaPlotHBox, new Insets(0,0,0,100));
+
 
                         areaPlotHBox.setStyle("-fx-background-color: transparent;");
 
-                        NumberAxis xAxis = new NumberAxis(indexStart, indexEnd, nn);
-                        NumberAxis yAxis = new NumberAxis(0, ymax, (double) ymax / 2);
-                        AreaChart<Number, Number> ac = new AreaChart<>(xAxis, yAxis);
 
-
-                        ac.setStyle("-fx-background-color: transparent;");
-                        ac.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent;");
-
-                        ac.setPrefSize(representationWidthFinal, representationHeightFinal * 0.05);
-                        ac.setMinSize(representationWidthFinal, representationHeightFinal * 0.05);
-                        ac.setMaxSize(representationWidthFinal, representationHeightFinal * 0.05);
-
-                        int extraSpace = 10;
-
-
-                        ac.setPadding(new Insets(0, 0, -extraSpace, -9));
-
-                        XYChart.Series seriesDepth = new XYChart.Series();
-
-
-
-                        if (finalIsAccumulated) { // accumulated
-                            for (int i = 0; i < depthListFinal.length; i++) {
-                                seriesDepth.getData().add(new XYChart.Data(indexes.get(i), depthListFinal[i]));
-                            }
-                        } else {
-                            for (int i = indexStart; i <= indexEnd; i++) {
-                                seriesDepth.getData().add(new XYChart.Data(i, depthList[i]));
-                                }
-                        }
-
-
-                        //format graph
-                        ac.getData().addAll(seriesDepth);
-                        ac.setLegendVisible(false);
-                        ac.getYAxis().setSide(Side.RIGHT);
-                        ac.getXAxis().setTickLabelsVisible(false);
-                        ac.getXAxis().setTickMarkVisible(false);
-                        ac.getYAxis().setTickLabelsVisible(false);
-                        ac.getYAxis().setTickMarkVisible(false);
-                        ac.getXAxis().setOpacity(0);
-                        ac.getYAxis().setOpacity(0);
-                        ac.setHorizontalGridLinesVisible(false);
-                        ac.setVerticalGridLinesVisible(false);
-                        ac.setCreateSymbols(false);
-
-                        seriesDepth.getNode().lookup(".chart-series-area-fill")
-                                .setStyle("-fx-fill: "+ ColorPalette.getColor(conditions.indexOf(file.getCondition())));
-
-
-                        Pane plotPane = new Pane();
+                        AnchorPane plotPane = new AnchorPane();
                         plotPane.setPrefHeight(representationHeightFinal* 0.05);
-//                areaPlotHBox.setPrefHeight(condSampleText.getBoundsInLocal().getHeight() * 6);
-//                areaPlotHBox.setMinHeight(condSampleText.getBoundsInLocal().getHeight() * 6);
+
 
                         areaPlotHBox.getChildren().clear();
-                        // add plot
-                        plotPane.getChildren().add(ac);
-                        sashimiPane = new Pane();
-                        plotPane.getChildren().add(sashimiPane);
 
+                        Path path = new Path();
+                        path.getElements().add(new MoveTo(0,representationHeightFinal * 0.05));
+
+                        for (int i = 0; i < finalDepthListFinal.length; i++) {
+                            if(i!=0)
+                                path.getElements().add(new LineTo(i*representationWidthFinal/ finalDepthListFinal.length,
+                                        representationHeightFinal * 0.05- finalDepthListFinal[i]* representationHeightFinal * 0.05/ymax));
+
+                            if(i== finalDepthListFinal.length-1)
+                                path.getElements().add(new LineTo(i*representationWidthFinal/ finalDepthListFinal.length,  representationHeightFinal * 0.05));
+                        }
+                        path.getElements().add(new ClosePath());
+                        path.setFill(Color.web(ColorPalette.getColor(conditions.indexOf(file.getCondition()))));
+
+                        Pane coveragePane = new Pane();
+                        coveragePane.setPrefWidth(representationWidthFinal);
+                        coveragePane.setPrefHeight(representationHeightFinal * 0.05);
+
+                        coveragePane.getChildren().add(path);
+                        plotPane.getChildren().add(coveragePane);
+
+                        sashimiPane = new Pane();
+
+                        sashimiPane.toFront();
+
+                        plotPane.getChildren().add(sashimiPane);
 
                         areaPlotHBox.getChildren().add(plotPane);
 
@@ -383,14 +350,15 @@ public class BamController implements Initializable {
 
                         mainBox.getChildren().add(areaPlotHBox);
 
+
+
                         VBox.setMargin(areaPlotHBox, new Insets(0,0,0,0));
 
-                        long estimatedTime = System.currentTimeMillis() - startTime;
-                        //System.out.println("drawDepth: "+estimatedTime);
+
 
                         try {
                             junctionThread.join();
-                            drawSashami(file, start, end, geneStart, representationHeightFinal * 0.05, areaPlotHBox, ac);
+                            drawSashami(file, start, end, geneStart, representationHeightFinal * 0.05, areaPlotHBox, coveragePane);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -490,7 +458,7 @@ public class BamController implements Initializable {
         return exons;
     }
 
-    public void drawSashami(BamFile file, int start, int end, int geneViewerMinimumCoordinate, double boxHeight, HBox container, AreaChart<Number, Number> ac){
+    public void drawSashami(BamFile file, int start, int end, int geneViewerMinimumCoordinate, double boxHeight, HBox container, Pane coveragePane){
 
         long startTime = System.currentTimeMillis();
 
@@ -602,10 +570,10 @@ public class BamController implements Initializable {
         endTopCount = new HashMap<>();
         boxHeight+=(maxBottomGlobal+maxTopGlobal)*textHeight;
 
-        double plottop = boxHeight/2-ac.getPrefHeight()/2;
-        double plotbottom = plottop+ac.getPrefHeight();
+        double plottop = boxHeight/2-coveragePane.getPrefHeight()/2;
+        double plotbottom = plottop+coveragePane.getPrefHeight();
 
-        ac.setLayoutY(plottop);
+        coveragePane.setLayoutY(plottop);
 
 
 
@@ -673,8 +641,8 @@ public class BamController implements Initializable {
                     double exonEndPos = representationWidthFinal * (((double) (exonEnd.getStart() + exonEnd.getEnd()) / 2 -
                             start)) / (end - start);
 
-                    double exon2Height = ac.getPrefHeight() * (double) maxExon2Depth / max;
-                    double exon1Height = ac.getPrefHeight() * (double) maxExon1Depth / max;
+                    double exon2Height = coveragePane.getPrefHeight() * (double) maxExon2Depth / max;
+                    double exon1Height = coveragePane.getPrefHeight() * (double) maxExon1Depth / max;
                     double maxHeight = Math.max(exon1Height, exon2Height);
 
                     Line l1;

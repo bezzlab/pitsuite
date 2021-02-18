@@ -320,9 +320,8 @@ public class PeptideTableController implements Initializable {
 
         new Thread(() -> {
 
-            //TODO: uncomment
-//            selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-//                    this, peptideToFind, parentController.getConfig());
+            selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
+                    this, peptideToFind, parentController.getConfig());
 
 
             peptideTable.getItems().clear();

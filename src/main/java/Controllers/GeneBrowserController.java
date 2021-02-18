@@ -324,6 +324,8 @@ public class GeneBrowserController implements Initializable {
             }
         });
 
+        //geneExonsSeqsVBox.setStyle("-fx-background-color: #25282D");
+
 
 
         FXMLLoader drawerFXML = new FXMLLoader(App.class.getResource("/drawerControllers/drawer.fxml"));
@@ -338,6 +340,8 @@ public class GeneBrowserController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
 
 
 
@@ -999,17 +1003,12 @@ public class GeneBrowserController implements Initializable {
         currentCoordinateTextField.setText(NumberFormat.getNumberInstance(Locale.US).format(geneSlider.getLowValue())+":"+ NumberFormat.getNumberInstance(Locale.US).format(geneSlider.getHighValue()));
         filterTranscripts();
 
-        PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.2));
-
-        pauseTransition.setOnFinished(event -> {
-            if (showDepthInGeneBrowserBool && ((int) geneSlider.getLowValue()!=previousStart || (int) geneSlider.getHighValue()!=previousEnd)) {
-                bamPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
-                bedPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
-            }
-            previousStart = (int) geneSlider.getLowValue();
-            previousEnd = (int) geneSlider.getHighValue();
-        });
-        pauseTransition.play();
+        if (showDepthInGeneBrowserBool && ((int) geneSlider.getLowValue()!=previousStart || (int) geneSlider.getHighValue()!=previousEnd)) {
+            bamPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
+            bedPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
+        }
+        previousStart = (int) geneSlider.getLowValue();
+        previousEnd = (int) geneSlider.getHighValue();
 
         if (viewType.equals("transcripts")) {
             displayTranscriptCentricViewExonsOrSeq();
@@ -1487,7 +1486,7 @@ public class GeneBrowserController implements Initializable {
                                 int pepStartCoordInView = Math.max(startGenomCoord, peptideRectangleStart+1);
                                 int pepEndCoordInView = Math.min(endGenomCoord, peptideRectangleEnd);
 
-                                double totalSizeInView = endGenomCoord - startGenomCoord + 1;
+                                double totalSizeInView = endGenomCoord - startGenomCoord;
 
                                 pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
                                 pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
@@ -1581,7 +1580,7 @@ public class GeneBrowserController implements Initializable {
                             int pepStartCoordInView = Math.max(startGenomCoord, peptideRectangleStart);
                             int pepEndCoordInView = Math.min(endGenomCoord, peptideRectangleEnd);
 
-                            double totalSizeInView = endGenomCoord - startGenomCoord + 1;
+                            double totalSizeInView = endGenomCoord - startGenomCoord;
                             pepRect.setX(rectanglesAreaWidth * (getProportion(pepStartCoordInView, startGenomCoord, totalSizeInView)));
                             pepRect.setWidth(rectanglesAreaWidth * (getProportion(pepEndCoordInView, pepStartCoordInView, totalSizeInView)));
 

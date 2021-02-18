@@ -359,11 +359,6 @@ public class DgeTableController extends Controller {
 
 
 
-        redrawVolcanoButton.setOnAction(actionEvent -> {
-            volcanoPlotThread(foldChangesLinkedList, adjPValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue(), "dge" );
-        });
-
-
 
     }
 
