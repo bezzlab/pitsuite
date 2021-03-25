@@ -59,4 +59,8 @@ public class MassSpecModificationSample {
     public ArrayList<PSM> getPsms() {
         return psms;
     }
+
+    public HashSet<PTM> getPtms() {
+        return ptms;
+    }
 }

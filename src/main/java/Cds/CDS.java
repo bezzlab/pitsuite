@@ -141,6 +141,18 @@ public class CDS {
         peptides.add(peptide);
     }
 
+    public void addPeptide(String sequence, String mod, String run){
+        for(Peptide peptide: peptides){
+            if(peptide.getSequence().equals(sequence)){
+                peptide.addPsm(new PSM(run, mod));
+                return;
+            }
+        }
+        Peptide peptide = new Peptide(sequence, new MSRun(run));
+        peptide.addPsm(new PSM(run, mod));
+        peptides.add(peptide);
+    }
+
     public boolean hasPfam(){
         return pfams.size()>0;
     }

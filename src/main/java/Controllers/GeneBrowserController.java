@@ -315,6 +315,8 @@ public class GeneBrowserController implements Initializable {
         t.setFont(Font.font(16));
 
 
+
+
         browserGrid.heightProperty().addListener((observable, oldValue, newValue) -> {
             if(extraInfoTitledPane.isExpanded()){
                 extraInfoTitledPane.setPrefHeight(browserGrid.getHeight());
@@ -323,8 +325,6 @@ public class GeneBrowserController implements Initializable {
 
             }
         });
-
-        //geneExonsSeqsVBox.setStyle("-fx-background-color: #25282D");
 
 
 
@@ -340,8 +340,6 @@ public class GeneBrowserController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
 
 
 
@@ -555,6 +553,8 @@ public class GeneBrowserController implements Initializable {
         parentController = parent;
         databaseProjectName = databaseName;
         this.hostServices = hostServices;
+
+        
 
         this.allGenesReader = allGenesReader;
         displayCdsGeneBrowserMenuItem.setDisable(true);

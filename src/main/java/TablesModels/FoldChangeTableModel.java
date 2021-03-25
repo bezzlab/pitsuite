@@ -7,18 +7,18 @@ public class FoldChangeTableModel {
     private String geneSymbol;
     private String type;
     private double logFoldChange;
-    private double pVal;
+    private Double pVal;
     private boolean hasPeptideEvidence;
     private ArrayList<ProteinFoldChange> msRuns;
 
-    public FoldChangeTableModel(String geneSymbol, String type,  double logFoldChange, double pVal){
+    public FoldChangeTableModel(String geneSymbol, String type,  double logFoldChange, Double pVal){
         this.geneSymbol = geneSymbol;
         this.type = type;
         this.logFoldChange = logFoldChange;
         this.pVal = pVal;
     }
 
-    public FoldChangeTableModel(String geneSymbol,  double logFoldChange, double pVal, boolean hasPeptideEvidence) {
+    public FoldChangeTableModel(String geneSymbol,  double logFoldChange, Double pVal, boolean hasPeptideEvidence) {
         this.geneSymbol = geneSymbol;
         this.logFoldChange = logFoldChange;
         this.pVal = pVal;
@@ -41,7 +41,7 @@ public class FoldChangeTableModel {
         return logFoldChange;
     }
 
-    public double getPVal() {
+    public Double getPVal() {
         return pVal;
     }
 
@@ -49,7 +49,7 @@ public class FoldChangeTableModel {
         return hasPeptideEvidence;
     }
 
-    public double getpVal() {
+    public Double getpVal() {
         return pVal;
     }
 

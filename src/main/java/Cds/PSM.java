@@ -30,6 +30,11 @@ public class PSM {
         this.prob = prob;
     }
 
+    public PSM(String run, String modifications) {
+        this.run = run;
+        ptms = PTM.parsePtms(modifications);
+    }
+
 
 
     public PSM(String run, String modifications, double prob, String label, String file) {
@@ -92,11 +97,24 @@ public class PSM {
 
     public boolean contains(PTM ptm){
         for(PTM other: ptms){
-            if(ptm.getMassShift()==other.getMassShift() && ptm.getResidue().equals(other.getResidue())){
+            if(ptm.getMod().equals(other.getMod()) && ptm.getResidue().equals(other.getResidue())){
                 return true;
             }
         }
         return false;
+    }
+
+    public boolean contains(HashSet<PTM> ptmsToTest){
+
+        for(PTM ptm: ptmsToTest){
+            for(PTM other: ptms){
+                if(ptm.getMassShift()!=other.getMassShift() || !ptm.getResidue().equals(other.getResidue())){
+                    return false;
+                }
+            }
+
+        }
+        return true;
     }
 
     public int getSpecIndex() {

@@ -13,6 +13,7 @@ public class PTM {
     protected int pos;
     protected double massShift;
     protected boolean assigned;
+    protected String mod;
 
     public PTM(String residue, double massShift, boolean assigned) {
         this.residue = residue;
@@ -25,6 +26,11 @@ public class PTM {
         this.massShift = massShift;
         this.assigned = assigned;
         this.pos = pos;
+    }
+
+    public PTM(String residue, String mod) {
+        this.mod = mod;
+        this.residue = residue;
     }
 
     public String getResidue() {
@@ -111,4 +117,7 @@ public class PTM {
         return null;
     }
 
+    public String getMod() {
+        return mod;
+    }
 }

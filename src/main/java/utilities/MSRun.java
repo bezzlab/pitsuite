@@ -1,6 +1,7 @@
 package utilities;
 
 import Cds.PSM;
+import Cds.PTM;
 import Cds.Peptide;
 import Controllers.PeptideTableController;
 import javafx.application.Platform;
@@ -47,7 +48,8 @@ public class MSRun {
         this.type = type;
     }
 
-    public void load(Nitrite db, String output, String runName, PeptideTableController controller, Peptide peptideToFind, Config config){
+    public void load(Nitrite db, String output, String runName, PeptideTableController controller,
+                     Peptide peptideToFind, String conditionA, String conditionB){
         NitriteCollection collection = db.getCollection("peptideMap");
         Cursor cursor = collection.find(eq("run", runName));
 
@@ -78,11 +80,14 @@ public class MSRun {
                 }
             }
 
-            if(isCombined){
+            if(1>2){
                 allPeptides.put(doc.get("peptide", String.class), new Peptide(doc.get("peptide", String.class), this));
             }else{
-                allPeptides.put(doc.get("peptide", String.class), new Peptide(doc));
-                for(Object o: doc.get("psm", JSONArray.class)){
+                Peptide p = new Peptide(doc);
+                p.calculateFoldChange(conditionA, conditionB);
+
+                allPeptides.put(doc.get("peptide", String.class), p);
+                for(Object o: doc.get("psms", JSONArray.class)){
                     JSONObject psm = (JSONObject) o;
                     String label = (String) psm.get("label");
                     String file = (String) psm.get("file");
@@ -186,6 +191,8 @@ public class MSRun {
 
         HashMap<String, Double> intensities = new HashMap<>();
         int nbPeptides = 0;
+        if(Config.getRunType(name).equals("LABELFREE"))
+            nbPeptides=1;
 
         if(isCombined){
             for(MSRun subrun: subRuns){
@@ -202,7 +209,44 @@ public class MSRun {
                             intensities.replace(entry.getKey(), intensities.get(entry.getKey())+entry.getValue());
                         }
                     }
-                    nbPeptides++;
+                    if(!Config.getRunType(name).equals("LABELFREE"))
+                        nbPeptides++;
+                }
+            }
+            for(Map.Entry<String, Double> entry: intensities.entrySet()){
+                intensities.replace(entry.getKey(), intensities.get(entry.getKey())/nbPeptides);
+            }
+            return intensities;
+
+        }else{
+            return allPeptides.get(peptide).getIntensities();
+        }
+    }
+
+    public HashMap<String, Double> getIntensities(String peptide, HashSet<PTM> ptms){
+
+        HashMap<String, Double> intensities = new HashMap<>();
+        int nbPeptides = 0;
+        if(Config.getRunType(name).equals("LABELFREE"))
+            nbPeptides=1;
+
+        if(isCombined){
+            for(MSRun subrun: subRuns){
+                Peptide pep = subrun.getPeptide(peptide);
+                if(pep!=null){
+                    for(Map.Entry<String, Double> entry: pep.getIntensities(ptms).entrySet()){
+
+
+
+
+                        if(!intensities.containsKey(entry.getKey())){
+                            intensities.put(entry.getKey(), entry.getValue());
+                        }else{
+                            intensities.replace(entry.getKey(), intensities.get(entry.getKey())+entry.getValue());
+                        }
+                    }
+                    if(!Config.getRunType(name).equals("LABELFREE"))
+                        nbPeptides++;
                 }
             }
             for(Map.Entry<String, Double> entry: intensities.entrySet()){

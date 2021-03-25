@@ -165,8 +165,9 @@ public class Config {
                 return "SILAC";
             } else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("TMT")){
                 return "TMT";
+            }else{
+                return "LABELFREE";
             }
-            return null;
         }
 
     }
@@ -198,6 +199,31 @@ public class Config {
 
     public static boolean isReferenceGuided(){
         return config.has("reference_fasta");
+    }
+
+    public static String getRunOrLabelCondition(String runName){
+
+        if(getRunType(runName).equals("LABELFREE")){
+            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).getString("condition");
+        }
+        return null;
+    }
+
+    public static ArrayList<String> getSubRuns(String runName){
+        ArrayList<String> subRuns = new ArrayList<>();
+        for(Object o :config.getJSONObject("mzml").getJSONObject("combine")
+                .getJSONObject(runName).getJSONArray("runs")){
+            subRuns.add((String) o);
+        }
+        return subRuns;
+    }
+
+    public static boolean haveReplicates(String[] conditions){
+        for(String condition: conditions){
+            if (getSamplesInCondition(condition).size()==1)
+                return false;
+        }
+        return true;
     }
 }
 

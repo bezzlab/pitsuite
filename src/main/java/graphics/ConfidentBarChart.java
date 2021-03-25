@@ -16,8 +16,10 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import javafx.util.Pair;
 
 import java.util.*;
+import java.util.function.DoublePredicate;
 
 public class ConfidentBarChart extends Pane {
 
@@ -46,6 +48,8 @@ public class ConfidentBarChart extends Pane {
             "#cda4de","#8e4585","#1f75fe","#1a4876","#fe4eda","#c8385a","#ff7538"};
 
     String title;
+
+    Pair<Double, String> horizontalLineAt;
 
 
 
@@ -116,7 +120,9 @@ public class ConfidentBarChart extends Pane {
                  else{
                     double[] values = entry.getValue().stream().mapToDouble(val -> val).toArray();
                     Arrays.sort(values);
-                    if (values.length % 2 == 0)
+                    if(values.length==0)
+                        agregatedValue = 0.;
+                    else if (values.length % 2 == 0)
                         agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
                     else
                         agregatedValue = values[values.length/2];
@@ -235,13 +241,16 @@ public class ConfidentBarChart extends Pane {
         for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
             for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
 
-                Double agregatedValue;
+                double agregatedValue;
                 if(meanOrMedian.equals("mean"))
                     agregatedValue = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
                 else{
-                    double[] values = entry.getValue().stream().mapToDouble(val -> val).toArray();
+                    double[] values = entry.getValue().stream().mapToDouble(val -> val)
+                            .filter((d) -> !Double.isNaN(d)).toArray();
                     Arrays.sort(values);
-                    if (values.length % 2 == 0)
+                    if (values.length == 0)
+                        agregatedValue = 0.;
+                    else if (values.length % 2 == 0)
                         agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
                     else
                         agregatedValue = values[values.length/2];
@@ -342,6 +351,17 @@ public class ConfidentBarChart extends Pane {
             legend.setX(this.getWidth()/2 - legend.getLayoutBounds().getWidth()/2);
             legend.setY(80);
             xAxisPane.getChildren().add(legend);
+        }
+
+
+        if (horizontalLineAt!=null){
+            Line line = new Line();
+            line.setStartX(0);
+            line.setEndX(offsetX);
+            double lineValue = horizontalLineAt.getKey();
+            line.setStartY(height - (lineValue /(max-min))*height);
+            line.setEndY(height - (lineValue /(max-min))*height);
+            dataPane.getChildren().add(line);
         }
 
 
@@ -638,6 +658,10 @@ public class ConfidentBarChart extends Pane {
 
     public void setReference(String ref){
         this.reference = ref;
+    }
+
+    public void drawHorizontalLineAt(Double value, String label){
+        horizontalLineAt = new Pair<>(value, label);
     }
 
 

@@ -13,10 +13,7 @@ import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.chart.*;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
@@ -85,6 +82,8 @@ public class PeptideTableController implements Initializable {
     public AnchorPane spectrumViewer;
     @FXML
     public BarChart intensitiesChart;
+    public ComboBox<String> condACombobox;
+    public ComboBox<String> condBCombobox;
     @FXML
     private TableColumn<MSRun, String> peptideSampleTableSampleColumn;
     @FXML
@@ -221,6 +220,17 @@ public class PeptideTableController implements Initializable {
                             psmTable.getItems().add(psm);
                         }
 
+                        HashMap<String, Double> intensities = selectedRun.getIntensities(peptideTable.getSelectionModel()
+                                        .getSelectedItem().getSequence(), rowData.getPtms());
+                        XYChart.Series series =  new XYChart.Series();
+                        for(Map.Entry<String, Double> entry: intensities.entrySet()){
+                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
+                        }
+
+
+                        intensitiesChart.getData().clear();
+                        intensitiesChart.getData().add(series);
+
                     }
 
                 }
@@ -316,17 +326,28 @@ public class PeptideTableController implements Initializable {
 
         selectedRun = new MSRun(runCombobox.getSelectionModel().getSelectedItem(), Config.getOutputPath());
 
-
-
         new Thread(() -> {
 
+            HashSet<String> conditions = new HashSet<>();
+            for ( String subrun : Config.getSubRuns(selectedRun.getName())){
+                conditions.add(Config.getRunOrLabelCondition(subrun));
+
+            }
+            condACombobox.getItems().addAll(conditions);
+            condBCombobox.getItems().addAll(conditions);
+
+
+            condACombobox.getSelectionModel().select(0);
+            condBCombobox.getSelectionModel().select(1);
+
             selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                    this, peptideToFind, parentController.getConfig());
+                    this, peptideToFind,
+                    condACombobox.getSelectionModel().getSelectedItem(), condBCombobox.getSelectionModel().getSelectedItem());
 
 
             peptideTable.getItems().clear();
             peptideTable.getItems().addAll(selectedRun.getAllPeptides());
-
+            allPeptides = new ArrayList<>(selectedRun.getAllPeptides());
 
         }).start();
 
@@ -854,10 +875,10 @@ public class PeptideTableController implements Initializable {
     }
 
     private void populateSuggestedPtms(){
-        suggestedPTMFilterTable.getItems().add(new PTM("S", 79.96633, true));
-        suggestedPTMFilterTable.getItems().add(new PTM("T", 79.96633, true));
-        suggestedPTMFilterTable.getItems().add(new PTM("Y", 79.96633, true));
-        suggestedPTMFilterTable.getItems().add(new PTM("M", 15.9949, true));
+        suggestedPTMFilterTable.getItems().add(new PTM("S", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("T", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("Y", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("M", "(Phospho (STY))"));
     }
 
     @FXML

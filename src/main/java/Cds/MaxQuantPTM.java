@@ -7,12 +7,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MaxQuantPTM extends PTM{
+
+
     public MaxQuantPTM(String residue, double massShift, boolean assigned) {
         super(residue, massShift, assigned);
     }
 
-    public MaxQuantPTM(String residue, int pos, double massShift, boolean assigned) {
+    public MaxQuantPTM(String mod, String residue, int pos, double massShift, boolean assigned) {
         super(residue, pos, massShift, assigned);
+        this.mod = mod;
     }
 
 
@@ -20,17 +23,16 @@ public class MaxQuantPTM extends PTM{
         HashSet<PTM> ptms = new HashSet<>();
 
 
-        Pattern pattern = Pattern.compile("[A-Z]*(\\(.*?\\)\\))[A-Z]*");
+        Pattern pattern = Pattern.compile("([A-Z])(\\(.*?\\)\\))[A-Z]*?");
         Matcher matcher = pattern.matcher(modsStr);
 
         int charOffset = 1;
-        if(matcher.find()){
-            for (int i = 0; i < matcher.groupCount(); i++) {
-                String mod = matcher.group(i+1);
-                int pos = matcher.start(i+1) - charOffset;
-                ptms.add(new MaxQuantPTM(mod, pos, 2, true));
-                charOffset+=mod.length();
-            }
+        while(matcher.find()){
+            String residue = matcher.group(1);
+            String mod = matcher.group(2);
+            int pos = matcher.start(1) + 1 - charOffset;
+            ptms.add(new MaxQuantPTM(mod, residue, pos, 2, true));
+            charOffset+=mod.length();
         }
 
         return ptms;
@@ -57,12 +59,19 @@ public class MaxQuantPTM extends PTM{
     }
 
     public String getName(){
-        if(residue.contains("Oxidation (M)")){
+        if(mod.contains("Oxidation (M)")){
             return "Oxidation of M";
-        }else if(residue.contains("Acetyl (Protein N-term)")){
+        }else if(mod.contains("Acetyl (Protein N-term)")){
             return "Acetylation of Protein N-terminal";
-        }else{
+        }else if(mod.contains("Phospho")){
+            return "Phosphorylation";
+        }
+        else{
             return "Unknown modification";
         }
+    }
+
+    public String toString(){
+        return getName()+"("+residue+pos+")";
     }
 }

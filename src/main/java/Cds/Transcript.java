@@ -124,8 +124,8 @@ public class Transcript {
                         JSONArray peptides = (JSONArray) ((JSONObject) transcriptCds.get(key)).get("peptides");
                         for (Object pepObj : peptides) {
                             JSONObject pepO = (JSONObject) pepObj;
-                            cds.addPeptide((String) pepO.get("sequence"),(String)  pepO.get("mod"), (double) pepO.get("probability"),
-                                    (String) pepO.get("run"), (String) pepO.get("condition"), (String)  pepO.get("sample"));
+
+                            cds.addPeptide((String) pepO.get("sequence"), (String) pepO.get("mod"), (String) pepO.get("run"));
                         }
                     }
 

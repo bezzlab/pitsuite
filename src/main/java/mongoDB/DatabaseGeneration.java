@@ -576,10 +576,10 @@ public class DatabaseGeneration {
                     peptideMapDoc.put("peptide", key);
                     peptideMapDoc.put("run", runName);
                     peptideMapDoc.put("transcripts", ((JSONObject) jsonObject.get(key)).get("transcripts"));
-                    peptideMapDoc.put("psm", ((JSONObject) jsonObject.get(key)).get("psm"));
+                    peptideMapDoc.put("psms", ((JSONObject) jsonObject.get(key)).get("psms"));
                     peptideMapDoc.put("probability", ((JSONObject) jsonObject.get(key)).get("probability"));
-                    if(((JSONObject) jsonObject.get(key)).containsKey("intensities")){
-                        peptideMapDoc.put("intensities", ((JSONObject) jsonObject.get(key)).get("intensities"));
+                    if(((JSONObject) jsonObject.get(key)).containsKey("intensity")){
+                        peptideMapDoc.put("intensity", ((JSONObject) jsonObject.get(key)).get("intensity"));
                     }
 
                     peptidesDocsToDbList.add(peptideMapDoc);
@@ -922,7 +922,8 @@ public class DatabaseGeneration {
                 currCollection.insert(splicDocsArray);
             }
 
-            currCollection.createIndex("event", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            currCollection.
+                    createIndex("event", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -1044,7 +1045,9 @@ public class DatabaseGeneration {
                 currDocument.put("geneName", values[0]);
                 currDocument.put("event", values[1]);
                 currDocument.put("deltaPsi", Double.valueOf(values[2]));
-                currDocument.put("pval", Double.valueOf(values[3]));
+
+                if(!values[3].equals(""))
+                    currDocument.put("pval", Double.valueOf(values[3]));
                 currDocument.put("eventType", values[4]);
                 currDocument.put("pepEvidence", Boolean.valueOf(values[5]));
                 //currDocument.put("geneRatioDiff", Double.valueOf(values[6]));

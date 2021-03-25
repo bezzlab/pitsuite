@@ -1,6 +1,7 @@
 package Controllers;
 
 import FileReading.AllGenesReader;
+import Singletons.Config;
 import Singletons.Database;
 import TablesModels.SplicingEventsTableModel;
 import TablesModels.Variation;
@@ -339,7 +340,9 @@ public class SplicingTableController extends Controller {
             // filters
             List<Filter> filters = new ArrayList<>();
 
-            filters.add(lte("pval", pvalThreshold));
+            if(Config.haveReplicates(comparisonSplicingCombobox.getValue().split("vs")))
+                filters.add(lte("pval", pvalThreshold));
+
             if (geneSymbolFilter.length() > 0 ) { // TODO: change this to check if in list
                 filters.add(eq("geneName", geneSymbolFilter));
             }
@@ -702,7 +705,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd =  Integer.parseInt(fourthPartSplit.get(0));
 
-                drawAFPosALNeg(currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
+                drawAFPosALNeg(spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
             } else  if (eventType.equals("AL")) {
                 // eg. "AL:chr1:1060393-1061020:1061117:1060393-1065830:1066274:+";
                 //      0  1    2               3       4         1S     5 E
@@ -714,7 +717,7 @@ public class SplicingTableController extends Controller {
                 currentExonStart = Integer.parseInt(thidPartSplit.get(1));
                 currentExonEnd = Integer.parseInt(keyElementsColonSplit.get(5));
 
-                drawALPosAFNeg(firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
+                drawALPosAFNeg(spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
             }
 
         } else { // reverse strand
@@ -789,7 +792,7 @@ public class SplicingTableController extends Controller {
                 currentExonStart =  Integer.parseInt(thirdPartSplit.get(1));
                 currentExonEnd =  Integer.parseInt(keyElementsColonSplit.get(5));
 
-                drawALPosAFNeg(firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
+                drawALPosAFNeg(spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
             } else  if (eventType.equals("AL")) {
                 // eg. "AL:chr2:9405684:9406905-9408113:9407572:9407598-9408113:-";
                 //      0  1    2  S    3  0E           4       5
@@ -801,7 +804,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd = Integer.parseInt(fourthPartSplit.get(0));
 
-                drawAFPosALNeg(currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
+                drawAFPosALNeg(spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
             }
 
         }
@@ -912,12 +915,18 @@ public class SplicingTableController extends Controller {
                         .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
 
                 for(Object channel: intensities.keySet()){
-                    proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
-                }
+                    if(intensities.get(channel)!=null){
+                        proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
+                    }
 
+                }
+                
                 bc.getData().add(proteinCorrectedRatiosSeries);
                 GridPane.setColumnIndex(bc, 0);
                 representationChartsBox.getChildren().add(bc);
+
+
+
 
 
                 if(doc.containsKey("proteinPeptidesRatios") &&
@@ -1566,7 +1575,7 @@ public class SplicingTableController extends Controller {
     }
 
 
-    private void drawAFPosALNeg(int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd, int lastExonStart){
+    private void drawAFPosALNeg(String eventID, int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd, int lastExonStart){
 
         exonRepresentationPane.getChildren().clear();
         Group group = new Group();
@@ -1578,7 +1587,7 @@ public class SplicingTableController extends Controller {
         text.setFont(Font.font("monospace", fontSize));
         double fontHeight  = text.getLayoutBounds().getHeight();
         double textWidth;
-        int yTop = 30;
+        int yTop = 40;
         int yBottom = 60;
         int yMax = yTop -  20;
         int yMin = yBottom + 20;
@@ -1592,18 +1601,18 @@ public class SplicingTableController extends Controller {
         // exons
 
         Path currExon = new Path(new MoveTo(perctToVal(0,prefW),yValTop), //  left top
-                new LineTo(perctToVal(40,prefW),yValTop), // right top
-                new LineTo(perctToVal(40,prefW),yValBottom),
+                new LineTo(perctToVal(20,prefW),yValTop), // right top
+                new LineTo(perctToVal(20,prefW),yValBottom),
                 new LineTo(perctToVal(0,prefW),yValBottom),
                 new ClosePath());
         currExon.setFill(BLACK);
 
         group.getChildren().add(currExon);
 
-        Path nextExon = new Path(new MoveTo(perctToVal(50,prefW), yValTop),
-                new LineTo(perctToVal(80,prefW), yValTop), // top right
-                new LineTo(perctToVal(80,prefW), yValBottom), // bottom right
-                new LineTo(perctToVal(50,prefW),yValBottom),
+        Path nextExon = new Path(new MoveTo(perctToVal(35,prefW), yValTop),
+                new LineTo(perctToVal(65,prefW), yValTop), // top right
+                new LineTo(perctToVal(65,prefW), yValBottom), // bottom right
+                new LineTo(perctToVal(35,prefW),yValBottom),
                 new ClosePath());
 //
         nextExon.setFill(LIGHTGRAY);
@@ -1611,8 +1620,8 @@ public class SplicingTableController extends Controller {
 
 
         Path lastExon = new Path(new MoveTo(perctToVal(100,prefW),yValTop),
-                new LineTo(perctToVal(90,prefW),yValTop),
-                new LineTo(perctToVal(90,prefW),yValBottom), // left bottom
+                new LineTo(perctToVal(80,prefW),yValTop),
+                new LineTo(perctToVal(80,prefW),yValBottom), // left bottom
                 new LineTo(perctToVal(100,prefW),yValBottom));
         lastExon.setFill(WHITE);
 
@@ -1632,7 +1641,7 @@ public class SplicingTableController extends Controller {
         text = new Text(Integer.toString(currentExonEnd));
         text.setFont(Font.font("monospace", fontSize));
         textWidth = text.getLayoutBounds().getWidth();
-        text.setX(perctToVal(40,prefW) - (textWidth / 2.0));
+        text.setX(perctToVal(35,prefW) - (textWidth / 2.0));
         text.setY(textTopYVal );
         group.getChildren().add(text);
 
@@ -1640,7 +1649,7 @@ public class SplicingTableController extends Controller {
         text = new Text(Integer.toString(nextExonStart));
         text.setFont(Font.font("monospace", fontSize));
         textWidth = text.getLayoutBounds().getWidth();
-        text.setX(perctToVal(50,prefW) - (textWidth / 2.0));
+        text.setX(perctToVal(65,prefW) - (textWidth / 2.0));
         text.setY(textBottomYVal);
         group.getChildren().add(text);
 
@@ -1652,35 +1661,31 @@ public class SplicingTableController extends Controller {
         group.getChildren().add(text);
 
 
-        text = new Text(Integer.toString(lastExonStart));
-        text.setFont(Font.font("monospace", fontSize));
-        textWidth = text.getLayoutBounds().getWidth();
-        text.setX(perctToVal(90,prefW) - (textWidth / 2.0));
-        text.setY(textBottomYVal);
-        group.getChildren().add(text);
-
 
         // unions
-        Path union1Top = new Path(new MoveTo(perctToVal(40,prefW), yValTop),
-                new LineTo(perctToVal((40 + (90-40)/2),prefW), yValMax),
-                new LineTo(perctToVal(90,prefW), yValTop)); // end
+        Path union1Top = new Path(new MoveTo(perctToVal(20,prefW), yValTop),
+                new LineTo(perctToVal((20 + (80-20)/2),prefW), yValMax),
+                new LineTo(perctToVal(80,prefW), yValTop)); // end
 
         group.getChildren().add(union1Top);
 
-        Path union1Bottom = new Path(new MoveTo(perctToVal(80,prefW),yValBottom),
-                new LineTo(perctToVal((80 + (90-80)/2),prefW),yValMin),
-                new LineTo(perctToVal(90,prefW),yValBottom));
+        Path union1Bottom = new Path(new MoveTo(perctToVal(65,prefW),yValBottom),
+                new LineTo(perctToVal((65 + (80-65)/2),prefW),yValMin),
+                new LineTo(perctToVal(80,prefW),yValBottom));
 
         group.getChildren().add(union1Bottom);
 
 
         // add the representation
         exonRepresentationPane.getChildren().add(group);
+
+        addPeptideToRepresentation(eventID, group, perctToVal(35,prefW), perctToVal(65,prefW), 0, perctToVal(20,prefW),
+                perctToVal(80,prefW), perctToVal(100,prefW));
     }
 
 
 
-    private void drawALPosAFNeg(int firstExonEnd, int prevExonStart, int prevExonEnd, int currentExonStart, int currentExonEnd){
+    private void drawALPosAFNeg(String eventID, int firstExonEnd, int prevExonStart, int prevExonEnd, int currentExonStart, int currentExonEnd){
 
         exonRepresentationPane.getChildren().clear();
         Group group = new Group();
@@ -1786,6 +1791,9 @@ public class SplicingTableController extends Controller {
 
         // add the representation
         exonRepresentationPane.getChildren().add(group);
+
+        addPeptideToRepresentation(eventID, group, perctToVal(35,prefW), perctToVal(65,prefW), 0, perctToVal(20,prefW),
+                perctToVal(80,prefW), perctToVal(100,prefW));
     }
 
 

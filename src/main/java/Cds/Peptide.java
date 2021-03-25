@@ -1,14 +1,12 @@
 package Cds;
 
+import Singletons.Config;
 import org.dizitart.no2.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utilities.MSRun;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 
 public class Peptide {
 
@@ -32,6 +30,7 @@ public class Peptide {
         this.run = run;
     }
 
+
     public Peptide(Document document){
         this.sequence = document.get("peptide", String.class);
         this.probability = (double) document.get("probability");
@@ -39,7 +38,7 @@ public class Peptide {
 
         psms = new ArrayList<>();
 
-        JSONArray docPsms = document.get("psm", JSONArray.class);
+        JSONArray docPsms = document.get("psms", JSONArray.class);
         for(Object o: docPsms){
             JSONObject psm = (JSONObject) o;
 
@@ -48,8 +47,16 @@ public class Peptide {
                 psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
                         (String) psm.get("label"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file")));
             }else{
-                psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
-                        Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file")));
+                if (psm.containsKey("intensity")){
+                    HashMap<String, Double> intensity = new HashMap<>();
+                    intensity.put((String) psm.get("run"), (Double) psm.get("intensity"));
+//                    psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
+//                            Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"), intensity));
+                }else{
+                    psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
+                            Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file")));
+                }
+
             }
 
 
@@ -58,7 +65,7 @@ public class Peptide {
         JSONObject transcripts = document.get("transcripts", JSONObject.class);
         genes = new HashSet<>(transcripts.keySet());
 
-        JSONObject jsonIntensities = document.get("intensities", JSONObject.class);
+        JSONObject jsonIntensities = document.get("intensity", JSONObject.class);
         intensities = (HashMap) jsonIntensities;
 
     }
@@ -68,17 +75,33 @@ public class Peptide {
 
         psms = new ArrayList<>();
 
-        JSONArray docPsms = document.get("psm", JSONArray.class);
+        JSONArray docPsms = document.get("psms", JSONArray.class);
         for(Object o: docPsms){
             JSONObject psm = (JSONObject) o;
 
 
             if(psm.containsKey("run") && psm.get("run").equals(runName)){
 
-                if(psm.containsKey("intensities")){
-                    psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
-                            (String) psm.get("run"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"),
-                            (HashMap) psm.get("intensities")));
+                if(psm.containsKey("intensity")){
+
+                    if(Config.getRunType(runName).equals("LABELFREE")){
+                        HashMap<String, Double> intensity = new HashMap<>();
+
+                        if (psm.get("intensity").getClass().equals(Double.class)){
+                            intensity.put(runName, (Double) psm.get("intensity"));
+                        }else{
+                            intensity.put(runName, ((Long) psm.get("intensity")).doubleValue());
+                        }
+
+                        psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
+                                (String) psm.get("run"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"),
+                                intensity));
+                    }else{
+                        psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
+                                (String) psm.get("run"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file"),
+                                (HashMap) psm.get("intensity")));
+                    }
+
                 }else{
                     psms.add(new PSM((String) psm.get("mod"), (double) psm.get("probability"),
                             (String) psm.get("label"), Math.toIntExact((Long) psm.get("specIndex")), (String) psm.get("file")));
@@ -95,8 +118,22 @@ public class Peptide {
         genes = new HashSet<>(transcripts.keySet());
 
         //intensities = new HashMap<>();
-        JSONObject jsonIntensities = (JSONObject) document.get("intensities", JSONObject.class).get(runName);
-        intensities = (HashMap) jsonIntensities;
+        if(Config.getRunType(runName).equals("LABELFREE")){
+            JSONObject jsonIntensities = document.get("intensity", JSONObject.class);
+
+            intensities = new HashMap<>();
+            for(Object key: jsonIntensities.keySet()){
+                if(jsonIntensities.get(key).getClass().equals(Double.class)){
+                    intensities.put((String) key, (Double) jsonIntensities.get(key));
+                }else{
+                    intensities.put((String) key, ((Long) jsonIntensities.get(key)).doubleValue());
+                }
+            }
+        }else{
+            JSONObject jsonIntensities = (JSONObject) document.get("intensity", JSONObject.class).get(runName);
+            intensities = (HashMap) jsonIntensities;
+        }
+
 //        for(Object o:  jsonIntensities.entrySet()){
 //            Map.Entry<String, String> entry = (Map.Entry<String, String>) o;
 //
@@ -105,7 +142,9 @@ public class Peptide {
 
         if(run.getType().equals("SILAC")){
             this.probability = (Double) document.get("probability");
-        }else{
+        }else if(run.getType().equals("LABELFREE")){
+            this.probability = (Double) document.get("probability");
+        }else {
             this.probability = (Double) document.get("probability", JSONObject.class).get(runName);
         }
 
@@ -176,8 +215,45 @@ public class Peptide {
         return genes;
     }
 
+//    public HashMap<String, Double> getIntensities() {
+//        return intensities;
+//    }
     public HashMap<String, Double> getIntensities() {
-        return intensities;
+        HashMap<String, Double> psmIntensities = new HashMap<>();
+
+        for(PSM psm: psms){
+            for(Map.Entry<String, Double> entry: psm.getIntensities().entrySet()){
+                if(!psmIntensities.containsKey(entry.getKey()))
+                    psmIntensities.put(entry.getKey(), 0.);
+                psmIntensities.replace(entry.getKey(), psmIntensities.get(entry.getKey())+entry.getValue());
+            }
+        }
+
+
+        return psmIntensities;
+
+    }
+
+    public HashMap<String, Double> getIntensities(HashSet<PTM> ptms) {
+        HashMap<String, Double> psmIntensities = new HashMap<>();
+
+        for(PSM psm: psms){
+
+            if(psm.contains(ptms)){
+                for(Map.Entry<String, Double> entry: psm.getIntensities().entrySet()){
+                    if(!psmIntensities.containsKey(entry.getKey()))
+                        psmIntensities.put(entry.getKey(), 0.);
+                    psmIntensities.replace(entry.getKey(), psmIntensities.get(entry.getKey())+entry.getValue());
+                }
+            }
+
+
+
+        }
+
+
+        return psmIntensities;
+
     }
 
     public String getRunName(){
@@ -193,6 +269,46 @@ public class Peptide {
 
     public boolean hasPSM(){
         return psms.size()>0;
+    }
+
+    public double calculateFoldChange(String condA, String condB){
+        ArrayList<Double> condAIntensities = new ArrayList<>();
+        ArrayList<Double> condBIntensities = new ArrayList<>();
+
+        HashMap<String, Double> intensities = getIntensities();
+
+        if(run.isCombined()){
+            if(Config.getRunType(run.getName()).equals("LABELFREE")){
+                for(MSRun subrun: run.getRuns()){
+                    if(Config.getRunOrLabelCondition(subrun.getName()).equals(condA)){
+                        condAIntensities.add(intensities.get(subrun.getName()));
+                    }else if(Config.getRunOrLabelCondition(subrun.getName()).equals(condB)){
+                        condBIntensities.add(intensities.get(subrun.getName()));
+                    }
+                }
+
+                OptionalDouble averageA = condAIntensities
+                        .stream()
+                        .mapToDouble(a -> a)
+                        .average();
+                OptionalDouble averageB = condBIntensities
+                        .stream()
+                        .mapToDouble(a -> a)
+                        .average();
+
+                if(averageA.isPresent() && averageB.isPresent()){
+                    if(averageB.getAsDouble()!=0.){
+                        return averageA.getAsDouble()/averageB.getAsDouble();
+                    }
+                }
+            }
+        }else{
+
+        }
+
+        return 0.;
+
+
     }
 
 

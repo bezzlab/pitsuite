@@ -18,6 +18,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.dizitart.no2.*;
 import org.dizitart.no2.filters.Filters;
@@ -38,9 +39,9 @@ public class DgeTableController extends Controller {
     private JFXTextField geneFilterFoldChangeTextField;
 
     @FXML
-    private JFXComboBox dgeComparisonCombobox;
+    private JFXComboBox<String> dgeComparisonCombobox;
     @FXML
-    private JFXComboBox protComparisonCombobox;
+    private JFXComboBox<String> protComparisonCombobox;
     @FXML
     private Spinner<Double> adjPValFilterFoldChangeSpinner;
     @FXML
@@ -230,7 +231,9 @@ public class DgeTableController extends Controller {
                             }
 
                             keggController.setKeggGeneTable(rowData.getGeneSymbol());
-                            blastController.selectGene(rowData.getGeneSymbol());
+
+                            if(!Config.isReferenceGuided())
+                                blastController.selectGene(rowData.getGeneSymbol());
 
 
 
@@ -337,44 +340,17 @@ public class DgeTableController extends Controller {
             filterFoldChangeTable();
         });
 
-//        // set Filtering options when filtering options are modified
-//        geneFilterFoldChangeTextField.textProperty().addListener((observableValue, s, t1) -> {
-//            filterFoldChangeTable(); // generic filtering function
-//        });
-//
-//        adjPValFilterFoldChangeSpinner.valueProperty().addListener((observableValue, o, t1) -> {
-//            filterFoldChangeTable();// generic filtering function
-//            // display Volcano plot
-////            volcanoPlotThread(foldChangesArray, pValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue() );
-//
-//        });
-//
-//        foldFilterFoldChangeSpinner.valueProperty().addListener((observableValue, o, t1) -> {
-//            filterFoldChangeTable();// generic filtering function
-//        });
-//
-//        peptideEvidenceCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> filterFoldChangeTable());
-
-
-
-
-
-
     }
 
 
-    public void filterFoldChangeTableThread(){
-        new Thread(() -> {
-            filterFoldChangeTable();
-        }).start();
-    }
+
     public void filterFoldChangeTable(){
         foldChangesLinkedList = new LinkedList<>();
 
         ArrayList<String> genesWithGoFilterList = (!goTermsController.isGoLoaded())?null:goTermsController.genesWithGoTermsForFilter();
 
 
-        String dgeCollectionName = dgeComparisonCombobox.getValue().toString() + "_dge";
+        String dgeCollectionName = dgeComparisonCombobox.getValue() + "_dge";
         boolean filterByProt = protFilterCheckbox.isSelected();
         boolean hasPeptideEvidenceFilter = peptideEvidenceCheckbox.isSelected();
         Double pvalThreshold = adjPValFilterFoldChangeSpinner.getValue();
@@ -393,9 +369,18 @@ public class DgeTableController extends Controller {
         }
 //        filters.add(eq("type", "lncRNA"));
 
-        filters.add(and(lte("padj", pvalThreshold), not(
-                and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
-        )));
+
+
+        if(Config.haveReplicates(dgeComparisonCombobox.getValue().split("vs"))){
+            filters.add(and(lte("padj", pvalThreshold), not(
+                    and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
+            )));
+        }else{
+            filters.add(not(and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold)
+            )));
+        }
+
+
 
         if(hasPeptideEvidenceFilter){
             filters.add( eq("hasPeptideEvidence", true));
@@ -436,8 +421,19 @@ public class DgeTableController extends Controller {
                 }
 
 
-                double dgeFoldChange = (double) dgeDoc.get("log2fc");
-                double dgePVal = (double) dgeDoc.get("padj");
+                double dgeFoldChange;
+                if(dgeDoc.get("log2fc") instanceof Long)
+                    dgeFoldChange = ((Long) dgeDoc.get("log2fc")).doubleValue();
+                else
+                    dgeFoldChange = (double) dgeDoc.get("log2fc");
+
+                Double dgePVal=null;
+                if(dgeDoc.containsKey("padj")) {
+                    if (dgeDoc.get("padj") instanceof Long)
+                        dgePVal = ((Long) dgeDoc.get("padj")).doubleValue();
+                    else
+                        dgePVal = (double) dgeDoc.get("padj");
+                }
                 //boolean hasPeptideEvidence = (boolean) dgeDoc.get("hasPeptideEvidence");
                 boolean hasPeptideEvidence = false;
 
@@ -450,23 +446,42 @@ public class DgeTableController extends Controller {
                     org.json.simple.JSONObject runsObj = (org.json.simple.JSONObject) dgeDoc.get("ms");
                     for(Object runName: runsObj.keySet()){
 
-                        msRuns.add((String) runName);
-                        org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
+                        if(runsObj.get(runName) instanceof org.json.simple.JSONObject) {
 
-                        Double padj=null;
-                        if(run.containsKey("padj")){
-                            padj = (Double) run.get("padj");
-                        }
+                            msRuns.add((String) runName);
+                            org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
 
-                        if(filterByProt && (padj==null || padj>pvalThreshold)){
-                            addToTable=false;
-                            break;
-                        }
+                            Double padj = null;
+                            if (run.containsKey("padj")) {
 
-                        try{
-                            currFoldChange.addMsRun((String) runName, (Double) run.get("log2fc"), padj);
-                        }catch (ClassCastException e){
-                            e.printStackTrace();
+                                if (run.get("padj") instanceof Long && ((Long) run.get("padj") == 0))
+                                    padj = 0.;
+                                else
+                                    padj = (Double) run.get("padj");
+                            }
+
+                            if (filterByProt && (padj == null || padj > pvalThreshold)) {
+                                addToTable = false;
+                                break;
+                            }
+
+                            try {
+                                Double log2fc = null;
+                                if (run.get("log2fc") instanceof String) {
+                                    if (run.get("log2fc").equals("-Inf")) {
+                                        log2fc = Double.NEGATIVE_INFINITY;
+                                    } else if (run.get("log2fc").equals("Inf")) {
+                                        log2fc = Double.POSITIVE_INFINITY;
+                                    } else {
+                                        log2fc = 0.;
+                                    }
+                                } else {
+                                    log2fc = (Double) run.get("log2fc");
+                                }
+                                currFoldChange.addMsRun((String) runName, log2fc, padj);
+                            } catch (ClassCastException e) {
+                                e.printStackTrace();
+                            }
                         }
 
                     }
@@ -732,28 +747,6 @@ public class DgeTableController extends Controller {
 
 
 
-    private void setHeatMapImageView(String dgeComparison) {
-        String dgeComparisonString = dgeComparison.split("_")[0];
-
-
-
-        NitriteCollection pngHeatMapPathsCollection = Database.getDb().getCollection("pngHeatMapPaths");
-
-        Document queryHeatMapDoc = new Document();
-        queryHeatMapDoc.put("comparison", dgeComparisonString);
-
-
-
-        Document pngPathDoc = pngHeatMapPathsCollection.find(Filters.eq("comparison", dgeComparisonString)).firstOrDefault();
-
-        if (pngPathDoc.get("pngHeatMapPath") != null) {
-            String pngPathString = (String) pngPathDoc.get("pngHeatMapPath");
-            Image heatMap = new Image("file:" + pngPathString);
-            heatMapImageView.setImage(heatMap);
-        }
-
-    }
-
     private void drawSelectedGeneReadCount(String gene){
 
         NitriteCollection collection = Database.getDb().getCollection("readCounts");
@@ -818,7 +811,7 @@ public class DgeTableController extends Controller {
 
 
 
-        NitriteCollection collection = Database.getDb().getCollection("proteinQuant");
+        NitriteCollection collection = Database.getDb().getCollection("genePeptides");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
         final CategoryAxis xAxisbarChart = new CategoryAxis();
@@ -846,25 +839,24 @@ public class DgeTableController extends Controller {
 //        allSeriesAbundance.add(new XYChart.Data(conditionKey+" "+sampleKey, condition.getInt(sampleKey));
 
 
-        boolean isSILAC = true;
+        boolean isSILAC = false;
 
         ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
         proteinConfidentBarChart.setMeanOrMedian("median");
         proteinConfidentBarChart.setTitle("Differencial protein abundance");
         proteinConfidentBarChart.setMin(0);
-        proteinConfidentBarChart.setReference("Nsi");
+        proteinConfidentBarChart.setReference("HEK293T_HeV_RNAseq_0hrsvsHEK293T_HeV_RNAseq_8hrs");
 
         for(Document result: documents){
 
 
-            if(isSILAC){
+            if(Config.getRunType(protComparisonCombobox.getValue()).equals("SILAC")){
 
                 JSONObject res = new JSONObject(result).getJSONObject("peptides");
-                String reference = "Nsi";
 
                 HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
                 for(String peptide: res.keySet()){
-                    JSONObject peptideObj = res.getJSONObject(peptide);
+                    JSONObject peptideObj = res.getJSONObject(peptide).getJSONObject("intensity");
                     for(String subRun: peptideObj.keySet()){
 
                         if(!groups.containsKey(subRun)){
@@ -879,10 +871,10 @@ public class DgeTableController extends Controller {
                                 groups.get(subRun).put(condition, new ArrayList<>());
                             }
 
-                            if(condition.equals("Nsi")){
+                            if(condition.equals("HEK293T_HeV_RNAseq_0hrs")){
                                 groups.get(subRun).get(condition).add(1.);
                             }else{
-                                double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble("Nsi");
+                                double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble("HEK293T_HeV_RNAseq_0hrs");
                                 if(ratio!=Double.POSITIVE_INFINITY){
                                     groups.get(subRun).get(condition)
                                             .add(ratio);
@@ -906,7 +898,7 @@ public class DgeTableController extends Controller {
                     peptideSeries.setName(Peptide);
                     allPeptidesSeries.add(peptideSeries);
 
-                    JSONObject peptideObj = res.getJSONObject(Peptide);
+                    JSONObject peptideObj = res.getJSONObject(Peptide).getJSONObject("intensity");
 
                     for (String runKey : peptideObj.keySet()) {
                         JSONObject runObject = peptideObj.getJSONObject(runKey);
@@ -923,41 +915,98 @@ public class DgeTableController extends Controller {
             }else {
 
 
-                JSONObject res = new JSONObject(result).getJSONObject("abundance");
-                int i = 0;
-                for (String conditionKey : res.keySet()) {
-                    double intensity = res.getDouble(conditionKey);
+                JSONObject res = new JSONObject(result);
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
 
-                    if (i + 1 > allSeriesAbundance.size()) {
-                        allSeriesAbundance.add(new XYChart.Series());
+
+                ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
+
+                Iterator<String> it = res.getJSONObject("peptides").getJSONObject(res.getJSONObject("peptides").keys().next())
+                        .getJSONObject("intensity").keys();
+
+                while(it.hasNext()){
+                    String run = it.next();
+                    String condition = Config.getRunOrLabelCondition(run);
+                    runsConditions.add(new Pair<>(run, condition));
+                    if(!groups.containsKey(condition)){
+                        groups.put(condition, new HashMap<>());
                     }
-                    allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, intensity));
-
                 }
 
+                runsConditions.sort(Comparator.comparing(Pair::getValue));
 
-                res = new JSONObject(result).getJSONObject("peptides");
-                for (String PSM : res.keySet()) {
+                String refCondition = runsConditions.get(0).getValue();
+
+
+
+                res = res.getJSONObject("peptides");
+                for (String peptide : res.keySet()) {
 
                     XYChart.Series peptideSeries = new XYChart.Series();
-                    peptideSeries.setName(PSM);
+                    peptideSeries.setName(peptide);
                     allPeptidesSeries.add(peptideSeries);
 
-                    JSONObject peptideObj = res.getJSONObject(PSM);
+                    ArrayList<Double> referenceIntensities = new ArrayList<>();
 
-                    for (String conditionKey : peptideObj.keySet()) {
-                        double intensity = peptideObj.getDouble(conditionKey);
-                        //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
-                        peptideSeries.getData().add(new XYChart.Data(conditionKey, intensity));
+                    for(Pair<String, String> runCondition: runsConditions){
 
+                        String run = runCondition.getKey();
+                        String condition = runCondition.getValue();
+
+                        double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
+
+                        peptideSeries.getData().add(new XYChart.Data(run, intensity));
+
+
+                        if(condition.equals(refCondition)){
+                            referenceIntensities.add(intensity);
+                        }else{
+                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
+                                    .average().getAsDouble();
+                            double ratio = intensity/referenceIntensityMean;
+                            if(!groups.get(condition).containsKey(run)) {
+                                groups.get(condition).put(run, new ArrayList<>());
+                            }
+                            if(ratio!=Double.POSITIVE_INFINITY){
+                                groups.get(condition).get(run)
+                                        .add(ratio);
+                            }
+
+                        }
                     }
+                    for(Pair<String, String> runCondition: runsConditions){
+                        if(runCondition.getValue().equals(refCondition)){
+                            String run = runCondition.getKey();
+                            String condition = runCondition.getValue();
+                            double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
+                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
+                                    .average().getAsDouble();
+                            double ratio = intensity/referenceIntensityMean;
+                            if(!groups.get(condition).containsKey(run)) {
+                                groups.get(condition).put(run, new ArrayList<>());
+                            }
+                            if(ratio!=Double.POSITIVE_INFINITY){
+                                groups.get(condition).get(run)
+                                        .add(ratio);
+                            }
+
+                        }else{
+                            break;
+                        }
+                    }
+
+
+
                 }
+                proteinConfidentBarChart.addGroups(groups);
+                proteinConfidentBarChart.setReference(refCondition);
+                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
             }
 
         }
-        for(XYChart.Series series: allSeriesAbundance){
-            barChart.getData().add(series);
-        }
+
+
+
         HBox.setHgrow(proteinConfidentBarChart, Priority.ALWAYS);
 
         selectedGeneCharts.getChildren().add(proteinConfidentBarChart);
