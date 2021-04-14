@@ -1,6 +1,5 @@
 package utilities;
 
-import Cds.PSM;
 import Cds.PTM;
 import Cds.Peptide;
 import Controllers.PeptideTableController;
@@ -72,29 +71,20 @@ public class MSRun {
         allPeptides = new HashMap<>(cursor.size());
 
         for (Document doc : cursor) {
-            Peptide peptide = null;
-            for(MSRun subRuns: subRuns){
-                Peptide tpmPep = subRuns.addPeptide(doc);
-                if(tpmPep!=null){
-                    peptide = tpmPep;
-                }
-            }
 
-            if(1>2){
-                allPeptides.put(doc.get("peptide", String.class), new Peptide(doc.get("peptide", String.class), this));
-            }else{
-                Peptide p = new Peptide(doc);
-                p.calculateFoldChange(conditionA, conditionB);
 
-                allPeptides.put(doc.get("peptide", String.class), p);
-                for(Object o: doc.get("psms", JSONArray.class)){
-                    JSONObject psm = (JSONObject) o;
-                    String label = (String) psm.get("label");
-                    String file = (String) psm.get("file");
-                    if (!mzmlIndexes.containsKey(file)){
-                        mzmlIndexes.put(file, new HashMap<>());
-                        loadIndex(output, file);
-                    }
+
+            Peptide peptide = new Peptide(doc);
+            peptide.calculateFoldChange(conditionA, conditionB);
+
+            allPeptides.put(doc.get("peptide", String.class), peptide);
+            for(Object o: doc.get("psms", JSONArray.class)){
+                JSONObject psm = (JSONObject) o;
+                String label = (String) psm.get("label");
+                String file = (String) psm.get("file");
+                if (!mzmlIndexes.containsKey(file)){
+                    mzmlIndexes.put(file, new HashMap<>());
+                    loadIndex(output, file);
                 }
             }
 
@@ -129,7 +119,6 @@ public class MSRun {
 
     public Collection<Peptide> getAllPeptides() {
 
-
         return allPeptides.values();
 
     }
@@ -142,23 +131,6 @@ public class MSRun {
         return name;
     }
 
-    public Peptide addPeptide(Document doc){
-        Peptide peptide =  new Peptide(doc, name, this);
-
-
-        for(PSM psm : peptide.getPsms()){
-            if(!mzmlIndexes.containsKey(psm.getFile())){
-                loadIndex(output, psm.getFile());
-            }
-        }
-
-        if(peptide.getProbability()!=null){
-            allPeptides.put(peptide.getSequence(), peptide);
-        }
-
-        return peptide;
-
-    }
 
     public ArrayList<MSRun> getRuns(){
         if(isCombined){
@@ -194,33 +166,35 @@ public class MSRun {
         if(Config.getRunType(name).equals("LABELFREE"))
             nbPeptides=1;
 
-        if(isCombined){
-            for(MSRun subrun: subRuns){
-                Peptide pep = subrun.getPeptide(peptide);
-                if(pep!=null){
-                    for(Map.Entry<String, Double> entry: pep.getIntensities().entrySet()){
+        return allPeptides.get(peptide).getIntensities(name);
 
-
-
-
-                        if(!intensities.containsKey(entry.getKey())){
-                            intensities.put(entry.getKey(), entry.getValue());
-                        }else{
-                            intensities.replace(entry.getKey(), intensities.get(entry.getKey())+entry.getValue());
-                        }
-                    }
-                    if(!Config.getRunType(name).equals("LABELFREE"))
-                        nbPeptides++;
-                }
-            }
-            for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                intensities.replace(entry.getKey(), intensities.get(entry.getKey())/nbPeptides);
-            }
-            return intensities;
-
-        }else{
-            return allPeptides.get(peptide).getIntensities();
-        }
+//        if(isCombined){
+//            for(MSRun subrun: subRuns){
+//                Peptide pep = subrun.getPeptide(peptide);
+//                if(pep!=null){
+//                    for(Map.Entry<String, Double> entry: pep.getIntensities(subrun.getName()).entrySet()){
+//
+//
+//
+//
+//                        if(!intensities.containsKey(entry.getKey())){
+//                            intensities.put(entry.getKey(), entry.getValue());
+//                        }else{
+//                            intensities.replace(entry.getKey(), intensities.get(entry.getKey())+entry.getValue());
+//                        }
+//                    }
+//                    if(!Config.getRunType(name).equals("LABELFREE"))
+//                        nbPeptides++;
+//                }
+//            }
+//            for(Map.Entry<String, Double> entry: intensities.entrySet()){
+//                intensities.replace(entry.getKey(), intensities.get(entry.getKey())/nbPeptides);
+//            }
+//            return intensities;
+//
+//        }else{
+//            return allPeptides.get(peptide).getIntensities(name);
+//        }
     }
 
     public HashMap<String, Double> getIntensities(String peptide, HashSet<PTM> ptms){
@@ -234,7 +208,7 @@ public class MSRun {
             for(MSRun subrun: subRuns){
                 Peptide pep = subrun.getPeptide(peptide);
                 if(pep!=null){
-                    for(Map.Entry<String, Double> entry: pep.getIntensities(ptms).entrySet()){
+                    for(Map.Entry<String, Double> entry: pep.getIntensities(ptms, subrun.getName()).entrySet()){
 
 
 
@@ -255,7 +229,8 @@ public class MSRun {
             return intensities;
 
         }else{
-            return allPeptides.get(peptide).getIntensities();
+            //return allPeptides.get(peptide).getIntensities();
+            return null;
         }
     }
 

@@ -164,6 +164,11 @@
                         <fx:include fx:id="goTerms" source="goTerms.fxml" />
                      </content>
                   </Tab>
+                  <Tab text="GSEA">
+                      <content>
+                          <fx:include fx:id="gsea" source="gsea.fxml" />
+                      </content>
+                  </Tab>
               </tabs>
             </TabPane>
 

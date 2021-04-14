@@ -2,7 +2,6 @@ package utilities;
 
 import Cds.PSM;
 import Cds.PTM;
-import Cds.Peptide;
 
 import java.util.ArrayList;
 import java.util.HashSet;

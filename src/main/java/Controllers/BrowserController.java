@@ -3,18 +3,14 @@ package Controllers;
 
 import Cds.Peptide;
 import FileReading.AllGenesReader;
-import TablesModels.BamFile;
 import javafx.application.HostServices;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import org.dizitart.no2.Nitrite;
 import org.json.JSONObject;
-import utilities.BioFile;
 
 import java.net.URL;
-import java.util.List;
 import java.util.ResourceBundle;
 
 public class BrowserController implements Initializable {

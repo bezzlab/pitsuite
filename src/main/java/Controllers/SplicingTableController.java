@@ -139,6 +139,9 @@ public class SplicingTableController extends Controller {
     @FXML
     private GoTermsController goTermsController;
 
+    @FXML
+    private GSEAController gseaController;
+
 
     // parent controller
     ResultsController parentController;
@@ -267,6 +270,7 @@ public class SplicingTableController extends Controller {
             Platform.runLater(() -> {
                 keggController.setParentController(this, allGenesReader);
                 goTermsController.setParentController(this, allGenesReader, Database.getDb());
+                gseaController.setParentController(this);
             });
         }else{
             allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
@@ -274,6 +278,7 @@ public class SplicingTableController extends Controller {
                     Platform.runLater(() -> {
                         keggController.setParentController(this, allGenesReader);
                         goTermsController.setParentController(this, allGenesReader, Database.getDb());
+                        gseaController.setParentController(this);
                     });
                 }
             });
@@ -1824,6 +1829,11 @@ public class SplicingTableController extends Controller {
             }
         }
         return genes.values();
+    }
+
+    @Override
+    public String getSelectedComparison(){
+        return comparisonSplicingCombobox.getValue();
     }
 
 }

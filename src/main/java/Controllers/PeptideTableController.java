@@ -1,9 +1,11 @@
 package Controllers;
 
+import Cds.CDS;
 import Cds.PSM;
 import Cds.PTM;
 import Cds.Peptide;
 import Singletons.Database;
+import TablesModels.PeptideSampleModel;
 import com.jfoenix.controls.JFXComboBox;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
@@ -26,7 +28,6 @@ import javafx.util.Pair;
 import netscape.javascript.JSObject;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
-import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.NitriteCollection;
 import org.dizitart.no2.filters.Filters;
 import org.json.simple.JSONArray;
@@ -53,7 +54,7 @@ public class PeptideTableController implements Initializable {
     @FXML
     public GridPane peptideDetailsGrid;
     @FXML
-    public TableView<MSRun> peptideSampleTable;
+    public TableView<PeptideSampleModel> peptideSampleTable;
     @FXML
     public TableView<PSM> psmTable;
     @FXML
@@ -85,9 +86,9 @@ public class PeptideTableController implements Initializable {
     public ComboBox<String> condACombobox;
     public ComboBox<String> condBCombobox;
     @FXML
-    private TableColumn<MSRun, String> peptideSampleTableSampleColumn;
+    private TableColumn<PeptideSampleModel, String> peptideSampleTableSampleColumn;
     @FXML
-    private TableColumn<MSRun, Double> peptideSampleTableProbabilityColumn;
+    private TableColumn<PeptideSampleModel, Double> peptideSampleTableProbabilityColumn;
     @FXML
     public TableView<MassSpecModificationSample> modificationsTable;
     @FXML
@@ -117,9 +118,9 @@ public class PeptideTableController implements Initializable {
         nbGenesColumn.setCellValueFactory(new PropertyValueFactory<>("nbGenes"));
         nbGenesColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.3));
 
-        peptideSampleTableSampleColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getName()));
+        peptideSampleTableSampleColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getSample()));
         peptideSampleTableProbabilityColumn.setCellValueFactory(cellData ->
-                new ReadOnlyDoubleWrapper(cellData.getValue().getPeptideProbability(selectedPeptide.getSequence())).asObject());
+                new ReadOnlyDoubleWrapper(cellData.getValue().getProbability()).asObject());
 
         peptideSampleTableSampleColumn.prefWidthProperty().bind(peptideSampleTable.widthProperty().divide(2));
         peptideSampleTableProbabilityColumn.prefWidthProperty().bind(peptideSampleTable.widthProperty().divide(2));
@@ -148,24 +149,29 @@ public class PeptideTableController implements Initializable {
         });
 
         peptideSampleTable.setRowFactory(tv -> {
-            TableRow<MSRun> row = new TableRow<>();
+            TableRow<PeptideSampleModel> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!(row.isEmpty())) {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
                         Peptide peptide = peptideTable.getSelectionModel().getSelectedItem();
-                        MSRun run = row.getItem();
 
-                       HashMap<String, Double> intensities = run.getIntensities(peptide.getSequence());
+
+
                         XYChart.Series series =  new XYChart.Series();
-                        for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                        }
+                       for(String run: peptide.getRuns()){
+
+                           for(Map.Entry<String, Double> entry: selectedPeptide.getIntensities(run).entrySet()){
+                               series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
+                           }
+                       }
+
+
 
 
                         intensitiesChart.getData().clear();
                         intensitiesChart.getData().add(series);
 
-                        selectPeptideRun(row.getItem().getPeptide(selectedPeptide.getSequence()));
+                        selectPeptideRun(peptide);
 
                     }
 
@@ -260,7 +266,8 @@ public class PeptideTableController implements Initializable {
 
 
                         spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
-                        spectrumViewerController.select(psmTable.getSelectionModel().getSelectedItem(), peptideSampleTable.getSelectionModel().getSelectedItem(), selectedPeptide.getSequence());
+                        spectrumViewerController.select(psmTable.getSelectionModel().getSelectedItem()
+                                , selectedRun, selectedPeptide.getSequence());
                     }
 
                 }
@@ -407,11 +414,8 @@ public class PeptideTableController implements Initializable {
         chartsBox.getChildren().clear();
 
 
-        for(MSRun run: selectedRun.getRuns()){
-            if(run.getPeptide(peptide.getSequence())!=null && run.getPeptide(peptide.getSequence()).hasPSM()){
-                peptideSampleTable.getItems().add(run);
-            }
-
+        for(String run: peptide.getRuns()){
+            peptideSampleTable.getItems().add(new PeptideSampleModel(run, peptide.getProbability()));
         }
 
         selectedPeptide = peptide;
@@ -423,7 +427,7 @@ public class PeptideTableController implements Initializable {
 
         HashMap<HashSet<PTM>, MassSpecModificationSample> ptmSamples = new HashMap<>();
 
-        for (PSM psm: peptide.getPsms()){
+        for (PSM psm: peptide.getPsms(selectedRun.getName())){
             if (ptmSamples.containsKey(psm.getModifications())) {
                 ptmSamples.get(psm.getModifications()).addPSM(psm);
             }else{
@@ -661,12 +665,12 @@ public class PeptideTableController implements Initializable {
             }
         }
 
-        public void browseGene(String msg){
-            org.json.JSONObject obj = new org.json.JSONObject(msg);
-            if(obj.getString("shape").equals("triangle")){
-                parentController.showGeneBrowser(obj.getString("label"), selectedPeptide);
-            }
-        }
+//        public void browseGene(String msg){
+//            org.json.JSONObject obj = new org.json.JSONObject(msg);
+//            if(obj.getString("shape").equals("triangle")){
+//                parentController.showGeneBrowser(obj.getString("label"), selectedPeptide);
+//            }
+//        }
 
     }
 
@@ -898,7 +902,7 @@ public class PeptideTableController implements Initializable {
     }
 
     public void showPeptide(Peptide peptide){
-        String run = peptide.getPsms().get(0).getRun();
+        String run = peptide.getRunName();
 
 
         if(runCombobox.getSelectionModel().getSelectedItem()==null || !runCombobox.getSelectionModel().getSelectedItem().equals("run")){

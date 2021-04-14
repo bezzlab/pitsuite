@@ -506,7 +506,6 @@ public class GeneBrowserController implements Initializable {
 
         geneBrowserScrollPane.addEventFilter(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
 
-            //geneBrowserScrollPane.setOnMousePressed(mouseEvent -> {
             if(mouseEvent.getTarget().getClass()!=Rectangle.class && mouseEvent.getTarget().getClass()!=Text.class &&
                     !(mouseEvent.getTarget().getClass()==Pane.class && ((Pane) mouseEvent.getTarget()).getId()!=null &&
                             ((Pane) mouseEvent.getTarget()).getId().equals("exonPane")) &&

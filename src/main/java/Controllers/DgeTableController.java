@@ -912,7 +912,7 @@ public class DgeTableController extends Controller {
 
                     }
                 }
-            }else {
+            }else if (Config.getRunType(protComparisonCombobox.getValue()).equals("LABELFREE")){
 
 
                 JSONObject res = new JSONObject(result);
@@ -953,7 +953,7 @@ public class DgeTableController extends Controller {
                         String run = runCondition.getKey();
                         String condition = runCondition.getValue();
 
-                        double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
+                        double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(run);
 
                         peptideSeries.getData().add(new XYChart.Data(run, intensity));
 
@@ -998,6 +998,108 @@ public class DgeTableController extends Controller {
 
 
                 }
+                proteinConfidentBarChart.addGroups(groups);
+                proteinConfidentBarChart.setReference(refCondition);
+                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+
+            }else{ //TMT
+
+
+                JSONObject res = new JSONObject(result);
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
+
+
+                ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
+
+                Iterator<String> it = res.getJSONObject("peptides").getJSONObject(res.getJSONObject("peptides").keys().next())
+                        .getJSONObject("intensity").keys();
+
+
+                Set<String> samples = Config.getRunSamples(protComparisonCombobox.getValue());
+//                for(String sample: samples){
+//                    groups.put(sample, new HashMap<>());
+//                }
+                groups.put("Nsi", new HashMap<>());
+                groups.put("si", new HashMap<>());
+                groups.put("hypoxia", new HashMap<>());
+                groups.put("normoxia", new HashMap<>());
+
+//                runsConditions.sort(Comparator.comparing(Pair::getValue));
+//
+//                String refCondition = runsConditions.get(0).getValue();
+                String refCondition = "Nsi";
+
+
+                res = res.getJSONObject("peptides");
+                for (String peptide : res.keySet()) {
+
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(peptide);
+                    allPeptidesSeries.add(peptideSeries);
+
+                    ArrayList<Double> referenceIntensities = new ArrayList<>();
+
+
+
+                    String run = protComparisonCombobox.getValue();
+
+                    JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(run);
+
+                    ArrayList<Double> referenceIntensitiesPeptide = new ArrayList<>();
+                    for(String sample: samples){
+                        if (intensity.get(sample) instanceof Double) {
+                            if(sample.equals(refCondition) || sample.split("/")[0].equals(refCondition)){
+                                referenceIntensitiesPeptide.add(intensity.getDouble(sample));
+                            }
+                        }
+                    }
+
+                    Double referenceIntensityMean = referenceIntensitiesPeptide.stream().mapToDouble(a->a).average().getAsDouble();
+                    referenceIntensities.add(referenceIntensityMean);
+
+
+                    for(String sample: samples){
+                        String condition = sample.split("/")[0];
+                        peptideSeries.getData().add(new XYChart.Data(sample, intensity.get(sample)));
+
+
+                        double ratio = ((Double) intensity.get(sample))/referenceIntensityMean;
+                        if(!groups.get(condition).containsKey(sample)) {
+                            groups.get(condition).put(sample, new ArrayList<>());
+                        }
+                        if(ratio!=Double.POSITIVE_INFINITY){
+                            groups.get(condition).get(sample)
+                                    .add(ratio);
+                        }
+                    }
+
+
+                }
+
+//                    for(Pair<String, String> runCondition: runsConditions){
+//                        if(runCondition.getValue().equals(refCondition)){
+//                            String run = runCondition.getKey();
+//                            String condition = runCondition.getValue();
+//                            double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
+//                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
+//                                    .average().getAsDouble();
+//                            double ratio = intensity/referenceIntensityMean;
+//                            if(!groups.get(condition).containsKey(run)) {
+//                                groups.get(condition).put(run, new ArrayList<>());
+//                            }
+//                            if(ratio!=Double.POSITIVE_INFINITY){
+//                                groups.get(condition).get(run)
+//                                        .add(ratio);
+//                            }
+//
+//                        }else{
+//                            break;
+//                        }
+//                    }
+
+
+
+
                 proteinConfidentBarChart.addGroups(groups);
                 proteinConfidentBarChart.setReference(refCondition);
                 proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
@@ -1048,7 +1150,7 @@ public class DgeTableController extends Controller {
 
     @Override
     public String getSelectedComparison(){
-        return dgeComparisonCombobox.getValue().toString();
+        return dgeComparisonCombobox.getValue();
     }
 
 }

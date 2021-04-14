@@ -1,6 +1,7 @@
 package Controllers;
 
 import Cds.PSM;
+import TablesModels.PeptideSampleModel;
 import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXSlider;
 import javafx.beans.property.SimpleDoubleProperty;

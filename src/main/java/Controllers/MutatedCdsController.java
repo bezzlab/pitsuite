@@ -1,7 +1,6 @@
 package Controllers;
 
 import Cds.CDS;
-import Cds.PSM;
 import Cds.Peptide;
 import Cds.Transcript;
 import Controllers.drawerControllers.DrawerController;

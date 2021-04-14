@@ -82,7 +82,8 @@ public class Config {
 
     public static Set<String> getRunSamples(String run){
 
-        if(config.getJSONObject("mzml").getJSONObject("combine").has(run)) {
+        if(config.getJSONObject("mzml").has("combine") &&
+                config.getJSONObject("mzml").getJSONObject("combine").has(run)) {
             JSONObject runObj = config.getJSONObject("mzml").getJSONObject("runs")
                     .getJSONObject(config.getJSONObject("mzml").getJSONObject("combine")
                             .getJSONObject(run).getJSONArray("runs").getString(0));
@@ -91,10 +92,10 @@ public class Config {
                 return runObj.getJSONObject("TMT").keySet();
             }else return null;
 
-        }else if(config.getJSONObject("mzml").getJSONObject(run).keySet().contains("SILAC")){
-            return config.getJSONObject("mzml").getJSONObject(run).getJSONObject("SILAC").keySet();
-        }else if(config.getJSONObject("mzml").getJSONObject(run).keySet().contains("TMT")){
-            return config.getJSONObject("mzml").getJSONObject(run).getJSONObject("TMT").keySet();
+        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).keySet().contains("SILAC")){
+            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("SILAC").keySet();
+        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).keySet().contains("TMT")){
+            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("TMT").keySet();
         }else{
             JSONObject conditionsObj = config.getJSONObject("conditions");
             Iterator<String> condKeys = conditionsObj.keys();
@@ -211,10 +212,15 @@ public class Config {
 
     public static ArrayList<String> getSubRuns(String runName){
         ArrayList<String> subRuns = new ArrayList<>();
-        for(Object o :config.getJSONObject("mzml").getJSONObject("combine")
-                .getJSONObject(runName).getJSONArray("runs")){
-            subRuns.add((String) o);
+        if(config.getJSONObject("mzml").has("combine")){
+            for(Object o :config.getJSONObject("mzml").getJSONObject("combine")
+                    .getJSONObject(runName).getJSONArray("runs")){
+                subRuns.add((String) o);
+            }
+        }else{
+            subRuns.add(runName);
         }
+
         return subRuns;
     }
 

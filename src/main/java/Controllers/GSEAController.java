@@ -177,91 +177,107 @@ public class GSEAController  implements Initializable {
 
         List<Filter> filters = new ArrayList<>(1);
 
-        if(rnaOrProtein.equals("rna")){
-            if(rnaAbsCheckbox.isSelected()){
-                if(rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")){
-                    filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
-                            or(lt("log2fc", -rnaLog2fcSpinner.getValue()), gt("log2fc", rnaLog2fcSpinner.getValue())
-                            )));
-                }else{
-                    filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
-                            and(gt("log2fc", -rnaLog2fcSpinner.getValue()), lt("log2fc", rnaLog2fcSpinner.getValue())
-                            )));
+        if(parentController.getClass().equals(DgeTableController.class)) {
+
+            if (rnaOrProtein.equals("rna")) {
+                if (rnaAbsCheckbox.isSelected()) {
+                    if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
+
+                        filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
+                                or(lt("log2fc", -rnaLog2fcSpinner.getValue()), gt("log2fc", rnaLog2fcSpinner.getValue())
+                                )));
+                    } else {
+                        filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
+                                and(gt("log2fc", -rnaLog2fcSpinner.getValue()), lt("log2fc", rnaLog2fcSpinner.getValue())
+                                )));
+                    }
+
+                } else {
+                    if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
+                        filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
+                                gt("log2fc", rnaLog2fcSpinner.getValue())));
+                    } else {
+                        filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
+                                lt("log2fc", rnaLog2fcSpinner.getValue())));
+                    }
                 }
 
-            }else{
-                if(rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")){
-                    filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
-                            gt("log2fc", rnaLog2fcSpinner.getValue())));
-                }else{
-                    filters.add(and(lte("padj", rnaPvalueSpinner.getValue()),
-                            lt("log2fc", rnaLog2fcSpinner.getValue())));
-                }
             }
-
+        }else{
+            filters.add(lte("pval", rnaPvalueSpinner.getValue()));
         }
 
 
 
 
         Cursor dgeFindCursor;
+        String dbName = parentController.getClass().equals(DgeTableController.class)?
+                parentController.getSelectedComparison()+"_dge":"SplicingDPSI_"+parentController.getSelectedComparison();
+
+
+
         if(rnaOrProtein.equals("rna"))
-            dgeFindCursor = Database.getDb().getCollection(parentController.getSelectedComparison()+"_dge")
+            dgeFindCursor = Database.getDb().getCollection(dbName)
                 .find(and(filters.toArray(new Filter[]{})));
         else
-            dgeFindCursor = Database.getDb().getCollection(parentController.getSelectedComparison()+"_dge")
+            dgeFindCursor = Database.getDb().getCollection(dbName)
                     .find();
 
         ArrayList<String> genes = new ArrayList<>(dgeFindCursor.size());
 
 
 
-        for (Document dgeDoc : dgeFindCursor) {
+        for (Document doc : dgeFindCursor) {
 
-            if(rnaOrProtein.equals("rna")){
-                genes.add((String) dgeDoc.get("symbol"));
-            }else{
+            if(parentController.getClass().equals(DgeTableController.class)) {
 
-
-                if (dgeDoc.containsKey("ms")) {
-
-                    org.json.simple.JSONObject runsObj = (org.json.simple.JSONObject) dgeDoc.get("ms");
-                    for (Object runName : runsObj.keySet()) {
+                if (rnaOrProtein.equals("rna")) {
+                    genes.add((String) doc.get("symbol"));
+                } else {
 
 
-                        org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
+                    if (doc.containsKey("ms")) {
 
-                        Double padj = null;
-                        if (run.containsKey("padj")) {
-                            padj = (Double) run.get("padj");
-                        }
+                        org.json.simple.JSONObject runsObj = (org.json.simple.JSONObject) doc.get("ms");
+                        for (Object runName : runsObj.keySet()) {
 
-                        Double log2fc = (Double) run.get("log2fc");
 
-                        if (proteinAbsCheckbox.isSelected()) {
-                            if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
-                                if (log2fc != null && Math.abs(log2fc) > proteinLog2fcSpinner.getValue()) {
-                                    genes.add((String) dgeDoc.get("symbol"));
-                                }
-                            } else {
-                                if (log2fc != null && Math.abs(log2fc) < proteinLog2fcSpinner.getValue()) {
-                                    genes.add((String) dgeDoc.get("symbol"));
-                                }
+                            org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
+
+                            Double padj = null;
+                            if (run.containsKey("padj")) {
+                                padj = (Double) run.get("padj");
                             }
 
-                        } else {
-                            if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
-                                if (log2fc != null && log2fc > proteinLog2fcSpinner.getValue()) {
-                                    genes.add((String) dgeDoc.get("symbol"));
+                            Double log2fc = (Double) run.get("log2fc");
+
+                            if (proteinAbsCheckbox.isSelected()) {
+                                if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
+                                    if (log2fc != null && Math.abs(log2fc) > proteinLog2fcSpinner.getValue()) {
+                                        genes.add((String) doc.get("symbol"));
+                                    }
+                                } else {
+                                    if (log2fc != null && Math.abs(log2fc) < proteinLog2fcSpinner.getValue()) {
+                                        genes.add((String) doc.get("symbol"));
+                                    }
                                 }
+
                             } else {
-                                if (log2fc != null && log2fc < proteinLog2fcSpinner.getValue()) {
-                                    genes.add((String) dgeDoc.get("symbol"));
+                                if (rnaSignCombo.getSelectionModel().getSelectedItem().equals(">")) {
+                                    if (log2fc != null && log2fc > proteinLog2fcSpinner.getValue()) {
+                                        genes.add((String) doc.get("symbol"));
+                                    }
+                                } else {
+                                    if (log2fc != null && log2fc < proteinLog2fcSpinner.getValue()) {
+                                        genes.add((String) doc.get("symbol"));
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }else{
+                genes.add((String) doc.get("geneName"));
             }
 
         }

@@ -132,24 +132,24 @@ public class CDS {
     public void addPeptide(String sequence, String mod, double probability, String run, String condition, String sample){
         for(Peptide peptide: peptides){
             if(peptide.getSequence().equals(sequence)){
-                peptide.addPsm(new PSM(run, mod, probability, condition, sample));
+                peptide.addPsm(new PSM(run, mod, probability, condition, sample), run);
                 return;
             }
         }
         Peptide peptide = new Peptide(sequence, new MSRun(run));
-        peptide.addPsm(new PSM(run, mod, probability, condition, sample));
+        peptide.addPsm(new PSM(run, mod, probability, condition, sample), run);
         peptides.add(peptide);
     }
 
     public void addPeptide(String sequence, String mod, String run){
         for(Peptide peptide: peptides){
             if(peptide.getSequence().equals(sequence)){
-                peptide.addPsm(new PSM(run, mod));
+                peptide.addPsm(new PSM(run, mod), run);
                 return;
             }
         }
         Peptide peptide = new Peptide(sequence, new MSRun(run));
-        peptide.addPsm(new PSM(run, mod));
+        peptide.addPsm(new PSM(run, mod), run);
         peptides.add(peptide);
     }
 
