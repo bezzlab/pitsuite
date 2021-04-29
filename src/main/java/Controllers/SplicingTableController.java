@@ -4,7 +4,6 @@ import FileReading.AllGenesReader;
 import Singletons.Config;
 import Singletons.Database;
 import TablesModels.SplicingEventsTableModel;
-import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import exonSplicingEvent.SplicingEvent;
@@ -12,6 +11,7 @@ import graphics.ConfidentBarChart;
 import graphics.DoughnutChart;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -26,24 +26,22 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.dizitart.no2.*;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.net.URL;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static javafx.scene.paint.Color.*;
@@ -51,7 +49,8 @@ import static org.dizitart.no2.filters.Filters.*;
 
 public class SplicingTableController extends Controller {
 
-
+    @FXML
+    public JFXComboBox<String> comparisonSplicingComboboxProtein;
     @FXML
     private GridPane rightGrid;
     @FXML
@@ -83,8 +82,6 @@ public class SplicingTableController extends Controller {
     @FXML
     private TableColumn<SplicingEventsTableModel, String> geneSymbolSplicingTableColumn;
     @FXML
-    private TableColumn<SplicingEventsTableModel, String> strandSplicingTableColumn;
-    @FXML
     private TableColumn<SplicingEventsTableModel, String> eventTypeSplicingTableColumn;
     @FXML
     private TableColumn<SplicingEventsTableModel, Integer> exonStartSplicingTableColumn;
@@ -97,7 +94,9 @@ public class SplicingTableController extends Controller {
     @FXML
     private TableColumn<SplicingEventsTableModel, Boolean> peptideEvidenceColumn;
     @FXML
-    private TableColumn<SplicingEventsTableModel, Double> geneRatioColumn;
+    private TableColumn<SplicingEventsTableModel, Double> peptideDpsiColumn;
+    @FXML
+    private TableColumn<SplicingEventsTableModel, Double> peptidePvalColumn;
 
     // labels below the table
     @FXML
@@ -166,24 +165,23 @@ public class SplicingTableController extends Controller {
 
         // table : reflection for the getters
         geneSymbolSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("geneSymbol"));
-        strandSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("strand"));
         eventTypeSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("eventType"));
         exonStartSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("exonStart"));
         exonEndSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("exonEnd"));
         dPsiSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("deltaPsi"));
         pValSplicingTableColumn.setCellValueFactory( new PropertyValueFactory<>("pVal"));
-        geneRatioColumn.setCellValueFactory( new PropertyValueFactory<>("geneRatioDiff"));
         peptideEvidenceColumn.setCellValueFactory( new PropertyValueFactory<>("hasPeptideEvidence"));
+        peptideDpsiColumn.setCellValueFactory( new PropertyValueFactory<>("pVal"));
+        peptidePvalColumn.setCellValueFactory( new PropertyValueFactory<>("hasPeptideEvidence"));
 
         geneSymbolSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
-        strandSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
         eventTypeSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
         exonStartSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
         exonEndSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
         dPsiSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
         pValSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
-        geneRatioColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
-        pValSplicingTableColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
+        peptideDpsiColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
+        peptidePvalColumn.prefWidthProperty().bind(splicingEventsTableView.widthProperty().divide(9));
 
 
 
@@ -212,6 +210,20 @@ public class SplicingTableController extends Controller {
             return row;
         });
 
+        peptideDpsiColumn.setCellValueFactory(p -> {
+            if (p.getValue() != null && comparisonSplicingComboboxProtein.getValue()!=null) {
+                return new SimpleObjectProperty<Double>(p.getValue().getProteinDpsi(comparisonSplicingComboboxProtein.getValue()));
+            }
+            return null;
+        });
+
+        peptidePvalColumn.setCellValueFactory(p -> {
+            if (p.getValue() != null && comparisonSplicingComboboxProtein.getValue()!=null) {
+                return new SimpleObjectProperty<Double>(p.getValue().getProteinPval(comparisonSplicingComboboxProtein.getValue()));
+            }
+            return null;
+        });
+
         // p-value spinner
 
         StringConverter<Double> doubleConverter = new StringConverter<Double>() {
@@ -236,15 +248,12 @@ public class SplicingTableController extends Controller {
         pValFilterSplicingSpinner.setValueFactory(pValValueFactory);
         pValFilterSplicingSpinner.setEditable(true);
 
-        ChangeListener runRepresentationListener =  new ChangeListener<String>() {
-            @Override
-            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
-                SplicingEventsTableModel se = splicingEventsTableView.getSelectionModel().getSelectedItem();
-                if(se.getEventKey().equals(selectedEvent)){
-                    drawSplicingEventRepresentation(se.getEventKey(), se.getStrand(), se.getEventType());
-                }
-
+        ChangeListener runRepresentationListener = (ChangeListener<String>) (observable, oldValue, newValue) -> {
+            SplicingEventsTableModel se = splicingEventsTableView.getSelectionModel().getSelectedItem();
+            if(se.getEventKey().equals(selectedEvent)){
+                drawSplicingEventRepresentation(se.getEventKey(), se.getStrand(), se.getEventType());
             }
+
         };
         selectedRunRepresentation.valueProperty().addListener(runRepresentationListener);
 
@@ -325,6 +334,8 @@ public class SplicingTableController extends Controller {
         ArrayList<String> genesList = new ArrayList<>();
         ArrayList<SplicingEventsTableModel> events = new ArrayList();
 
+        AtomicBoolean hasProteinEvidence = new AtomicBoolean(false);
+
 
         ArrayList<String> genesWithGoFilterList = (!goTermsController.isGoLoaded())?null:goTermsController.genesWithGoTermsForFilter();
 
@@ -395,9 +406,27 @@ public class SplicingTableController extends Controller {
                     boolean tmpPepEvidence = (boolean) tmpDoc.get("pepEvidence");
                     Double geneRatioDiff = (Double) tmpDoc.get("geneRatioDiff");
 
+                    if(tmpDoc.containsKey("protein")){
 
-                    events.add(new SplicingEventsTableModel(tmpEventKey, tmpGeneName, tmpEventType, tmpDeltaPsi, tmpPval,
-                            tmpPepEvidence, geneRatioDiff));
+                        HashMap<String, HashMap<String, Double>> proteins =
+                                (HashMap<String, HashMap<String, Double>>) tmpDoc.get("protein");
+
+
+                        events.add(new SplicingEventsTableModel(tmpEventKey, tmpGeneName, tmpEventType, tmpDeltaPsi, tmpPval,
+                                tmpPepEvidence, geneRatioDiff, proteins));
+
+                        hasProteinEvidence.set(true);
+
+                        for(String run: proteins.keySet()){
+                            if(!comparisonSplicingComboboxProtein.getItems().contains(run))
+                                comparisonSplicingComboboxProtein.getItems().add(run);
+                        }
+
+                    }else{
+                        events.add(new SplicingEventsTableModel(tmpEventKey, tmpGeneName, tmpEventType, tmpDeltaPsi, tmpPval,
+                                tmpPepEvidence, geneRatioDiff));
+                    }
+
 
                     switch (tmpEventType) {
                         case "SE":
@@ -432,10 +461,17 @@ public class SplicingTableController extends Controller {
 
 
                 }
+
+
             }
             boolean finalUpdateTableBool = updateTableBool;
             Platform.runLater(() -> {
                 if(finalUpdateTableBool) {
+
+                    if(comparisonSplicingComboboxProtein.getItems().size()>0)
+                        comparisonSplicingComboboxProtein.getSelectionModel().select(0);
+
+
                     splicingEventsTableView.getItems().clear();
                     splicingEventsTableView.getItems().addAll(events);
 
@@ -573,13 +609,16 @@ public class SplicingTableController extends Controller {
         psiChart.addAll(psiValues);
         psiChart.setMin(0.);
         psiChart.setMax(1.);
+        psiChart.setPrefWidth(rightGrid.getWidth());
 
-        rightGrid.add(psiChart, 2, 2);
+
+        rightGrid.add(psiChart, 0, 1, 3, 1);
 
         // Barcharts
         //tpmWithBarChart.getData().add(samplCondTpmBarChartSeries);
 
-
+        psiChart.setTitle("RNA psi");
+        psiChart.setYLegend("PSI");
         psiChart.draw();
 
 
@@ -621,7 +660,6 @@ public class SplicingTableController extends Controller {
     private void drawSplicingEventRepresentation(String spliceEventKey, String strand, String eventType){
         // clear representation hbox
         exonRepresentationPane.getChildren().clear();
-        Pane exonRepresentationPane = new Pane();
 
         // parse splice event key to extract values (https://github.com/comprna/SUPPA)
         String[] spliceEventKeySplitted = spliceEventKey.split(";",1);
@@ -919,16 +957,36 @@ public class SplicingTableController extends Controller {
                 JSONObject intensities = (JSONObject) doc.get("proteinCorrectedRatios", JSONObject.class)
                         .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
 
+                HashMap<String, ArrayList<Double>> groups = new HashMap();
+
                 for(Object channel: intensities.keySet()){
                     if(intensities.get(channel)!=null){
                         proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
                     }
 
+                    String channelStr = (String) channel;
+                    if(channelStr.contains("/")){
+                        String condition = channelStr.split("/")[0];
+                        if(!groups.containsKey(condition)){
+                            groups.put(condition, new ArrayList<>());
+                        }
+                        groups.get(condition).add((Double) intensities.get(channel));
+                    }else{
+                        ArrayList<Double> val = new ArrayList<>();
+                        val.add((Double) intensities.get(channel));
+                        groups.put(channelStr, val);
+                    }
+
                 }
+
+                ConfidentBarChart cbc = new ConfidentBarChart();
+                cbc.addAll(groups);
+                cbc.setTitle("Normalised protein psi");
+
                 
                 bc.getData().add(proteinCorrectedRatiosSeries);
                 GridPane.setColumnIndex(bc, 0);
-                representationChartsBox.getChildren().add(bc);
+                representationChartsBox.getChildren().add(cbc);
 
 
 
@@ -958,6 +1016,7 @@ public class SplicingTableController extends Controller {
 
                     proteinPeptidesRatiosChart.addAll(channels);
                     proteinPeptidesRatiosChart.draw();
+                    proteinPeptidesRatiosChart.setTitle("Non event peptides ratios");
                     GridPane.setColumnIndex(proteinPeptidesRatiosChart, 1);
                     representationChartsBox.getChildren().add(proteinPeptidesRatiosChart);
 
@@ -987,6 +1046,7 @@ public class SplicingTableController extends Controller {
 
                     eventPeptidesRatiosChart.addAll(channels);
                     eventPeptidesRatiosChart.draw();
+                    eventPeptidesRatiosChart.setTitle("Event peptides ratios");
                     GridPane.setColumnIndex(eventPeptidesRatiosChart, 2);
                     representationChartsBox.getChildren().add(eventPeptidesRatiosChart);
 

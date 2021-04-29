@@ -845,7 +845,11 @@ public class DgeTableController extends Controller {
         proteinConfidentBarChart.setMeanOrMedian("median");
         proteinConfidentBarChart.setTitle("Differencial protein abundance");
         proteinConfidentBarChart.setMin(0);
-        proteinConfidentBarChart.setReference("HEK293T_HeV_RNAseq_0hrsvsHEK293T_HeV_RNAseq_8hrs");
+
+
+        String referenceCondition = Config.getReferenceMSCondition(protComparisonCombobox.getValue());
+
+        proteinConfidentBarChart.setReference(referenceCondition);
 
         for(Document result: documents){
 
@@ -871,10 +875,10 @@ public class DgeTableController extends Controller {
                                 groups.get(subRun).put(condition, new ArrayList<>());
                             }
 
-                            if(condition.equals("HEK293T_HeV_RNAseq_0hrs")){
+                            if(condition.equals(referenceCondition)){
                                 groups.get(subRun).get(condition).add(1.);
                             }else{
-                                double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble("HEK293T_HeV_RNAseq_0hrs");
+                                double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble(referenceCondition);
                                 if(ratio!=Double.POSITIVE_INFINITY){
                                     groups.get(subRun).get(condition)
                                             .add(ratio);

@@ -33,7 +33,8 @@ public class Variation {
         refPos = Math.toIntExact((Long) document.get("refPos"));
         alt = (String) document.get("alt");
         ref = (String) document.get("ref");
-        hasPeptideEvidence = (boolean) document.get("hasPeptideEvidence");
+        //hasPeptideEvidence = (boolean) document.get("hasPeptideEvidence");
+        hasPeptideEvidence=false;
         conditions = (Map<String, Map<String, Map<String, Double>>>) document.get("condition");
 
         if(document.containsKey("peptides")){

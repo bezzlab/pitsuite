@@ -231,5 +231,21 @@ public class Config {
         }
         return true;
     }
+
+    public static String getReferenceMSCondition(String runName){
+        if(isCombinedRun(runName)){
+            if(config.getJSONObject("mzml").getJSONObject("combine").has("reference"))
+                return config.getJSONObject("mzml").getJSONObject("combine").getString("reference");
+            else{
+                return new TreeSet<>(getRunSamples(runName)).iterator().next();
+            }
+        }else{
+            if(config.getJSONObject("mzml").getJSONObject("combine").has("reference"))
+                return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).getString("reference");
+            else{
+                return new TreeSet<>(getRunSamples(runName)).iterator().next();
+            }
+        }
+    }
 }
 

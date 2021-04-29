@@ -1,10 +1,6 @@
 package graphics;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.geometry.Dimension2D;
 import javafx.geometry.Orientation;
-import javafx.geometry.Side;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -15,11 +11,9 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
 import javafx.util.Pair;
 
 import java.util.*;
-import java.util.function.DoublePredicate;
 
 public class ConfidentBarChart extends Pane {
 
@@ -71,6 +65,7 @@ public class ConfidentBarChart extends Pane {
         mainDataPane.prefWidthProperty().bind(this.widthProperty());
         mainDataPane.prefHeightProperty().bind(this.heightProperty());
 
+        titlePane.prefWidthProperty().bind(this.widthProperty());
         mainPane.getChildren().add(titlePane);
         mainPane.getChildren().add(mainDataPane);
 
@@ -195,7 +190,10 @@ public class ConfidentBarChart extends Pane {
 
 
         double barWidth = (this.getWidth() - yAxisWidth - groupLabelsWidth);
-        barWidth-=20*(groups.size()-1);
+        if(groups.containsKey("default"))
+            barWidth-=20*(groups.get("default").size()-1);
+        else
+            barWidth-=20*(groups.size()-1);
 
         int nbBars = 0;
         for(Map.Entry<String, HashMap<String, ArrayList<Double>>> entry: groups.entrySet()){
@@ -378,7 +376,12 @@ public class ConfidentBarChart extends Pane {
         double widestText = 0;
 
         for (int i = 0; i <= 10; i++) {
-            Text text = new Text(String.valueOf(Math.round(tickIndent*i)));
+            Text text;
+            if(max-min>10){
+                text = new Text(String.valueOf(Math.round(tickIndent*i)));
+            }else{
+                text = new Text(String.format("%.2f", tickIndent*i));
+            }
             text.setFont(Font.font(12));
 
             if(text.getLayoutBounds().getWidth()>widestText){
@@ -470,7 +473,7 @@ public class ConfidentBarChart extends Pane {
         if(title!=null){
             Text t = new Text(title);
             t.setFont(Font.font("monospace", 20));
-           // t.setX(this.getWidth() - t.getLayoutBounds().getWidth() / 2);
+            t.setX((this.getWidth() - t.getLayoutBounds().getWidth()) / 2);
             titlePane.getChildren().add(t);
             return t.getLayoutBounds().getHeight();
         }
@@ -496,6 +499,7 @@ public class ConfidentBarChart extends Pane {
     public void clear(){
         mainPane.getChildren().clear();
         mainDataPane.getChildren().clear();
+        titlePane.getChildren().clear();
         mainDataPane = new HBox();
         xAxisPane = new Pane();
         dataPane = new Pane();
