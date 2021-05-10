@@ -34,6 +34,7 @@ import org.controlsfx.control.textfield.TextFields;
 import org.dizitart.no2.*;
 import org.dizitart.no2.filters.Filters;
 import org.json.simple.JSONObject;
+import pitguiv2.Settings;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -609,7 +610,10 @@ public class MutationsTableController implements Initializable {
             VBox lastNode = (VBox) upsetSampleSliderBox.getChildren().get(0);
             double height = upsetSampleSliderBox.getHeight() - lastNode.getHeight();
 
-            ProcessBuilder pb = new ProcessBuilder("Rscript", "Rscripts/upset.R", "Rscripts/variantsTable.csv",
+            String ptr;
+            ptr = Settings.getInstance().getPathToR();
+
+            ProcessBuilder pb = new ProcessBuilder(ptr, "Rscripts/upset.R", "Rscripts/variantsTable.csv",
                     "plots/upset.jpeg", String.valueOf(upsetSampleSliderBox.getWidth()), String.valueOf(height - 10));
             pb.redirectErrorStream(true);
             Process process = pb.start();

@@ -33,6 +33,7 @@ import java.util.function.DoubleBinaryOperator;
 import static org.dizitart.no2.filters.Filters.*;
 
 
+
 public class DgeTableController extends Controller {
 
     @FXML
@@ -275,7 +276,7 @@ public class DgeTableController extends Controller {
         allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
             if (allGenesReader.getGenesLoadedProperty().get()) {
                 Platform.runLater(() ->{
-                    keggController.setParentController(this, allGenesReader);
+                    //keggController.setParentController(this, allGenesReader);
                     goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     gseaController.setParentController(this);
                 });
