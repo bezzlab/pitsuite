@@ -50,47 +50,52 @@ import static org.dizitart.no2.filters.Filters.*;
 public class PeptideTableController implements Initializable {
 
     @FXML
-    public HBox chartsBox;
+    private HBox chartsBox;
     @FXML
-    public GridPane peptideDetailsGrid;
+    private GridPane peptideDetailsGrid;
     @FXML
-    public TableView<PeptideSampleModel> peptideSampleTable;
+    private TableView<PeptideSampleModel> peptideSampleTable;
     @FXML
-    public TableView<PSM> psmTable;
+    private TableView<PSM> psmTable;
     @FXML
-    public TableColumn<PSM, Double> psmProbabilityColumn;
+    private TableColumn<PSM, Double> psmProbabilityColumn;
     @FXML
-    public TableColumn<PSM, String> psmFileColumn;
+    private TableColumn<PSM, String> psmFileColumn;
     @FXML
-    public TableColumn<PSM, Integer> psmIndexColumn;
+    private TableColumn<PSM, Integer> psmIndexColumn;
     @FXML
-    public TableView<PTM> suggestedPTMFilterTable;
+    private TableView<PTM> suggestedPTMFilterTable;
     @FXML
-    public TableView<PTM> ptmFilterTable;
+    private TableView<PTM> ptmFilterTable;
     @FXML
-    public TableColumn<PTM, String> suggestedPTMNameColumn;
+    private TableColumn<PTM, String> suggestedPTMNameColumn;
     @FXML
-    public TableColumn<PTM, Double> suggestedPTMMassShiftColumn;
+    private TableColumn<PTM, Double> suggestedPTMMassShiftColumn;
     @FXML
-    public TableColumn<PTM, String> PTMNameFilterColumn;
+    private TableColumn<PTM, String> PTMNameFilterColumn;
     @FXML
-    public TableColumn<PTM, Double> PTMMassShiftFilterColumn;
+    private TableColumn<PTM, Double> PTMMassShiftFilterColumn;
     @FXML
-    public TableColumn<Peptide, Integer> nbGenesColumn;
+    private TableColumn<Peptide, Integer> nbGenesColumn;
     @FXML
-    public WebView specWebview;
+    private TableColumn<Peptide, Double> foldChangeColumn;
     @FXML
-    public AnchorPane spectrumViewer;
+    private WebView specWebview;
     @FXML
-    public BarChart intensitiesChart;
-    public ComboBox<String> condACombobox;
-    public ComboBox<String> condBCombobox;
+    private AnchorPane spectrumViewer;
+    @FXML
+    private BarChart intensitiesChart;
+    @FXML
+    private ComboBox<String> condACombobox;
+    @FXML
+    private ComboBox<String> condBCombobox;
+
     @FXML
     private TableColumn<PeptideSampleModel, String> peptideSampleTableSampleColumn;
     @FXML
     private TableColumn<PeptideSampleModel, Double> peptideSampleTableProbabilityColumn;
     @FXML
-    public TableView<MassSpecModificationSample> modificationsTable;
+    private TableView<MassSpecModificationSample> modificationsTable;
     @FXML
     private TableView<Peptide> peptideTable;
     @FXML
@@ -114,9 +119,11 @@ public class PeptideTableController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         peptideColumn.setCellValueFactory( new PropertyValueFactory<>("sequence"));
-        peptideColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.7));
+        peptideColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.6));
         nbGenesColumn.setCellValueFactory(new PropertyValueFactory<>("nbGenes"));
-        nbGenesColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.3));
+        nbGenesColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.15));
+        foldChangeColumn.setCellValueFactory(new PropertyValueFactory<>("foldChange"));
+        foldChangeColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.25));
 
         peptideSampleTableSampleColumn.setCellValueFactory(cellData -> new ReadOnlyStringWrapper(cellData.getValue().getSample()));
         peptideSampleTableProbabilityColumn.setCellValueFactory(cellData ->
@@ -155,23 +162,16 @@ public class PeptideTableController implements Initializable {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
                         Peptide peptide = peptideTable.getSelectionModel().getSelectedItem();
 
-
-
                         XYChart.Series series =  new XYChart.Series();
-                       for(String run: peptide.getRuns()){
 
-                           for(Map.Entry<String, Double> entry: selectedPeptide.getIntensities(run).entrySet()){
-                               series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                           }
-                       }
-
-
-
+                        for(Map.Entry<String, Double> entry: selectedPeptide.getIntensities(row.getItem().getSample()).entrySet()){
+                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
+                        }
 
                         intensitiesChart.getData().clear();
                         intensitiesChart.getData().add(series);
 
-                        selectPeptideRun(peptide);
+                        selectPeptideRun(peptide, row.getItem().getSample());
 
                     }
 
@@ -194,15 +194,18 @@ public class PeptideTableController implements Initializable {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
                         Peptide peptide = peptideTable.getSelectionModel().getSelectedItem();
 
-                        HashMap<String, Double> intensities = selectedRun.getIntensities(peptide.getSequence());
-                        XYChart.Series series =  new XYChart.Series();
-                        for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
+                        if(!Config.isCombinedRun(runCombobox.getSelectionModel().getSelectedItem())){
+                            HashMap<String, Double> intensities = selectedRun.getIntensities(peptide.getSequence());
+                            XYChart.Series series =  new XYChart.Series();
+                            for(Map.Entry<String, Double> entry: intensities.entrySet()){
+                                series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
+                            }
+
+
+                            intensitiesChart.getData().clear();
+                            intensitiesChart.getData().add(series);
                         }
 
-
-                        intensitiesChart.getData().clear();
-                        intensitiesChart.getData().add(series);
 
                         selectPeptide(peptide);
 
@@ -337,9 +340,12 @@ public class PeptideTableController implements Initializable {
 
             HashSet<String> conditions = new HashSet<>();
             for ( String subrun : Config.getSubRuns(selectedRun.getName())){
-                conditions.add(Config.getRunOrLabelCondition(subrun));
+                conditions.addAll(Config.getRunSamples(subrun));
 
             }
+
+            Iterator<String> condIterator = conditions.iterator();
+
             condACombobox.getItems().addAll(conditions);
             condBCombobox.getItems().addAll(conditions);
 
@@ -348,8 +354,7 @@ public class PeptideTableController implements Initializable {
             condBCombobox.getSelectionModel().select(1);
 
             selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                    this, peptideToFind,
-                    condACombobox.getSelectionModel().getSelectedItem(), condBCombobox.getSelectionModel().getSelectedItem());
+                    this, peptideToFind, condIterator.next(), condIterator.next());
 
 
             peptideTable.getItems().clear();
@@ -423,11 +428,11 @@ public class PeptideTableController implements Initializable {
     }
 
 
-    public void selectPeptideRun(Peptide peptide){
+    public void selectPeptideRun(Peptide peptide, String run){
 
         HashMap<HashSet<PTM>, MassSpecModificationSample> ptmSamples = new HashMap<>();
 
-        for (PSM psm: peptide.getPsms(selectedRun.getName())){
+        for (PSM psm: peptide.getPsms(run)){
             if (ptmSamples.containsKey(psm.getModifications())) {
                 ptmSamples.get(psm.getModifications()).addPSM(psm);
             }else{

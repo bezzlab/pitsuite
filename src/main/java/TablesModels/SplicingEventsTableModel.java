@@ -15,21 +15,9 @@ public class SplicingEventsTableModel {
     private Double pVal;
     private boolean hasPeptideEvidence;
     private Double geneRatioDiff;
+    private HashMap<String, HashMap<String, Double>> proteinPsi;
 
 
-    public SplicingEventsTableModel(String eventKey, String geneSymbol, String strand, String eventType, Integer exonStart,
-                                    Integer exonEnd, Double deltaPsi, Double pVal, boolean hasPeptideEvidence, Double geneRatioDiff) {
-        this.eventKey = eventKey;
-        this.geneSymbol = geneSymbol;
-        this.strand = strand;
-        this.eventType = eventType;
-        this.exonStart = exonStart;
-        this.exonEnd = exonEnd;
-        this.deltaPsi = deltaPsi;
-        this.pVal = pVal;
-        this.hasPeptideEvidence = hasPeptideEvidence;
-        this.geneRatioDiff = geneRatioDiff;
-    }
 
     public SplicingEventsTableModel(String eventKey, String geneSymbol, String eventType, Double deltaPsi, Double pVal,
                                     boolean hasPeptideEvidence, Double geneRatioDiff) {
@@ -40,6 +28,19 @@ public class SplicingEventsTableModel {
         this.pVal = pVal;
         this.hasPeptideEvidence = hasPeptideEvidence;
         this.geneRatioDiff = geneRatioDiff;
+        parseKey(eventKey, eventType);
+    }
+
+    public SplicingEventsTableModel(String eventKey, String geneSymbol, String eventType, Double deltaPsi, Double pVal,
+                                    boolean hasPeptideEvidence, Double geneRatioDiff, HashMap<String, HashMap<String, Double>> proteinPsi) {
+        this.eventKey = eventKey;
+        this.geneSymbol = geneSymbol;
+        this.eventType = eventType;
+        this.deltaPsi = deltaPsi;
+        this.pVal = pVal;
+        this.hasPeptideEvidence = hasPeptideEvidence;
+        this.geneRatioDiff = geneRatioDiff;
+        this.proteinPsi = proteinPsi;
         parseKey(eventKey, eventType);
     }
 
@@ -221,6 +222,28 @@ public class SplicingEventsTableModel {
 
     public Double getGeneRatioDiff() {
         return geneRatioDiff;
+    }
+
+    public Double getProteinDpsi(String run){
+
+        if (proteinPsi==null)
+                return null;
+
+        if(proteinPsi.containsKey(run)){
+            return proteinPsi.get(run).get("dpsi");
+        }
+        return null;
+    }
+
+    public Double getProteinPval(String run){
+
+        if (proteinPsi==null)
+            return null;
+
+        if(proteinPsi.containsKey(run)){
+            return proteinPsi.get(run).get("pval");
+        }
+        return null;
     }
 }
 

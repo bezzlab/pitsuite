@@ -87,7 +87,7 @@ public class DatabaseGeneration {
                         } else if (filePath.getFileName().toString().contains("splicingAllEvents_psi.tsv")) {
                             Platform.runLater(() -> progressDialog.setText("Importing splicing Psi / TPM ..."));
                             splicePsiParser(filePath);
-                        } else if (filePath.getFileName().toString().contains("splicingAllEvents_dpsi.tsv")){
+                        } else if (filePath.getFileName().toString().contains("splicingAllEvents_dpsi.json")){
                             Platform.runLater(() -> progressDialog.setText("Importing splicing dPsi: "));
                             spliceDPSIParser(filePath);
                         }
@@ -1018,48 +1018,64 @@ public class DatabaseGeneration {
         ArrayList<Document> splicDocsToDBList = new ArrayList<>();
 
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath.toString()))) {
-            String line;
+        try  {
 
-            // get / skip header
-            br.readLine();
+            ArrayList<Document> dpsiDocsToDBList = new ArrayList<>();
+
+            JSONParser parser = new JSONParser();
+
+            boolean hasBlastName = false;
+
+            try {
+                Object obj = parser.parse(new FileReader(filePath.toString()));
+
+                JSONObject events = (JSONObject) obj;
+                Set<String> eventNames = events.keySet();
+                for (String event: eventNames) {
+                    JSONObject eventObj = (JSONObject) events.get(event);
+                    if (dpsiDocsToDBList.size() >= 10000) {
+                        Document[] splicDocsArray = new Document[dpsiDocsToDBList.size()];
+                        splicDocsArray = dpsiDocsToDBList.toArray(splicDocsArray);
+                        dPsiCollection.insert(splicDocsArray);
+                        dpsiDocsToDBList = new ArrayList<>();
+                    }
 
 
-            while ((line = br.readLine()) != null) {
 
-                if (splicDocsToDBList.size() >= 10000) {
-                    Document[] splicDocsArray = new Document[splicDocsToDBList.size()];
-                    splicDocsArray = splicDocsToDBList.toArray(splicDocsArray);
+                    Document dpsiDocument = new Document(eventObj);
+                    String comp = filePath.getParent().getFileName().toString();
+
+                    if(dpsiDocument.get(comp+"_delta_psi")!=null){
+
+
+                        dpsiDocument.put("geneName", eventObj.get("gene_id"));
+                        dpsiDocument.put("event", event);
+                        dpsiDocument.put("deltaPsi", dpsiDocument.get(comp+"_delta_psi"));
+                        dpsiDocument.put("pval", dpsiDocument.get(comp+"_pvalue"));
+                        dpsiDocument.put("pepEvidence", dpsiDocument.get("peptide_evidence"));
+                        dpsiDocument.put("eventType", dpsiDocument.get("event_type"));
+
+                        if (eventObj.containsKey("protein")){
+                            dpsiDocument.put("protein", eventObj.get("protein"));
+                        }
+                        dpsiDocsToDBList.add(dpsiDocument);
+                    }
+
+
+
+
+                }
+
+                if(dpsiDocsToDBList.size() > 0){
+                    Document[] splicDocsArray = new Document[dpsiDocsToDBList.size()];
+                    splicDocsArray = dpsiDocsToDBList.toArray(splicDocsArray);
                     dPsiCollection.insert(splicDocsArray);
-                    splicDocsToDBList = new ArrayList<>();
                 }
 
-                Document currDocument = new Document();
-                String[] values = line.split("\\t");
 
-                // pass if delta_psi  = ""
-                if (values[2].length() == 0){
-                    continue;
-                }
 
-                currDocument.put("geneName", values[0]);
-                currDocument.put("event", values[1]);
-                currDocument.put("deltaPsi", Double.valueOf(values[2]));
-
-                if(!values[3].equals(""))
-                    currDocument.put("pval", Double.valueOf(values[3]));
-                currDocument.put("eventType", values[4]);
-                currDocument.put("pepEvidence", Boolean.valueOf(values[5]));
-                //currDocument.put("geneRatioDiff", Double.valueOf(values[6]));
-
-                splicDocsToDBList.add(currDocument);
-
-            }
-
-            if(splicDocsToDBList.size() > 0){
-                Document[] splicDocsArray = new Document[splicDocsToDBList.size()];
-                splicDocsArray = splicDocsToDBList.toArray(splicDocsArray);
-                dPsiCollection.insert(splicDocsArray);
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
 
             dPsiCollection.createIndex("event", IndexOptions.indexOptions(IndexType.NonUnique, false));
