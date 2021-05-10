@@ -17,6 +17,7 @@ public class Peptide {
     HashSet<String> genes;
     HashMap<String, HashMap<String, Double>> intensities;
     MSRun run;
+    double foldChange;
 
 
     public Peptide(String sequence){
@@ -226,17 +227,49 @@ public class Peptide {
         ArrayList<Double> condAIntensities = new ArrayList<>();
         ArrayList<Double> condBIntensities = new ArrayList<>();
 
-        HashMap<String, Double> intensities = getIntensities(run.getName());
+        //HashMap<String, Double> intensities = getIntensities(run.getName());
 
-        if(run.isCombined()){
-            if(Config.getRunType(run.getName()).equals("LABELFREE")){
-                for(MSRun subrun: run.getRuns()){
-                    if(Config.getRunOrLabelCondition(subrun.getName()).equals(condA)){
-                        condAIntensities.add(intensities.get(subrun.getName()));
-                    }else if(Config.getRunOrLabelCondition(subrun.getName()).equals(condB)){
-                        condBIntensities.add(intensities.get(subrun.getName()));
+        if(Config.isCombinedRun(run.getName())){
+//            if(Config.getRunType(run.getName()).equals("LABELFREE")){
+//                for(MSRun subrun: run.getRuns()){
+//                    if(Config.getRunOrLabelCondition(subrun.getName()).equals(condA)){
+//                        condAIntensities.add(intensities.get(subrun.getName()));
+//                    }else if(Config.getRunOrLabelCondition(subrun.getName()).equals(condB)){
+//                        condBIntensities.add(intensities.get(subrun.getName()));
+//                    }
+//                }
+//
+//                OptionalDouble averageA = condAIntensities
+//                        .stream()
+//                        .mapToDouble(a -> a)
+//                        .average();
+//                OptionalDouble averageB = condBIntensities
+//                        .stream()
+//                        .mapToDouble(a -> a)
+//                        .average();
+//
+//                if(averageA.isPresent() && averageB.isPresent()){
+//                    if(averageB.getAsDouble()!=0.){
+//                        return averageA.getAsDouble()/averageB.getAsDouble();
+//                    }
+//                }
+//            }
+            if(Config.getRunType(run.getName()).equals("SILAC")){
+
+                for(String subrun: Config.getSubRuns(run.getName())){
+                    if(psms.containsKey(subrun)){
+                        HashMap<String, Double> intensities = getIntensities(subrun);
+
+
+                        if(intensities.get(condA)!=null)
+                            condAIntensities.add(intensities.get(condA));
+                        if(intensities.get(condB)!=null)
+                            condBIntensities.add(intensities.get(condB));
+
                     }
+
                 }
+
 
                 OptionalDouble averageA = condAIntensities
                         .stream()
@@ -249,9 +282,12 @@ public class Peptide {
 
                 if(averageA.isPresent() && averageB.isPresent()){
                     if(averageB.getAsDouble()!=0.){
+                        foldChange = Math.log10(averageA.getAsDouble()/averageB.getAsDouble())/Math.log10(2);
                         return averageA.getAsDouble()/averageB.getAsDouble();
                     }
                 }
+
+
             }
         }else{
 
@@ -269,6 +305,10 @@ public class Peptide {
 
     public void addPsm(PSM psm, String run) {
         if(!run.equals("nan"))
+            if(!psms.containsKey(run))
+                psms.put(run, new ArrayList<>());
             psms.get(run).add(psm);
     }
+
+    public double getFoldChange(){return foldChange;}
 }

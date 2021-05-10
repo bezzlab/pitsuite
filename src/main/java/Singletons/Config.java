@@ -210,6 +210,7 @@ public class Config {
         return null;
     }
 
+
     public static ArrayList<String> getSubRuns(String runName){
         ArrayList<String> subRuns = new ArrayList<>();
         if(config.getJSONObject("mzml").has("combine")){
@@ -240,7 +241,7 @@ public class Config {
                 return new TreeSet<>(getRunSamples(runName)).iterator().next();
             }
         }else{
-            if(config.getJSONObject("mzml").getJSONObject("combine").has("reference"))
+            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).has("reference"))
                 return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).getString("reference");
             else{
                 return new TreeSet<>(getRunSamples(runName)).iterator().next();

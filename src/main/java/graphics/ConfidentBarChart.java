@@ -221,9 +221,13 @@ public class ConfidentBarChart extends Pane {
 
                 xAxisPane.getChildren().add(xLabel);
 
-
-                offsetX += barWidth + 20;
+                offsetX += barWidth;
+                if(groups.size()==1)
+                    offsetX +=  20;
             }
+
+            if(groups.size()>1)
+                offsetX+=20;
         }
 
 

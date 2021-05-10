@@ -48,7 +48,7 @@
                     <columns>
                       <TableColumn fx:id="peptideColumn" text="Peptide" />
                         <TableColumn fx:id="nbGenesColumn" text="Genes" />
-                        <TableColumn fx:id="foldChangeColumn" text="Fold change" />
+                        <TableColumn fx:id="foldChangeColumn" text="Log2FC" />
                     </columns>
                   </TableView>
                   <TabPane tabClosingPolicy="UNAVAILABLE" GridPane.columnIndex="1">
