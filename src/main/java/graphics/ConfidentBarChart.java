@@ -21,8 +21,6 @@ public class ConfidentBarChart extends Pane {
     HBox mainDataPane = new HBox();
     VBox rightPane = new VBox();
 
-
-
     Pane dataPane = new Pane();
     Pane xAxisPane = new Pane();
     Pane yAxisPane = new Pane();
@@ -50,6 +48,8 @@ public class ConfidentBarChart extends Pane {
 
 
     public ConfidentBarChart() {
+
+
 
         mainDataPane.getChildren().add(yAxisPane);
 
@@ -671,6 +671,8 @@ public class ConfidentBarChart extends Pane {
     public void drawHorizontalLineAt(Double value, String label){
         horizontalLineAt = new Pair<>(value, label);
     }
+
+
 
 
 
