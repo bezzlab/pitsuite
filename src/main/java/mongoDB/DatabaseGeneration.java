@@ -724,10 +724,14 @@ public class DatabaseGeneration {
 
 
                 Document dgeDocument = new Document(gene);
-                dgeDocsToDBList.add(dgeDocument);
+                if(dgeDocument.get("log2fc").getClass().equals(String.class)){
+                    dgeDocument.replace("log2fc", Double.parseDouble((String) dgeDocument.get("log2fc")));
+                }
+
                 if(dgeDocument.containsKey("names")){
                     hasBlastName = true;
                 }
+                dgeDocsToDBList.add(dgeDocument);
 
 
             }
