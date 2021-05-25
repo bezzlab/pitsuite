@@ -12,7 +12,11 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
+import org.json.JSONObject;
+import pitguiv2.Settings;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 public class ConfidentBarChart extends Pane {
@@ -20,7 +24,6 @@ public class ConfidentBarChart extends Pane {
     VBox mainPane = new VBox();
     HBox mainDataPane = new HBox();
     VBox rightPane = new VBox();
-
 
 
     Pane dataPane = new Pane();
@@ -38,21 +41,21 @@ public class ConfidentBarChart extends Pane {
     String meanOrMedian = "mean";
     String reference;
 
-    String[] colors = {"#aaf0d1","#ffa474","#bc5d58","#b2ec5d","#17806d","#fcb4d5","#e3256b","#bab86c","#fce883",
-            "#cda4de","#8e4585","#1f75fe","#1a4876","#fe4eda","#c8385a","#ff7538"};
+    String[] colors = {"#aaf0d1", "#ffa474", "#bc5d58", "#b2ec5d", "#17806d", "#fcb4d5", "#e3256b", "#bab86c", "#fce883",
+            "#cda4de", "#8e4585", "#1f75fe", "#1a4876", "#fe4eda", "#c8385a", "#ff7538"};
 
     String title;
 
     Pair<Double, String> horizontalLineAt;
 
-
-
+    private int fontSize;
 
 
     public ConfidentBarChart() {
 
         mainDataPane.getChildren().add(yAxisPane);
 
+        updateSettings(loadSettings());
         Separator separator1 = new Separator();
         separator1.setPrefWidth(30);
         separator1.setOrientation(Orientation.VERTICAL);
@@ -71,7 +74,7 @@ public class ConfidentBarChart extends Pane {
 
 
         this.heightProperty().addListener((observable, oldValue, newValue) -> {
-            if(ConfidentBarChart.this.getWidth()>0){
+            if (ConfidentBarChart.this.getWidth() > 0) {
                 draw();
             }
 
@@ -79,23 +82,23 @@ public class ConfidentBarChart extends Pane {
 
     }
 
-    public void addSeries(String name, String group, ArrayList<Double> values){
-        if(!groups.containsKey(group)){
+    public void addSeries(String name, String group, ArrayList<Double> values) {
+        if (!groups.containsKey(group)) {
             groups.put(group, new HashMap<>());
         }
         groups.get(group).put(name, values);
     }
 
-    public void addSeries(String name, ArrayList<Double> values){
+    public void addSeries(String name, ArrayList<Double> values) {
         addSeries(name, "default", values);
     }
 
-    public void addGroups(HashMap<String, HashMap<String, ArrayList<Double>>> groups){
+    public void addGroups(HashMap<String, HashMap<String, ArrayList<Double>>> groups) {
         this.groups = groups;
     }
 
 
-    public void draw(){
+    public void draw() {
 
         clear();
 
@@ -106,21 +109,21 @@ public class ConfidentBarChart extends Pane {
         double offsetX = 0;
 
 
-        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+        for (Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry : groups.entrySet()) {
             for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
 
                 Double agregatedValue;
-                if(meanOrMedian.equals("mean"))
+                if (meanOrMedian.equals("mean"))
                     agregatedValue = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
-                 else{
+                else {
                     double[] values = entry.getValue().stream().mapToDouble(val -> val).toArray();
                     Arrays.sort(values);
-                    if(values.length==0)
+                    if (values.length == 0)
                         agregatedValue = 0.;
                     else if (values.length % 2 == 0)
-                        agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
+                        agregatedValue = (values[values.length / 2] + values[values.length / 2 - 1]) / 2;
                     else
-                        agregatedValue = values[values.length/2];
+                        agregatedValue = values[values.length / 2];
                 }
 
 
@@ -136,7 +139,7 @@ public class ConfidentBarChart extends Pane {
                     }
                 }
 
-                if(meanOrMedian.equals("mean")) {
+                if (meanOrMedian.equals("mean")) {
                     sd /= (entry.getValue().size() - 1);
                     sd = Math.sqrt(sd);
                     double confInterval = 1.96 * sd / Math.sqrt(entry.getValue().size());
@@ -155,17 +158,17 @@ public class ConfidentBarChart extends Pane {
         }
 
 
-        if(manualMax!=null)
+        if (manualMax != null)
             max = manualMax;
 
-        if(manualMin!=null)
+        if (manualMin != null)
             min = manualMin;
 
         double maxLabelHeight = 0;
-        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+        for (Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry : groups.entrySet()) {
             for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
                 Text xLabel = new Text(entry.getKey());
-                xLabel.setFont(Font.font(20));
+                xLabel.setFont(Font.font(fontSize));
                 double labelHeight = xLabel.getLayoutBounds().getWidth();
 
                 if (labelHeight > maxLabelHeight) {
@@ -175,37 +178,32 @@ public class ConfidentBarChart extends Pane {
         }
 
 
-
-
-
-
-        double yAxisWidth = makeYAxis(min, max, this.getHeight()-maxLabelHeight - titleHeight);
+        double yAxisWidth = makeYAxis(min, max, this.getHeight() - maxLabelHeight - titleHeight);
         double groupLabelsWidth = 0;
-        if(groups.size()>1){
+        if (groups.size() > 1) {
             groupLabelsWidth = makeGroupLegend();
         }
 
-        drawDashedLines(this.getWidth() - yAxisWidth,  this.getHeight()-maxLabelHeight - titleHeight);
-
+        drawDashedLines(this.getWidth() - yAxisWidth, this.getHeight() - maxLabelHeight - titleHeight);
 
 
         double barWidth = (this.getWidth() - yAxisWidth - groupLabelsWidth);
-        if(groups.containsKey("default"))
-            barWidth-=20*(groups.get("default").size()-1);
+        if (groups.containsKey("default"))
+            barWidth -= 20 * (groups.get("default").size() - 1);
         else
-            barWidth-=20*(groups.size()-1);
+            barWidth -= 20 * (groups.size() - 1);
 
         int nbBars = 0;
-        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> entry: groups.entrySet()){
-            nbBars+=entry.getValue().size();
+        for (Map.Entry<String, HashMap<String, ArrayList<Double>>> entry : groups.entrySet()) {
+            nbBars += entry.getValue().size();
         }
-        barWidth/=nbBars;
+        barWidth /= nbBars;
 
 
-        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+        for (Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry : groups.entrySet()) {
             for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
                 Text xLabel = new Text(entry.getKey());
-                xLabel.setFont(Font.font("monospace", 20));
+                xLabel.setFont(Font.font("monospace", fontSize));
 
                 double labelWidth = xLabel.getLayoutBounds().getWidth();
 
@@ -222,17 +220,16 @@ public class ConfidentBarChart extends Pane {
                 xAxisPane.getChildren().add(xLabel);
 
                 offsetX += barWidth;
-                if(groups.size()==1)
-                    offsetX +=  20;
+                if (groups.size() == 1)
+                    offsetX += 20;
             }
 
-            if(groups.size()>1)
-                offsetX+=20;
+            if (groups.size() > 1)
+                offsetX += 20;
         }
 
 
-
-        double pixelsPerVal = (this.getHeight() - maxLabelHeight - titleHeight) /max;
+        double pixelsPerVal = (this.getHeight() - maxLabelHeight - titleHeight) / max;
         double height = this.getHeight() - maxLabelHeight - titleHeight;
         dataPane.setPrefHeight(height);
 
@@ -240,22 +237,22 @@ public class ConfidentBarChart extends Pane {
 
 
         int colorIndex = 0;
-        for(Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry: groups.entrySet()) {
+        for (Map.Entry<String, HashMap<String, ArrayList<Double>>> groupEntry : groups.entrySet()) {
             for (Map.Entry<String, ArrayList<Double>> entry : groupEntry.getValue().entrySet()) {
 
                 double agregatedValue;
-                if(meanOrMedian.equals("mean"))
+                if (meanOrMedian.equals("mean"))
                     agregatedValue = entry.getValue().stream().mapToDouble(val -> val).average().orElse(0.0);
-                else{
+                else {
                     double[] values = entry.getValue().stream().mapToDouble(val -> val)
                             .filter((d) -> !Double.isNaN(d)).toArray();
                     Arrays.sort(values);
                     if (values.length == 0)
                         agregatedValue = 0.;
                     else if (values.length % 2 == 0)
-                        agregatedValue = (values[values.length/2] + values[values.length/2 - 1])/2;
+                        agregatedValue = (values[values.length / 2] + values[values.length / 2 - 1]) / 2;
                     else
-                        agregatedValue = values[values.length/2];
+                        agregatedValue = values[values.length / 2];
                 }
 
                 double sd = 0;
@@ -277,11 +274,10 @@ public class ConfidentBarChart extends Pane {
                 rec.setHeight(height * (agregatedValue / max));
 
 
-
                 rec.setFill(Color.web(colors[colorIndex]));
                 dataPane.getChildren().add(rec);
 
-                if(meanOrMedian.equals("mean")) {
+                if (meanOrMedian.equals("mean")) {
                     Line intervalLine = new Line();
                     intervalLine.setStartX(offsetX + barWidth / 2);
                     intervalLine.setEndX(offsetX + barWidth / 2);
@@ -315,7 +311,7 @@ public class ConfidentBarChart extends Pane {
                     dataPane.getChildren().add(intervalLineHorizBottom);
                 }
 
-                if(!entry.getKey().equals(reference)) {
+                if (!entry.getKey().equals(reference)) {
                     for (double value : entry.getValue()) {
                         Circle c = new Circle();
                         double radius = Math.min(barWidth / 8, 10);
@@ -334,61 +330,59 @@ public class ConfidentBarChart extends Pane {
 
                 offsetX += barWidth;
 
-                if(groups.size()==1){
+                if (groups.size() == 1) {
                     colorIndex++;
                     offsetX += 20;
                 }
 
 
             }
-            if(groups.size()>1){
+            if (groups.size() > 1) {
                 colorIndex++;
                 offsetX += 20;
             }
         }
 
-        if(xLegend!=null){
+        if (xLegend != null) {
             Text legend = new Text(xLegend);
-            legend.setFont(Font.font(30));
-            legend.setX(this.getWidth()/2 - legend.getLayoutBounds().getWidth()/2);
+            legend.setFont(Font.font(fontSize));
+            legend.setX(this.getWidth() / 2 - legend.getLayoutBounds().getWidth() / 2);
             legend.setY(80);
             xAxisPane.getChildren().add(legend);
         }
 
 
-        if (horizontalLineAt!=null){
+        if (horizontalLineAt != null) {
             Line line = new Line();
             line.setStartX(0);
             line.setEndX(offsetX);
             double lineValue = horizontalLineAt.getKey();
-            line.setStartY(height - (lineValue /(max-min))*height);
-            line.setEndY(height - (lineValue /(max-min))*height);
+            line.setStartY(height - (lineValue / (max - min)) * height);
+            line.setEndY(height - (lineValue / (max - min)) * height);
             dataPane.getChildren().add(line);
         }
-
-
 
 
         this.getChildren().add(mainPane);
     }
 
 
-    public double makeYAxis(double min, double max, double height){
+    public double makeYAxis(double min, double max, double height) {
 
-        double tickIndent = (max-min)/10;
+        double tickIndent = (max - min) / 10;
 
         double widestText = 0;
 
         for (int i = 0; i <= 10; i++) {
             Text text;
-            if(max-min>10){
-                text = new Text(String.valueOf(Math.round(tickIndent*i)));
-            }else{
-                text = new Text(String.format("%.2f", tickIndent*i));
+            if (max - min > 10) {
+                text = new Text(String.valueOf(Math.round(tickIndent * i)));
+            } else {
+                text = new Text(String.format("%.2f", tickIndent * i));
             }
-            text.setFont(Font.font(12));
+            text.setFont(Font.font(fontSize));
 
-            if(text.getLayoutBounds().getWidth()>widestText){
+            if (text.getLayoutBounds().getWidth() > widestText) {
                 widestText = text.getLayoutBounds().getWidth();
             }
         }
@@ -397,15 +391,15 @@ public class ConfidentBarChart extends Pane {
         for (int i = 0; i <= 10; i++) {
 
             Text text;
-            if(max-min>10){
-                text = new Text(String.valueOf(Math.round(tickIndent*i)));
-            }else{
-                text = new Text(String.format("%.2f", tickIndent*i));
+            if (max - min > 10) {
+                text = new Text(String.valueOf(Math.round(tickIndent * i)));
+            } else {
+                text = new Text(String.format("%.2f", tickIndent * i));
             }
 
-            text.setFont(Font.font(12));
+            text.setFont(Font.font(fontSize));
             text.setX(5 - text.getLayoutBounds().getWidth() + widestText);
-            text.setY(height - height/10 * i + text.getLayoutBounds().getHeight()/2);
+            text.setY(height - height / 10 * i + text.getLayoutBounds().getHeight() / 2);
             yAxisPane.getChildren().add(text);
 
 
@@ -413,8 +407,8 @@ public class ConfidentBarChart extends Pane {
 
         for (int i = 0; i <= 10; i++) {
             Line l = new Line();
-            l.setStartY(height - height/10 * i);
-            l.setEndY(height - height/10 * i);
+            l.setStartY(height - height / 10 * i);
+            l.setEndY(height - height / 10 * i);
             l.setEndX(20 + widestText);
             l.setStartX(10 + widestText);
             yAxisPane.getChildren().add(l);
@@ -433,36 +427,36 @@ public class ConfidentBarChart extends Pane {
         return yAxisWidth;
     }
 
-    private double makeGroupLegend(){
-        int i=0;
+    private double makeGroupLegend() {
+        int i = 0;
 
         Pane container = new Pane();
         Text t = new Text("T");
-        t.setFont(Font.font("monospace", 16));
+        t.setFont(Font.font("monospace", fontSize));
 
-        double paneHeight = groups.size()*t.getLayoutBounds().getHeight() + (groups.size()-1)*10;
-        double offsetY = (this.getHeight()-paneHeight) / 2;
+        double paneHeight = groups.size() * t.getLayoutBounds().getHeight() + (groups.size() - 1) * 10;
+        double offsetY = (this.getHeight() - paneHeight) / 2;
 
         double maxWidth = 0;
 
-        for(String group: groups.keySet()){
+        for (String group : groups.keySet()) {
             Text groupText = new Text(group);
-            groupText.setFont(Font.font("monospace", 16));
+            groupText.setFont(Font.font("monospace", fontSize));
             Rectangle rectangle = new Rectangle();
             rectangle.setWidth(20);
             rectangle.setHeight(groupText.getLayoutBounds().getHeight());
             rectangle.setFill(Color.web(colors[i]));
 
             double width = 25 + groupText.getLayoutBounds().getWidth();
-            if(width>maxWidth)
+            if (width > maxWidth)
                 maxWidth = width;
 
             rectangle.setY(offsetY);
             groupText.setY(offsetY);
             groupText.setX(25);
-            groupText.setY(offsetY+groupText.getLayoutBounds().getHeight());
+            groupText.setY(offsetY + groupText.getLayoutBounds().getHeight());
 
-            offsetY+=rectangle.getHeight()+10;
+            offsetY += rectangle.getHeight() + 10;
             i++;
 
             container.getChildren().add(rectangle);
@@ -473,10 +467,10 @@ public class ConfidentBarChart extends Pane {
         return maxWidth;
     }
 
-    private double makeTitle(){
-        if(title!=null){
+    private double makeTitle() {
+        if (title != null) {
             Text t = new Text(title);
-            t.setFont(Font.font("monospace", 20));
+            t.setFont(Font.font("monospace", fontSize));
             t.setX((this.getWidth() - t.getLayoutBounds().getWidth()) / 2);
             titlePane.getChildren().add(t);
             return t.getLayoutBounds().getHeight();
@@ -485,22 +479,24 @@ public class ConfidentBarChart extends Pane {
     }
 
 
-    public HBox getPane(){
+    public HBox getPane() {
         return mainDataPane;
     }
 
-    public void setLegend(String x, String y){
+    public void setLegend(String x, String y) {
         xLegend = x;
-        yLegend = y;
-    }
-    public void setXLegend(String x){
-        xLegend = x;
-    }
-    public void setYLegend(String y){
         yLegend = y;
     }
 
-    public void clear(){
+    public void setXLegend(String x) {
+        xLegend = x;
+    }
+
+    public void setYLegend(String y) {
+        yLegend = y;
+    }
+
+    public void clear() {
         mainPane.getChildren().clear();
         mainDataPane.getChildren().clear();
         titlePane.getChildren().clear();
@@ -523,28 +519,29 @@ public class ConfidentBarChart extends Pane {
         this.getChildren().clear();
     }
 
-    private void drawDashedLines(double width, double height){
+    private void drawDashedLines(double width, double height) {
         for (int i = 0; i <= 10; i++) {
-            Line l = new Line(0, height - height/10 * i, width, height - height/10 * i);
+            Line l = new Line(0, height - height / 10 * i, width, height - height / 10 * i);
             l.getStrokeDashArray().addAll(2d);
-            l.setStroke(Color.rgb(127,127,127));
+            l.setStroke(Color.rgb(127, 127, 127));
             l.setOpacity(0.5);
             dataPane.getChildren().add(l);
         }
     }
 
-    public void addAll(String group, HashMap<String, ArrayList<Double>> series){
+    public void addAll(String group, HashMap<String, ArrayList<Double>> series) {
         groups.put(group, series);
     }
-    public void addAll(HashMap<String, ArrayList<Double>> series){
+
+    public void addAll(HashMap<String, ArrayList<Double>> series) {
         groups.put("default", series);
     }
 
-    public void setMin(double min){
+    public void setMin(double min) {
         this.manualMin = min;
     }
 
-    public void setMax(double max){
+    public void setMax(double max) {
         this.manualMax = max;
     }
 
@@ -652,27 +649,45 @@ public class ConfidentBarChart extends Pane {
 
     protected final double calculateNewScale(double length, double lowerBound, double upperBound) {
         double newScale = 1;
-        newScale = ((upperBound-lowerBound) == 0) ? -length : -(length / (upperBound - lowerBound));
+        newScale = ((upperBound - lowerBound) == 0) ? -length : -(length / (upperBound - lowerBound));
         return newScale;
     }
 
-    public void setMeanOrMedian(String val){
+    public void setMeanOrMedian(String val) {
         this.meanOrMedian = val;
     }
 
-    public void setTitle(String title){
+    public void setTitle(String title) {
         this.title = title;
     }
 
-    public void setReference(String ref){
+    public void setReference(String ref) {
         this.reference = ref;
     }
 
-    public void drawHorizontalLineAt(Double value, String label){
+    public void drawHorizontalLineAt(Double value, String label) {
         horizontalLineAt = new Pair<>(value, label);
     }
 
+    private JSONObject loadSettings() {
+        try {
+            Scanner in = new Scanner(new FileReader("./settings.json"));
+            StringBuilder sb = new StringBuilder();
+            while (in.hasNext()) {
+                sb.append(in.next());
+            }
+
+            return new JSONObject(sb.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public void updateSettings(org.json.JSONObject settings) {
+        fontSize = settings.getJSONObject("Fonts").getJSONObject("charts").getInt("size");
 
 
-
+    }
 }
