@@ -22,4 +22,8 @@ public class Settings {
     public int getMinSashimiReads(){
         return settings.getJSONObject("Browser").getInt("minSashimiReads");
     }
+
+    public String getPathToR(){
+        return settings.getJSONObject("tools").getString("R");
+    }
 }

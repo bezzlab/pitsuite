@@ -18,12 +18,16 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.dizitart.no2.*;
 import org.dizitart.no2.filters.Filters;
 import org.json.JSONObject;
+import pitguiv2.Settings;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
@@ -31,6 +35,7 @@ import java.util.*;
 import java.util.function.DoubleBinaryOperator;
 
 import static org.dizitart.no2.filters.Filters.*;
+
 
 
 public class DgeTableController extends Controller {
@@ -110,6 +115,7 @@ public class DgeTableController extends Controller {
     private WebViewController proteinRnaFcScatter;
 
     private int fontSize;
+    private JSONObject settings;
 
 
 
@@ -223,8 +229,9 @@ public class DgeTableController extends Controller {
 
 
                             selectedGeneCharts.getChildren().clear();
-                            drawSelectedGeneReadCount(rowData.getGeneSymbol());
-                            drawSelectedGeneProteinQuant(rowData.getGeneSymbol());
+                            updateSettings(loadSettings());
+                            //drawSelectedGeneReadCount(rowData.getGeneSymbol());
+                            //drawSelectedGeneProteinQuant(rowData.getGeneSymbol());
 
                             if (goTermsController.isGoLoaded()) {
                                 goTermsController.setGoTermsGeneTable(rowData.getGeneSymbol());
@@ -275,7 +282,7 @@ public class DgeTableController extends Controller {
         allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
             if (allGenesReader.getGenesLoadedProperty().get()) {
                 Platform.runLater(() ->{
-                    keggController.setParentController(this, allGenesReader);
+                    //keggController.setParentController(this, allGenesReader);
                     goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     gseaController.setParentController(this);
                 });
@@ -759,12 +766,19 @@ public class DgeTableController extends Controller {
                 new BarChart<>(xAxis, yAxis);
         bc.setTitle("Differential gene expression");
         bc.setLegendVisible(false);
-//        bc.setStyle("-fx-font-size: " + fontSize + "px;");
+        xAxis.tickLabelFontProperty().set(Font.font(fontSize));
+        //bc.setStyle("-fx-font-size: " + fontSize + "px;");
+
 
         ArrayList<XYChart.Series> allSeries = new ArrayList<>();
 
         ConfidentBarChart bc2 = new ConfidentBarChart();
         bc2.setTitle("Normalised read counts");
+        //bc2.setMaxSize(250,400);
+        //bc2.setStyle("-fx-font-size: 10px;");
+
+
+
 
         for(Document result: documents){
             JSONObject res = new JSONObject(result).getJSONObject("counts");
@@ -787,23 +801,17 @@ public class DgeTableController extends Controller {
                     i++;
                 }
                 bc2.addSeries(conditionKey, samplesCounts);
-
-
-
             }
         }
+
         for(XYChart.Series series: allSeries){
             bc.getData().add(series);
         }
+
         bc2.draw();
         HBox.setHgrow(bc2, Priority.ALWAYS);
+
         selectedGeneCharts.getChildren().add(bc2);
-
-
-
-
-
-
     }
 
 
@@ -822,12 +830,15 @@ public class DgeTableController extends Controller {
         barChart.setTitle("Differential protein abundance");
 
 
+
         final CategoryAxis xAxisLineChart = new CategoryAxis();
         final NumberAxis yAxisLineChart = new NumberAxis();
         yAxisLineChart.setLabel("Peptide intensity");
         LineChart<String,Number> lineChart =
                 new LineChart<>(xAxisLineChart,yAxisLineChart);
         lineChart.setTitle("Differential peptide intensity");
+        lineChart.setStyle("-fx-font-size: " + fontSize + "px;");
+
         
 
 
@@ -845,6 +856,8 @@ public class DgeTableController extends Controller {
         proteinConfidentBarChart.setMeanOrMedian("median");
         proteinConfidentBarChart.setTitle("Differencial protein abundance");
         proteinConfidentBarChart.setMin(0);
+        //proteinConfidentBarChart.setMaxSize(250,400);
+        //proteinConfidentBarChart.setStyle("-fx-font-size: 30px;");
 
 
         String referenceCondition = Config.getReferenceMSCondition(protComparisonCombobox.getValue());
@@ -1123,9 +1136,12 @@ public class DgeTableController extends Controller {
         }
         HBox.setHgrow(lineChart, Priority.ALWAYS);
         selectedGeneCharts.getChildren().add(lineChart);
+        //selectedGeneCharts.setStyle("-fx-font-size: 13px;");
 
 
     }
+
+
 
     public void updateSettings(org.json.JSONObject settings){
         fontSize = settings.getJSONObject("Fonts").getJSONObject("charts").getInt("size");
@@ -1139,6 +1155,22 @@ public class DgeTableController extends Controller {
         }
 
 
+    }
+
+    private JSONObject loadSettings(){
+        try {
+            Scanner in = new Scanner(new FileReader("./settings.json"));
+            StringBuilder sb = new StringBuilder();
+            while(in.hasNext()) {
+                sb.append(in.next());
+            }
+
+            return new JSONObject(sb.toString());
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public void resize(){

@@ -16,6 +16,8 @@ import javafx.scene.text.TextAlignment;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.dizitart.no2.Filter;
+import pitguiv2.Settings;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -309,13 +311,16 @@ public class GSEAController  implements Initializable {
 //                }
 //            }
 
+            String ptr;
+            ptr = Settings.getInstance().getPathToR();
+
             writer.close();
             ProcessBuilder pb;
             if(rnaOrProtein.equals("rna"))
-                pb = new ProcessBuilder("Rscript", "Rscripts/GSEA.R",
+                pb = new ProcessBuilder(ptr, "Rscripts/GSEA.R",
                         goOrKegg, rnaOrProtein , String.valueOf(rnaImageContainer.getWidth()), String.valueOf(rnaImageContainer.getHeight()));
             else
-                pb = new ProcessBuilder("Rscript", "Rscripts/GSEA.R",
+                pb = new ProcessBuilder(ptr, "Rscripts/GSEA.R",
                         goOrKegg, rnaOrProtein , String.valueOf(proteinImageContainer.getWidth()), String.valueOf(proteinImageContainer.getHeight()));
 
 
