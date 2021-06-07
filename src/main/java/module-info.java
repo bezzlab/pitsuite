@@ -37,6 +37,10 @@ module pitguivTwo {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.ikonli.fontawesome;
     requires diff.match.patch;
+    requires org.apache.httpcomponents.httpclient;
+    requires org.apache.httpcomponents.httpcore;
+    requires org.apache.httpcomponents.httpmime;
+    requires commons.fileupload;
 
 
 }

@@ -454,6 +454,26 @@ public class ResultsController implements Initializable {
     }
 
     private void uploadToPitdb(){
+        //PitdbUploader.uploadFile();
+
+        FXMLLoader loader = new FXMLLoader(App.class.getResource("/pitdbUpload.fxml"));
+        Stage stage = new Stage();
+
+        try {
+            Parent root = loader.load();
+            PITDBUploadController controller = loader.getController();
+            controller.setDb(db);
+            controller.setProjectName(projectName);
+            controller.loadFiles();
+            stage.setTitle("My New Stage Title");
+            stage.setScene(new Scene(root, 1000, 800));
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+
         PitdbUploader uploader = new PitdbUploader(db, projectName);
         uploader.upload();
     }
