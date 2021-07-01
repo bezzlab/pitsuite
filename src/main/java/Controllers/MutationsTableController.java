@@ -156,11 +156,31 @@ public class MutationsTableController implements Initializable {
             row.setOnMouseClicked(event -> {
                 if (!(row.isEmpty())) {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
+                        Variation tableRow = row.getItem();
                         if ( event.getClickCount() == 1 ) {
-                            Variation tableRow = row.getItem();
+
                             displayTranscMutInfo(tableRow);
                         } else if ( event.getClickCount() == 2 ) {
-                            parentController.showBrowserFromTranscId(row.getItem().getGene(), row.getItem().getRefPos());
+
+                            boolean foundCondition=false;
+                            if(tableRow.isInCDS() && !tableRow.isSilent()){
+                                for(Map.Entry<String, Map<String,  Map<String, Object>>> o: tableRow.getConditions().entrySet()){
+                                    for(Map.Entry<String,  Map<String, Object>> o2: o.getValue().entrySet()){
+                                        if(o2.getValue().containsKey("silent")){
+                                            foundCondition = true;
+                                            parentController.showBrowserFromTranscId(row.getItem().getGene(), row.getItem().getRefPos(),
+                                                    o.getKey());
+                                            System.out.println("FOUND");
+                                            break;
+                                        }
+                                    }
+                                    if(foundCondition)
+                                        break;
+                                }
+                            }
+
+                            if(!foundCondition)
+                                parentController.showBrowserFromTranscId(row.getItem().getGene(), row.getItem().getRefPos());
                         }
                     }
 
@@ -301,8 +321,8 @@ public class MutationsTableController implements Initializable {
                         String varRef = (String) mutationDoc.get("ref");
                         String chr = (String) mutationDoc.get("chr");
                         boolean hasPeptideEvidence = (boolean) mutationDoc.get("hasPeptideEvidence");
-                        Map<String, Map< String, Map<String, Double>>> conditions =
-                                (Map<String, Map<String, Map<String, Double>>>) mutationDoc.get("condition");
+                        Map<String, Map< String, Map<String, Object>>> conditions =
+                                (Map<String, Map<String, Map<String, Object>>>) mutationDoc.get("condition");
 
                         int varAltLength = varAlt.length();
                         int varRefLength = varRef.length();
@@ -337,20 +357,44 @@ public class MutationsTableController implements Initializable {
                             }
                         }
 
+                        boolean exclude = false;
                         int checkboxCount = 0;
-                        for(CheckBox checkBox: conditionFilterCheckboxes){
-                            if(checkBox.isSelected()){
+                        if(Config.hasPatients()){
 
-                                if((!conditions.containsKey(checkBox.getText()) && minSamplesConditionFilterSliders.get(checkboxCount).getLowValue()>0)||
-                                        (conditions.containsKey(checkBox.getText()) &&
-                                                conditions.get(checkBox.getText()).size()<minSamplesConditionFilterSliders.get(checkboxCount).getLowValue()) ||
-                                        (conditions.containsKey(checkBox.getText()) &&
-                                                conditions.get(checkBox.getText()).size()>minSamplesConditionFilterSliders.get(checkboxCount).getHighValue())){
-                                    break;
+
+                            for (CheckBox checkBox : conditionFilterCheckboxes) {
+                                if (checkBox.isSelected()) {
+
+                                    HashSet<String> intersection = new HashSet<>(conditions.keySet());
+                                    intersection.retainAll(Config.getPatientsGroups().get(checkBox.getText()));
+                                    if(intersection.size()<minSamplesConditionFilterSliders.get(checkboxCount).getLowValue() ||
+                                            intersection.size()>minSamplesConditionFilterSliders.get(checkboxCount).getHighValue()){
+
+                                        exclude=true;
+                                        break;
+                                    }
                                 }
+                                checkboxCount++;
                             }
-                            checkboxCount++;
+
+                        }else {
+                            for (CheckBox checkBox : conditionFilterCheckboxes) {
+                                if (checkBox.isSelected()) {
+
+                                    if ((!conditions.containsKey(checkBox.getText()) && minSamplesConditionFilterSliders.get(checkboxCount).getLowValue() > 0) ||
+                                            (conditions.containsKey(checkBox.getText()) &&
+                                                    conditions.get(checkBox.getText()).size() < minSamplesConditionFilterSliders.get(checkboxCount).getLowValue()) ||
+                                            (conditions.containsKey(checkBox.getText()) &&
+                                                    conditions.get(checkBox.getText()).size() > minSamplesConditionFilterSliders.get(checkboxCount).getHighValue())) {
+                                        exclude=true;
+                                        break;
+                                    }
+                                }
+                                checkboxCount++;
+                            }
                         }
+                        if(exclude)
+                            continue;
 
                         String type;
                         // count
@@ -466,10 +510,10 @@ public class MutationsTableController implements Initializable {
         ArrayList<Pair<String, Double>> qualArray = new ArrayList<>();
         ArrayList<Pair<String, Double>> afArray = new ArrayList<>();
 
-        for(Map.Entry<String, Map<String, Map<String, Double>>> condition: tableMutationBasicInfo.getConditions().entrySet()){
-            for(Map.Entry<String, Map<String, Double>> sample: condition.getValue().entrySet()){
-                qualArray.add(new Pair<>(condition.getKey()+" "+sample.getKey(), sample.getValue().get("qual")));
-                afArray.add(new Pair<>(condition.getKey()+" "+sample.getKey(), sample.getValue().get("AF")));
+        for(Map.Entry<String, Map<String, Map<String, Object>>> condition: tableMutationBasicInfo.getConditions().entrySet()){
+            for(Map.Entry<String, Map<String, Object>> sample: condition.getValue().entrySet()){
+                qualArray.add(new Pair<String, Double>(condition.getKey()+" "+sample.getKey(), (double) sample.getValue().get("qual")));
+                afArray.add(new Pair<>(condition.getKey() + " " + sample.getKey(), (double) sample.getValue().get("AF")));
             }
         }
 
@@ -521,45 +565,82 @@ public class MutationsTableController implements Initializable {
         VBox container = new VBox();
 
         // add chechboxes for the conditions
-        for(String condition: conditions){
 
-            JFXCheckBox conditionEnabledCheckbox = new JFXCheckBox();
-            conditionEnabledCheckbox.setText(condition);
-            conditionEnabledCheckbox.setSelected(true);
+        HashMap<String, ArrayList<String>> patients = Config.getPatientsGroups();
+        if(patients!=null){
+            for (Map.Entry<String, ArrayList<String>> entry : patients.entrySet()) {
+
+                JFXCheckBox conditionEnabledCheckbox = new JFXCheckBox();
+                conditionEnabledCheckbox.setText(entry.getKey());
+                conditionEnabledCheckbox.setSelected(true);
 
 //            conditionEnabledCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> filterTable());
 
 
-            conditionFilterCheckboxes.add(conditionEnabledCheckbox);
+                conditionFilterCheckboxes.add(conditionEnabledCheckbox);
 
-            int nbSamples = Config.getSamplesInCondition(condition).size();
-            RangeSlider slider = new RangeSlider();
-            slider.setMax(nbSamples);
-            slider.setLowValue(0);
-            slider.setHighValue(nbSamples);
-            slider.setMajorTickUnit(1);
-            slider.setShowTickLabels(true);
-            slider.setShowTickMarks(true);
-            slider.setSnapToTicks(true);
-
-
-            slider.lowValueProperty().addListener((obs, oldval, newVal) -> {
-                slider.setLowValue(Math.round(newVal.doubleValue()));
-            });
-            slider.highValueProperty().addListener((obs, oldval, newVal) -> {
-                slider.setHighValue(Math.round(newVal.doubleValue()));
-            });
-//            slider.setDisable(true);
-            conditionEnabledCheckbox.selectedProperty().addListener((obs, oldval, newVal) -> {
-                slider.setDisable(!newVal);
-            });
-
-            minSamplesConditionFilterSliders.add(slider);
-
-            container.getChildren().add(conditionEnabledCheckbox);
-            container.getChildren().add(slider);
+                int nbSamples = entry.getValue().size();
+                RangeSlider slider = new RangeSlider();
+                slider.setMax(nbSamples);
+                slider.setLowValue(0);
+                slider.setHighValue(nbSamples);
+                slider.setMajorTickUnit(1);
+                slider.setShowTickLabels(true);
+                slider.setShowTickMarks(true);
+                slider.setSnapToTicks(true);
 
 
+                slider.lowValueProperty().addListener((obs, oldval, newVal) -> slider.setLowValue(Math.round(newVal.doubleValue())));
+                slider.highValueProperty().addListener((obs, oldval, newVal) -> slider.setHighValue(Math.round(newVal.doubleValue())));
+                conditionEnabledCheckbox.selectedProperty().addListener((obs, oldval, newVal) -> {
+                    slider.setDisable(!newVal);
+                });
+
+                minSamplesConditionFilterSliders.add(slider);
+
+                container.getChildren().add(conditionEnabledCheckbox);
+                container.getChildren().add(slider);
+
+
+            }
+        }else {
+
+
+            for (String condition : conditions) {
+
+                JFXCheckBox conditionEnabledCheckbox = new JFXCheckBox();
+                conditionEnabledCheckbox.setText(condition);
+                conditionEnabledCheckbox.setSelected(true);
+
+//            conditionEnabledCheckbox.selectedProperty().addListener((observable, oldValue, newValue) -> filterTable());
+
+
+                conditionFilterCheckboxes.add(conditionEnabledCheckbox);
+
+                int nbSamples = Config.getSamplesInCondition(condition).size();
+                RangeSlider slider = new RangeSlider();
+                slider.setMax(nbSamples);
+                slider.setLowValue(0);
+                slider.setHighValue(nbSamples);
+                slider.setMajorTickUnit(1);
+                slider.setShowTickLabels(true);
+                slider.setShowTickMarks(true);
+                slider.setSnapToTicks(true);
+
+
+                slider.lowValueProperty().addListener((obs, oldval, newVal) -> slider.setLowValue(Math.round(newVal.doubleValue())));
+                slider.highValueProperty().addListener((obs, oldval, newVal) -> slider.setHighValue(Math.round(newVal.doubleValue())));
+                conditionEnabledCheckbox.selectedProperty().addListener((obs, oldval, newVal) -> {
+                    slider.setDisable(!newVal);
+                });
+
+                minSamplesConditionFilterSliders.add(slider);
+
+                container.getChildren().add(conditionEnabledCheckbox);
+                container.getChildren().add(slider);
+
+
+            }
         }
         upsetSampleSliderBox.getChildren().add(container);
 

@@ -113,10 +113,13 @@ public class PeptideTableController implements Initializable {
     private Peptide peptideToFind;
     private MSRun selectedRun;
 
+    private static PeptideTableController instance;
 
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+
+        instance = this;
 
         peptideColumn.setCellValueFactory( new PropertyValueFactory<>("sequence"));
         peptideColumn.prefWidthProperty().bind(peptideTable.widthProperty().multiply(0.6));
@@ -315,6 +318,8 @@ public class PeptideTableController implements Initializable {
 
     }
 
+    public static PeptideTableController getInstance(){return instance;}
+
 
     public void setParentController(ResultsController parentController){
         this.parentController = parentController;
@@ -330,17 +335,26 @@ public class PeptideTableController implements Initializable {
 
     }
 
-
     @FXML
     public void loadRun(){
+        loadRun(null);
+    }
+
+
+    @FXML
+    public void loadRun(String peptideSeq){
+
+        System.out.println(runCombobox.getSelectionModel().getSelectedItem()+", "+peptideSeq);
 
         selectedRun = new MSRun(runCombobox.getSelectionModel().getSelectedItem(), Config.getOutputPath());
+
 
         new Thread(() -> {
 
             HashSet<String> conditions = new HashSet<>();
             for ( String subrun : Config.getSubRuns(selectedRun.getName())){
-                conditions.addAll(Config.getRunSamples(subrun));
+                for(String sample: Config.getRunSamples(subrun))
+                    conditions.add(sample.split("/")[0]);
 
             }
 
@@ -350,16 +364,52 @@ public class PeptideTableController implements Initializable {
             condBCombobox.getItems().addAll(conditions);
 
 
-            condACombobox.getSelectionModel().select(0);
-            condBCombobox.getSelectionModel().select(1);
-
-            selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                    this, peptideToFind, condIterator.next(), condIterator.next());
 
 
-            peptideTable.getItems().clear();
-            peptideTable.getItems().addAll(selectedRun.getAllPeptides());
-            allPeptides = new ArrayList<>(selectedRun.getAllPeptides());
+            if(conditions.size()>2) {
+                Platform.runLater(() -> {
+                    condACombobox.getSelectionModel().select(0);
+                    condBCombobox.getSelectionModel().select(1);
+                });
+
+                selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
+                        this, peptideToFind, condIterator.next(), condIterator.next());
+            }else
+                selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
+                        this, peptideToFind, null, null);
+
+
+            Platform.runLater(() -> {
+                peptideTable.getItems().clear();
+                peptideTable.getItems().addAll(selectedRun.getAllPeptides());
+                allPeptides = new ArrayList<>(selectedRun.getAllPeptides());
+
+
+
+                if(peptideSeq!=null){
+                    int i = 0;
+
+                    for(Peptide peptide: selectedRun.getAllPeptides()){
+
+
+                        if(peptide.getSequence().equals(peptideSeq)){
+                            int finalI = i;
+
+
+                                peptideTable.requestFocus();
+                                peptideTable.getSelectionModel().select(finalI);
+                                peptideTable.getFocusModel().focus(finalI);
+                                peptideTable.scrollTo(finalI);
+                                selectPeptide(peptide);
+
+
+                            break;
+                        }
+                        i++;
+                    }
+                }
+            });
+
 
         }).start();
 
@@ -369,24 +419,12 @@ public class PeptideTableController implements Initializable {
 
     public void findPeptideInTable(String peptideSeq, String run){
 
-        if(selectedRun.getName().equals(run)){
-            int i = 0;
-            for(Peptide peptide: peptideTable.getItems()){
-                if(peptide.getSequence().equals(peptideSeq)){
-                    int finalI = i;
-                    Platform.runLater(() -> {
-                        peptideTable.requestFocus();
-                        peptideTable.getSelectionModel().select(finalI);
-                        peptideTable.getFocusModel().focus(finalI);
-                        peptideTable.scrollTo(finalI);
-                        selectPeptide(peptide);
-                    });
 
-                    break;
-                }
-                i++;
-            }
-        }
+        runCombobox.getSelectionModel().select(run);
+
+        loadRun(peptideSeq);
+
+
     }
 
     public void selectPeptide(Peptide peptide){
@@ -498,7 +536,7 @@ public class PeptideTableController implements Initializable {
 
                                         jsobj.setMember("java", new SelectNodeBridge());
 
-                                        //System.out.println(getNodes(peptide));
+
                                         webEngine.executeScript(command);
                                     } catch (IOException | URISyntaxException e) {
                                         e.printStackTrace();
@@ -521,7 +559,7 @@ public class PeptideTableController implements Initializable {
 
     private String getNodes(String peptide){
 
-        System.out.println("getNodes");
+
 
 
         ArrayList<String> nodes = new ArrayList<>();
@@ -537,16 +575,16 @@ public class PeptideTableController implements Initializable {
         nodesJson.add("{id:" + (nodes.size() - 1) + ", label: \"" +
                 nodes.get(nodes.size() - 1) + "\", shape: \"ellipse\", color: \"#BF9D7A\"}");
 
-        System.out.println("x");
+
         getPeptideGenes(nodesJson,  nodes,  links, genes,  peptide, true);
 
 
-        System.out.println("a");
+
         NitriteCollection collection = Database.getDb().getCollection("genePeptides");
-        System.out.println("b");
+
         Document doc = collection.find(and(eq("run", runCombobox.getSelectionModel().getSelectedItem()),
                 in("gene", genes.toArray(new Object[0])))).firstOrDefault();
-        System.out.println("c");
+
 
         JSONObject peptides = doc.get("peptides", JSONObject.class);
 
@@ -601,7 +639,7 @@ public class PeptideTableController implements Initializable {
 
         }
 
-        System.out.println("genNetwork(" + nodesStr.toString() + ", " + linksStr.toString() + "," + webview.getHeight() + ")");
+
         return "genNetwork(" + nodesStr.toString() + ", " + linksStr.toString() + "," + webview.getHeight() + ")";
 
     }
@@ -698,7 +736,7 @@ public class PeptideTableController implements Initializable {
             ArrayList<XYChart.Series> allSeriesAbundance = new ArrayList<>();
 
             org.json.JSONObject res = (org.json.JSONObject) doc.get("abundance");
-            System.out.println(res);
+
             for (String conditionKey : res.keySet()) {
                 org.json.JSONObject condition = res.getJSONObject(conditionKey);
                 int i = 0;

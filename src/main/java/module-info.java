@@ -41,6 +41,8 @@ module pitguivTwo {
     requires org.apache.httpcomponents.httpcore;
     requires org.apache.httpcomponents.httpmime;
     requires commons.fileupload;
+    requires java.desktop;
+    requires javafx.swing;
 
 
 }

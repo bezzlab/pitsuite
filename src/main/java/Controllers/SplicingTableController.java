@@ -32,6 +32,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.dizitart.no2.*;
 import org.json.simple.JSONArray;
@@ -592,7 +593,7 @@ public class SplicingTableController extends Controller {
                 if(!keyValuePair.getKey().equals("event")){
                     String condition = keyValuePair.getKey().split("/")[0];
                     if(!psiValues.containsKey(condition)){
-                        psiValues.put(condition, new ArrayList<>());
+                        psiValues.put(condition, new ArrayList<Double>());
                     }
                     psiValues.get(condition).add(Double.valueOf(String.valueOf(keyValuePair.getValue())));
                 }
@@ -620,6 +621,24 @@ public class SplicingTableController extends Controller {
         psiChart.setTitle("RNA psi");
         psiChart.setYLegend("PSI");
         psiChart.draw();
+
+        final MenuItem resizeItem = new MenuItem("Save plot");
+        resizeItem.setOnAction(event -> {
+            PlotSaver plotSaver = new PlotSaver("barchart");
+            plotSaver.setBarchartData(psiValues, (Stage) psiChart.getScene().getWindow());
+        });
+
+        final ContextMenu menu = new ContextMenu(
+                resizeItem
+        );
+
+
+
+        psiChart.setOnMouseClicked(event -> {
+            if (MouseButton.SECONDARY.equals(event.getButton())) {
+                menu.show(psiChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            }
+        });
 
 
 

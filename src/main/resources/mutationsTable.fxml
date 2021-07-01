@@ -28,9 +28,9 @@
             </columnConstraints>
             <rowConstraints>
                 <RowConstraints percentHeight="5" vgrow="SOMETIMES" />
-                <RowConstraints percentHeight="45" vgrow="NEVER" />
-                <RowConstraints percentHeight="5"  vgrow="NEVER" />
-                <RowConstraints percentHeight="45" vgrow="ALWAYS" />
+                <RowConstraints percentHeight="40" vgrow="NEVER" />
+                <RowConstraints percentHeight="15"  vgrow="NEVER" />
+                <RowConstraints percentHeight="40" vgrow="ALWAYS" />
             </rowConstraints>
             <children>
                 <BarChart fx:id="qualBarChart" animated="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.rowIndex="3">
@@ -51,7 +51,7 @@
                         <JFXCheckBox fx:id="otherTableFilterCheckbox" text="Other" />
                         <JFXCheckBox fx:id="cdsCheckbox" text="In CDS" selected="true" />
                         <JFXCheckBox fx:id="nonSilentCheckbox" text="Non synonymous" selected="true"/>
-                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="has PSM evidence" />
+                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="has PSM evidence" selected="true"/>
                         <Button fx:id="filterTableButton" mnemonicParsing="false" text="Filter" />
                     </children>
                 </HBox>

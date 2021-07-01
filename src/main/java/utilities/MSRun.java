@@ -75,7 +75,9 @@ public class MSRun {
 
 
             Peptide peptide = new Peptide(doc);
-            peptide.calculateFoldChange(conditionA, conditionB);
+
+            if(conditionA!=null && conditionB!=null)
+                peptide.calculateFoldChange(conditionA, conditionB);
 
             allPeptides.put(doc.get("peptide", String.class), peptide);
             for(Object o: doc.get("psms", JSONArray.class)){
@@ -84,7 +86,7 @@ public class MSRun {
                 String file = (String) psm.get("file");
                 if (!mzmlIndexes.containsKey(file)){
                     mzmlIndexes.put(file, new HashMap<>());
-                    loadIndex(output, file);
+                    //loadIndex(output, file);
                 }
             }
 

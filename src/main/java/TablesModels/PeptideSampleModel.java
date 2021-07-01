@@ -3,9 +3,9 @@ package TablesModels;
 public class PeptideSampleModel {
 
     private String sample;
-    private double probability;
+    private Double probability;
 
-    public PeptideSampleModel(String sample, double probability) {
+    public PeptideSampleModel(String sample, Double probability) {
         this.sample = sample;
         this.probability = probability;
     }
@@ -18,11 +18,11 @@ public class PeptideSampleModel {
         this.sample = sample;
     }
 
-    public double getProbability() {
+    public Double getProbability() {
         return probability;
     }
 
-    public void setProbability(double probability) {
+    public void setProbability(Double probability) {
         this.probability = probability;
     }
 }

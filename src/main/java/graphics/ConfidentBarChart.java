@@ -1,7 +1,11 @@
 package graphics;
 
+import javafx.application.Platform;
 import javafx.geometry.Orientation;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Separator;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -15,9 +19,13 @@ import javafx.util.Pair;
 import org.json.JSONObject;
 import pitguiv2.Settings;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import javax.imageio.ImageIO;
+import javafx.embed.swing.SwingFXUtils;
 
 public class ConfidentBarChart extends Pane {
 
@@ -99,6 +107,7 @@ public class ConfidentBarChart extends Pane {
 
 
     public void draw() {
+
 
         clear();
 
@@ -364,6 +373,31 @@ public class ConfidentBarChart extends Pane {
 
 
         this.getChildren().add(mainPane);
+
+
+//        Platform.runLater(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    TimeUnit.SECONDS.sleep(1);
+//                    WritableImage wi = new WritableImage((int) mainPane.getWidth(), (int)mainPane.getHeight());
+//
+//                    WritableImage snapshot = mainPane.snapshot(new SnapshotParameters(), wi);
+//                    File output = new File("Full.png");
+//                    try {
+//                        ImageIO.write(SwingFXUtils.fromFXImage(snapshot, null), "png", output);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//
+//            }
+//        });
+
+
+
     }
 
 

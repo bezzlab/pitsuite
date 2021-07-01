@@ -10,6 +10,8 @@ import graphics.ConfidentBarChart;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
@@ -17,8 +19,10 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
+import javafx.stage.Stage;
 import javafx.util.Pair;
 import javafx.util.StringConverter;
 import org.dizitart.no2.*;
@@ -289,7 +293,6 @@ public class DgeTableController extends Controller {
             }
         });
 
-        final DgeTableController _this = this;
 
         new Thread(() -> {
             fontSize = settings.getJSONObject("Fonts").getJSONObject("charts").getInt("size");
@@ -764,10 +767,9 @@ public class DgeTableController extends Controller {
         yAxis.setLabel("Normalised read counts");
         BarChart<String,Number> bc =
                 new BarChart<>(xAxis, yAxis);
-        bc.setTitle("Differential gene expression");
-        bc.setLegendVisible(false);
+
         xAxis.tickLabelFontProperty().set(Font.font(fontSize));
-        //bc.setStyle("-fx-font-size: " + fontSize + "px;");
+
 
 
         ArrayList<XYChart.Series> allSeries = new ArrayList<>();
@@ -804,9 +806,29 @@ public class DgeTableController extends Controller {
             }
         }
 
-        for(XYChart.Series series: allSeries){
-            bc.getData().add(series);
-        }
+
+
+        final MenuItem saveImageItem = new MenuItem("Save plot");
+        PlotSaver plotSaver = new PlotSaver("barchart");
+        saveImageItem.setOnAction(event -> {
+            plotSaver.setBarchartData(allSeries, (Stage) bc2.getScene().getWindow());
+        });
+        final MenuItem saveDataItem = new MenuItem("Save data");
+        saveDataItem.setOnAction(event -> {
+            plotSaver.saveBarchartData(allSeries, "Condition", "Normalised read Counts",
+                    (Stage) bc2.getScene().getWindow());
+        });
+
+        final ContextMenu menu = new ContextMenu(
+                saveImageItem,
+                saveDataItem
+        );
+
+        bc2.setOnMouseClicked(event -> {
+            if (MouseButton.SECONDARY.equals(event.getButton())) {
+                menu.show(bc2.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            }
+        });
 
         bc2.draw();
         HBox.setHgrow(bc2, Priority.ALWAYS);
@@ -839,7 +861,6 @@ public class DgeTableController extends Controller {
         lineChart.setTitle("Differential peptide intensity");
         lineChart.setStyle("-fx-font-size: " + fontSize + "px;");
 
-        
 
 
 
@@ -1131,12 +1152,30 @@ public class DgeTableController extends Controller {
         selectedGeneCharts.getChildren().add(proteinConfidentBarChart);
         proteinConfidentBarChart.draw();
 
+        ArrayList<XYChart.Series> allSeries = new ArrayList<>();
         for(XYChart.Series series: allPeptidesSeries){
             lineChart.getData().add(series);
+            allSeries.add(series);
         }
         HBox.setHgrow(lineChart, Priority.ALWAYS);
         selectedGeneCharts.getChildren().add(lineChart);
-        //selectedGeneCharts.setStyle("-fx-font-size: 13px;");
+
+
+        final MenuItem resizeItem = new MenuItem("Save plot");
+        resizeItem.setOnAction(event -> {
+            PlotSaver plotSaver = new PlotSaver("linechart");
+            plotSaver.setData(allSeries, (Stage) lineChart.getScene().getWindow());
+        });
+
+        final ContextMenu menu = new ContextMenu(
+                resizeItem
+        );
+
+        lineChart.setOnMouseClicked(event -> {
+            if (MouseButton.SECONDARY.equals(event.getButton())) {
+                menu.show(lineChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            }
+        });
 
 
     }

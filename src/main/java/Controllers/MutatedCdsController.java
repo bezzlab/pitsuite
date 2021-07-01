@@ -8,6 +8,7 @@ import TablesModels.Variation;
 import com.jfoenix.controls.JFXDrawer;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -40,7 +41,7 @@ public class MutatedCdsController implements Initializable {
     private HashMap<Variation, Boolean> selectedVariations;
     private String aaSeq;
     private String rnaSeq;
-    private HashMap<String, String> translationTable;
+    private static HashMap<String, String> translationTable;
     private double letterWidth=0;
     private double letterHeight=0;
     private Pane newAASeqBox = new Pane();
@@ -66,7 +67,7 @@ public class MutatedCdsController implements Initializable {
         this.resultsController = resultsController;
     }
 
-    public void showCds(CDS cds, int centerPos){
+    public void showCds(Variation selectedVariation, CDS cds, int centerPos){
 
         aaSeq = cds.getSequence();
         selectedVariations = new HashMap<>();
@@ -137,8 +138,9 @@ public class MutatedCdsController implements Initializable {
 
             for(Variation variation: transcript.getKey().getVariations()){
 
-                if(!addedVariations.contains(variation)){
 
+                if(!addedVariations.contains(variation) && !variation.isSilent()){
+                    System.out.println(variation.isSilent());
                     int pos = variation.getPositionInTranscript(transcript.getKey().getTranscriptId())-cds.getTranscriptsWithCdsPos().get(transcript.getKey()).getKey()+1;
 
                     if(cds.getStrand().equals("-")){
@@ -167,7 +169,11 @@ public class MutatedCdsController implements Initializable {
                                 t.setFont(Font.font("Monospaced", 30));
                                 t.setX(x);
                                 t.setY(30);
-                                t.setFill(Color.rgb(247, 65, 65, 0.5));
+
+                                if(selectedVariation!=null && selectedVariation==variation)
+                                    t.setFill(Color.rgb(106, 254, 13, 0.8));
+                                else
+                                    t.setFill(Color.rgb(247, 65, 65, 0.5));
                                 mutationBox.getChildren().add(t);
 
                                 x += letterWidth;
@@ -178,18 +184,20 @@ public class MutatedCdsController implements Initializable {
 
                                 Text finalT = t;
                                 t.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-                                    selectedVariations.replace(variation, !selectedVariations.get(variation));
-                                    if (selectedVariations.get(variation)) {
-                                        finalT.setFill(Color.rgb(247, 65, 65, 1));
-                                    } else {
-                                        finalT.setFill(Color.rgb(247, 65, 65, 0.5));
+
+                                    if(e.getButton().equals(MouseButton.PRIMARY)){
+                                        selectedVariations.replace(variation, !selectedVariations.get(variation));
+                                        if (selectedVariations.get(variation)) {
+                                            finalT.setFill(Color.rgb(247, 65, 65, 1));
+                                        } else {
+                                            finalT.setFill(Color.rgb(247, 65, 65, 0.5));
+                                        }
+                                        showAlternativeCDS(cds, transcript.getKey());
+                                    }else if(e.getButton().equals(MouseButton.SECONDARY)){
+                                        drawerController.showVariation(variation);
+                                        drawer.open();
+                                        drawer.toFront();
                                     }
-
-                                    drawerController.showVariation(variation);
-                                    drawer.open();
-                                    drawer.toFront();
-
-                                    showAlternativeCDS(cds, transcript.getKey());
                                 });
 
                             }
@@ -433,7 +441,7 @@ public class MutatedCdsController implements Initializable {
 
     }
 
-    private String translateSequence(String seq){
+    public static String translateSequence(String seq){
         StringBuilder aaSeq = new StringBuilder();
         for(int i = 0; i < seq.length(); i+= 3){
             if (i+3 > seq.length()){
@@ -450,7 +458,7 @@ public class MutatedCdsController implements Initializable {
         return aaSeq.toString();
     }
 
-    private static String getReverseComplementRna(String rnaSeq){
+    public static String getReverseComplementRna(String rnaSeq){
         StringBuilder output  = new StringBuilder();
         for (int i = rnaSeq.length() -1 ; i >= 0; i --){
             String nuclUpper = String.valueOf(rnaSeq.charAt(i)).toUpperCase();
@@ -559,10 +567,18 @@ public class MutatedCdsController implements Initializable {
                     r.setFill(Color.rgb(100,100,100));
                     peptidesPane.getChildren().add(r);
 
+                    Text t = new Text("Peptide");
+                    t.setFill(Color.WHITE);
+                    t.setFont(new Font(20));
+                    t.toFront();
+                    t.setX(letterWidth*3*pepMatchAaPosStart + letterWidth * 3 * (pepMatchAaPosEnd - pepMatchAaPosStart + 1)/2 - t.getLayoutBounds().getWidth()/2);
+                    t.setY(50-t.getLayoutBounds().getHeight()/4);
+
                     r.setOnMouseClicked(mouseEvent -> {
                         if(mouseEvent.getButton().equals(MouseButton.PRIMARY)){
                             if(mouseEvent.getClickCount() == 2){
                                 resultsController.showPeptideTab(peptide);
+                                PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), peptide.getRunName());
                             }
                         }
                     });
@@ -571,7 +587,14 @@ public class MutatedCdsController implements Initializable {
 
             for(Map.Entry<Variation, Boolean> entry: selectedVariations.entrySet()) {
                 if(entry.getValue()) {
+
+                    ArrayList<String> runs = new ArrayList<>();
                     for (Peptide peptide :entry.getKey().getPeptides(transcript.getTranscriptId())) {
+                        runs.add(peptide.getRunName());
+                    }
+
+                    for (Peptide peptide :entry.getKey().getPeptides(transcript.getTranscriptId())) {
+
                         Pattern pattern = Pattern.compile(peptide.getSequence());
                         Matcher matcher = pattern.matcher(alernativeCDS);
                         while (matcher.find()) {
@@ -585,10 +608,31 @@ public class MutatedCdsController implements Initializable {
                             r.setFill(Color.rgb(100, 100, 100));
                             peptidesPane.getChildren().add(r);
 
+                            Text t = new Text("Peptide");
+                            t.setFill(Color.WHITE);
+                            t.setFont(new Font(20));
+                            t.toFront();
+                            t.setX(letterWidth*3*pepMatchAaPosStart + letterWidth * 3 * (pepMatchAaPosEnd - pepMatchAaPosStart + 1)/2 - t.getLayoutBounds().getWidth()/2);
+                            t.setY(50-t.getLayoutBounds().getHeight()/4);
+                            peptidesPane.getChildren().add(t);
+
                             r.setOnMouseClicked(mouseEvent -> {
                                 if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
                                     if (mouseEvent.getClickCount() == 2) {
+
+                                        if(runs.size()>1){
+                                            ChoiceDialog<String> choiceDialog = new ChoiceDialog<>(runs.get(0), runs);
+                                            choiceDialog.showAndWait();
+                                            PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), choiceDialog.getSelectedItem());
+
+
+                                        }else
+                                            PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), peptide.getRunName());
+
                                         resultsController.showPeptideTab(peptide);
+
+
+
                                     }
                                 }
                             });
@@ -614,7 +658,7 @@ public class MutatedCdsController implements Initializable {
             if(cds.getStrand().equals("+")){
                 rna = transcript.getSequence(cdsPos.getKey()-1);
             }else{
-                rna = getReverseComplementRna(transcript.getSequence(0, cdsPos.getValue()));
+                rna = getReverseComplementRna(transcript.getSequence(1, cdsPos.getValue()));
             }
 
 
@@ -719,5 +763,34 @@ public class MutatedCdsController implements Initializable {
 //            t.setFont(Font.font("Monospaced", 30));
 
         }
+
+
+    }
+
+    public static boolean isSilentMutation(Variation variation, Transcript transcript) {
+
+
+        if(transcript.getHasCds()){
+            for(CDS cds: transcript.getCdss()){
+                String rna = cds.getRnaSeq();
+                int startInCDS = variation.getPositionInCds(cds, transcript);
+
+                if(startInCDS>0 && startInCDS<cds.getSequence().length()) {
+                    String newRna = rna.substring(0, startInCDS) + variation.getAlt() + rna.substring(startInCDS + 1 + variation.getRef().length() - 1);
+                    String prot;
+                    if (cds.getStrand().equals("-")) {
+                        prot = MutatedCdsController.translateSequence(MutatedCdsController.getReverseComplementRna(newRna));
+                    } else {
+                        prot = MutatedCdsController.translateSequence(newRna);
+                    }
+                    if (!prot.equals(cds.getSequence())) {
+                        return false;
+                    }
+                }
+
+            }
+            return true;
+        }
+        return true;
     }
 }

@@ -19,7 +19,7 @@ public class Variation {
     private String alt;
     private String chr;
     private JSONObject transcripts;
-    private Map<String, Map< String, Map<String, Double>>> conditions;
+    private Map<String, Map< String, Map<String, Object>>> conditions;
     private boolean hasPeptideEvidence;
     private boolean inCDS;
     private boolean silent;
@@ -35,7 +35,7 @@ public class Variation {
         ref = (String) document.get("ref");
         //hasPeptideEvidence = (boolean) document.get("hasPeptideEvidence");
         hasPeptideEvidence=false;
-        conditions = (Map<String, Map<String, Map<String, Double>>>) document.get("condition");
+        conditions = (Map<String, Map<String, Map<String, Object>>>) document.get("condition");
 
         if(document.containsKey("peptides")){
             peptides = document.get("peptides", JSONArray.class);
@@ -44,7 +44,7 @@ public class Variation {
     }
 
     public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence, Map<String,
-            Map< String, Map<String, Double>>> conditions, boolean inCDS, boolean silent, String type) {
+            Map< String, Map<String, Object>>> conditions, boolean inCDS, boolean silent, String type) {
         this.gene = gene;
         this.refPos = pos;
         this.ref = ref;
@@ -58,7 +58,7 @@ public class Variation {
     }
 
     public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence, Map<String,
-            Map< String, Map<String, Double>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent, String type) {
+            Map< String, Map<String, Object>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent, String type) {
         this.gene = gene;
         this.refPos = pos;
         this.ref = ref;
@@ -74,7 +74,7 @@ public class Variation {
 
     // used in gene browser
     public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence,
-                     Map<String, Map< String, Map<String, Double>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent) {
+                     Map<String, Map< String, Map<String, Object>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent) {
         this.gene = gene;
         this.refPos = pos;
         this.ref = ref;
@@ -107,7 +107,7 @@ public class Variation {
         return hasPeptideEvidence;
     }
 
-    public Map<String, Map<String, Map<String, Double>>> getConditions() {
+    public Map<String, Map<String, Map<String, Object>>> getConditions() {
         return conditions;
     }
 
@@ -222,4 +222,6 @@ public class Variation {
     public String getType() {
         return type;
     }
+
+    public JSONArray getPeptides(){ return peptides;}
 }

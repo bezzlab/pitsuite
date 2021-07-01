@@ -37,3 +37,4 @@ function displayPlot(x, y, names, width, height, title, fontsize){
     });
 
 }
+

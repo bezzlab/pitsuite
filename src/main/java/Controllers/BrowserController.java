@@ -60,10 +60,15 @@ public class BrowserController implements Initializable {
         geneBrowserController.setParentControler(parent, settings, hostServices, databaseProjectName, keggReader);
     }
 
+    public void geneBrowserDisplayGeneFromId(String gene, int position, String condition){
+        browsersTabTabPane.getSelectionModel().select(geneBrowserTab);
+        geneBrowserController.showGeneAtPosition(gene, position, condition);
+    }
     public void geneBrowserDisplayGeneFromId(String gene, int position){
         browsersTabTabPane.getSelectionModel().select(geneBrowserTab);
         geneBrowserController.showGeneAtPosition(gene, position);
     }
+
     public void geneBrowserDisplayGeneFromId(String gene, int start, int end){
         browsersTabTabPane.getSelectionModel().select(geneBrowserTab);
         geneBrowserController.showGeneAtPosition(gene, start, end);

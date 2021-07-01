@@ -98,35 +98,16 @@ public class Config {
             return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("TMT").keySet();
         }else{
             JSONObject conditionsObj = config.getJSONObject("conditions");
-            Iterator<String> condKeys = conditionsObj.keys();
 
            HashSet<String> runSamples = new HashSet<>();
 
-            while(condKeys.hasNext()) {
-                String condition = condKeys.next();
-                if (conditionsObj.get(condition) instanceof JSONObject) {
-                    JSONObject samplesObj = conditionsObj.getJSONObject(condition).getJSONObject("samples");
+           String condition = config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("condition");
+           if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("sample")){
+               runSamples.add(condition+"/"+config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("sample"));
+           }else{
+               runSamples.add(condition+"/1");
+           }
 
-                    Iterator<String> samplesKeys = samplesObj.keys();
-                    while(samplesKeys.hasNext()) {
-                        String sample = samplesKeys.next();
-                        if (samplesObj.get(sample) instanceof JSONObject) {
-                            JSONObject sampleObj = samplesObj.getJSONObject(sample);
-
-                            JSONArray mzmls = sampleObj.getJSONArray("mzml");
-                            for(Object o: mzmls){
-                                String mzml = (String) o;
-                                if(mzml.equals(run)){
-                                    runSamples.add(condition+"/"+sample);
-                                }
-
-                            }
-
-                        }
-                    }
-
-                }
-            }
             return runSamples;
         }
     }
@@ -247,6 +228,37 @@ public class Config {
                 return new TreeSet<>(getRunSamples(runName)).iterator().next();
             }
         }
+    }
+
+    public static HashMap<String, ArrayList<String>> getPatientsGroups(){
+
+
+
+        if(config.has("patients")){
+
+            HashMap<String, ArrayList<String>> groups = new HashMap<>();
+
+            Iterator<String> keys = config.getJSONObject("patients").keys();
+
+            while(keys.hasNext()) {
+                String key = keys.next();
+                if (config.getJSONObject("patients").get(key) instanceof JSONArray) {
+                    ArrayList<String> patients = new ArrayList<>();
+                    for(Object o: config.getJSONObject("patients").getJSONArray(key)){
+                        patients.add((String) o);
+                    }
+                    groups.put(key, patients);
+                }
+            }
+            return groups;
+
+        }
+        return null;
+
+    }
+
+    public static boolean hasPatients(){
+        return config.has("patients");
     }
 }
 

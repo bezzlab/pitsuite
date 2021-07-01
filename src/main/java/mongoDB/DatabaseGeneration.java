@@ -550,6 +550,7 @@ public class DatabaseGeneration {
 
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
         NitriteCollection peptidesMapsCollection = db.getCollection("peptideMap");
+        System.out.println(filePath);
 
         JSONParser parser = new JSONParser();
         try {

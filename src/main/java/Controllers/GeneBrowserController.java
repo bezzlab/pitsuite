@@ -5,14 +5,13 @@ import Controllers.drawerControllers.DrawerController;
 import FileReading.AllGenesReader;
 import FileReading.FastaIndex;
 import Gene.Gene;
+import Singletons.Config;
 import Singletons.ControllersBasket;
 import Singletons.Database;
-import TablesModels.BamFile;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXTextField;
-import javafx.animation.PauseTransition;
 import javafx.application.HostServices;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -22,18 +21,18 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.chart.BarChart;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -46,21 +45,17 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import org.controlsfx.control.CheckComboBox;
-import org.controlsfx.control.IndexedCheckModel;
 import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.textfield.TextFields;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
-import org.dizitart.no2.Nitrite;
 import org.dizitart.no2.NitriteCollection;
 import org.dizitart.no2.filters.Filters;
-import org.json.simple.JSONObject;
 import pitguiv2.App;
-import Singletons.Config;
-import utilities.BioFile;
 
 import java.io.IOException;
 import java.net.URL;
@@ -326,6 +321,24 @@ public class GeneBrowserController implements Initializable {
             }
         });
 
+        final MenuItem resizeItem = new MenuItem("Save plot");
+        resizeItem.setOnAction(event -> {
+            WritableImage image = geneBrowserScrollPane.snapshot(new SnapshotParameters(), null);
+
+            PlotSaver.savePng(image, (Stage) geneBrowserScrollPane.getScene().getWindow());
+
+        });
+
+        final ContextMenu menu = new ContextMenu(
+                resizeItem
+        );
+
+        geneBrowserScrollPane.setOnMouseClicked(event -> {
+            if (MouseButton.SECONDARY.equals(event.getButton())) {
+                menu.show(geneBrowserScrollPane.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            }
+        });
+
 
 
         FXMLLoader drawerFXML = new FXMLLoader(App.class.getResource("/drawerControllers/drawer.fxml"));
@@ -509,7 +522,7 @@ public class GeneBrowserController implements Initializable {
             if(mouseEvent.getTarget().getClass()!=Rectangle.class && mouseEvent.getTarget().getClass()!=Text.class &&
                     !(mouseEvent.getTarget().getClass()==Pane.class && ((Pane) mouseEvent.getTarget()).getId()!=null &&
                             ((Pane) mouseEvent.getTarget()).getId().equals("exonPane")) &&
-                    mouseEvent.getX()<representationWidthFinal){
+                    mouseEvent.getX()<representationWidthFinal && MouseButton.PRIMARY.equals(mouseEvent.getButton())){
                 if(!isSelectedZoomRegion){
                     selectingRegionStart = mouseEvent.getX();
                 }
@@ -642,7 +655,12 @@ public class GeneBrowserController implements Initializable {
      *
      * @param geneId  gene symbol
      */
-    public void displayGeneFromId(String geneId, int start, int end, boolean display) {
+
+    public void displayGeneFromId(String geneId, int start, int end, boolean display){
+        displayGeneFromId( geneId,  start,  end,  display, null);
+    }
+
+    public void displayGeneFromId(String geneId, int start, int end, boolean display, String selectedCondition) {
         isAGeneDisplayed = false;
         displayCdsGeneBrowserMenuItem.setDisable(false);
         showHideDepthGeneBrowserMenuItem.setDisable(false);
@@ -668,7 +686,7 @@ public class GeneBrowserController implements Initializable {
         //  so that sequences can be aligned.
         transcFormatedSequencesMap = new HashMap<>();
 
-
+        System.out.println(geneIdTextField.getText());
         Gene gene = allGenesReader.getGene(geneIdTextField.getText());
 
         cdss = new HashMap<>();
@@ -952,7 +970,10 @@ public class GeneBrowserController implements Initializable {
             if(bamThread!=null)
                 bamThread.join();
             // set combobox options and listeners
-            setConditionsCombobox(); // exons are drawn by this one. Uses transcriptHashMap
+            setConditionsCombobox();
+            if(selectedCondition!=null){
+                conditionsGeneBrowserCombobox.getSelectionModel().select(selectedCondition);
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -1054,7 +1075,8 @@ public class GeneBrowserController implements Initializable {
 
                 Double avgTPM = transcMapEntry.getValue().getAverageTPMByCondition(conditionToSortBy);
 
-                if (!avgTPM.equals(Double.NaN) && avgTPM >= tpmThreshold) { // filter by average TPM
+                //!avgTPM.equals(Double.NaN) &&
+                if ( avgTPM >= tpmThreshold) { // filter by average TPM
                     Pair<Transcript, Double> transcAvgTPMPair = new Pair(transcMapEntry.getValue(), avgTPM);
                     transcIDconditionAverageTPM.add(transcAvgTPMPair);
 
@@ -1823,7 +1845,7 @@ public class GeneBrowserController implements Initializable {
             String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
 
             //   cond        sample       af/qual  value
-            Map<String, Map<String, Map<String, Double>>> tmpConditions;
+            Map<String, Map<String, Map<String, Object>>> tmpConditions;
 
             // mutations: represented as black bars
             for (Variation variation : transcript.getVariations()) {
@@ -1835,9 +1857,9 @@ public class GeneBrowserController implements Initializable {
                 }
 
                 boolean qualGteThreshold = false;
-                Map<String, Map<String, Double>> sampleVariationMap = tmpConditions.get(conditionToSortBy);
-                for (Map<String, Double> sampleVariation : sampleVariationMap.values()) {
-                    if (sampleVariation.get("qual") >= qualThreshold) {
+                Map<String, Map<String, Object>> sampleVariationMap = tmpConditions.get(conditionToSortBy);
+                for (Map<String, Object> sampleVariation : sampleVariationMap.values()) {
+                    if ((double) sampleVariation.get("qual") >= qualThreshold) {
                         qualGteThreshold = true;
                     }
                 }
@@ -2020,7 +2042,7 @@ public class GeneBrowserController implements Initializable {
 
             String subSeq = formatedSequence.substring(startSeqPos, startSeqPos + charNum);
 
-            ArrayList<Integer> varFormatedSubseqPos = new ArrayList<>();
+            HashMap<Integer, Variation> varFormatedSubseqPos = new HashMap<>();
 
             // mutations detected in cond
             double qualThreshold = Double.parseDouble(minQualFilterGeneBrowserTextField.getText());
@@ -2030,7 +2052,7 @@ public class GeneBrowserController implements Initializable {
             for (Variation variation : transcript.getVariations()) {
                 int varGenomCoord = variation.getRefPos();
                 if (varGenomCoord >= geneSlider.getLowValue() && varGenomCoord <= geneSlider.getHighValue()) {
-                    varFormatedSubseqPos.add(varGenomCoord - (int) geneSlider.getLowValue());
+                    varFormatedSubseqPos.put(varGenomCoord - (int) geneSlider.getLowValue(), variation);
                 }
             }
 
@@ -2092,7 +2114,7 @@ public class GeneBrowserController implements Initializable {
 
 
                 String nuclUpper = nucl.toUpperCase();
-                if (varFormatedSubseqPos.contains(i)) {
+                if (varFormatedSubseqPos.containsKey(i)) {
                     t.setFont(Font.font(null, FontWeight.BOLD, fontSize + 3));
 
                     int finalI = i;
@@ -2112,7 +2134,7 @@ public class GeneBrowserController implements Initializable {
 
                                     String sub = formatedSequence.substring(0, finalI + startSeqPos + 1);
 
-                                    mutatedCdsController.showCds(cds,
+                                    mutatedCdsController.showCds(varFormatedSubseqPos.get(finalI), cds,
                                             finalI + startSeqPos - sub.length() +
                                                     sub.replaceAll("-", "").replaceAll(" ", "").length()
                                                     - cds.getTranscriptsWithCdsPos().get(transcript).getKey());
@@ -2207,8 +2229,6 @@ public class GeneBrowserController implements Initializable {
 
 
 
-
-
     /**
      * Filter Variants Table
      * Uses the Variants Array List obtained previously
@@ -2231,7 +2251,7 @@ public class GeneBrowserController implements Initializable {
      */
     private void displayCdsTab(String cdsSequenceOfInterest) {
 
-        mutatedCdsController.showCds(cdss.get(cdsSequenceOfInterest), -1);
+        mutatedCdsController.showCds(null, cdss.get(cdsSequenceOfInterest), -1);
 
     }
 
@@ -2810,10 +2830,16 @@ public class GeneBrowserController implements Initializable {
         geneIdTextField.setText(gene);
         displayGeneFromId(gene, pos, pos, false);
     }
+    public void showGeneAtPosition(String gene, int pos, String condition){
+        geneIdTextField.setText(gene);
+        //conditionsGeneBrowserCombobox.getSelectionModel().select(condition);
+        displayGeneFromId(gene, pos, pos, false, condition);
+    }
     public void showGeneAtPosition(String gene, int start, int end){
         geneIdTextField.setText(gene);
         displayGeneFromId(gene, start, end,false);
     }
+
 
     public void resize(){
         if(selectedGene!=null){
