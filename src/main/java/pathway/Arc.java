@@ -10,6 +10,7 @@ public class Arc {
     private String target;
     private String type;
     private String id;
+    private Element glyph;
 
     ArrayList<Pair<Double, Double>> points = new ArrayList<>(3);
 
@@ -18,6 +19,12 @@ public class Arc {
         this.target = target;
         this.type = type;
         this.id = id;
+    }
+
+    public Arc(String source, String target, String type) {
+        this.source = source;
+        this.target = target;
+        this.type = type;
     }
 
     public void setPoints(ArrayList<Pair<Double, Double>> points) {
@@ -42,5 +49,9 @@ public class Arc {
 
     public ArrayList<Pair<Double, Double>> getPoints() {
         return points;
+    }
+
+    public void setGlyph(Element glyph) {
+        this.glyph = glyph;
     }
 }

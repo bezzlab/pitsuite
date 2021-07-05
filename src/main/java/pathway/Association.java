@@ -1,22 +1,26 @@
 package pathway;
 
-import java.util.ArrayList;
-
 public class Association extends Element{
 
-    private String label;
-    private ArrayList<Port> ports = new ArrayList<>(2);
+    Arc arc;
 
+    public Association(double x, double y, double width, double height) {
+        super(x, y, width, height);
+    }
 
     public Association(double x, double y, double width, double height, String id) {
         super(x, y, width, height, id);
     }
 
-    public void setLabel(String label) {
-        this.label = label;
+    public Association(double x, double y, double width, double height, String id, String type, String label) {
+        super(x, y, width, height, id, type, label);
     }
 
-    public void setPorts(ArrayList<Port> ports) {
-        this.ports = ports;
+    public Arc getArc() {
+        return arc;
+    }
+
+    public void setArc(Arc arc) {
+        this.arc = arc;
     }
 }

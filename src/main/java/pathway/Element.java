@@ -7,7 +7,7 @@ public class Element {
     private double width;
     private double height;
     private String id;
-    private String type;
+    protected String type;
     private String label;
 
     public Element(double x, double y, double width, double height) {
