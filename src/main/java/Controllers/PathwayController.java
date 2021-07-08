@@ -1,9 +1,9 @@
 package Controllers;
 
+import Singletons.Database;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -12,7 +12,6 @@ import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -21,6 +20,8 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import org.dizitart.no2.Cursor;
+import org.dizitart.no2.Filter;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -39,6 +40,8 @@ import java.net.URLConnection;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.dizitart.no2.filters.Filters.and;
 
 
 public class PathwayController implements Initializable {
@@ -78,7 +81,6 @@ public class PathwayController implements Initializable {
     private Group arcBackgroundGroup;
     private Group arcGroup;
     private Group elementGroup;
-
 
 
     @Override
@@ -153,15 +155,16 @@ public class PathwayController implements Initializable {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(true);
         factory.setIgnoringElementContentWhitespace(true);
-        DocumentBuilder builder = null;
+        DocumentBuilder builder;
         try {
             builder = factory.newDocumentBuilder();
-            File file = new File("test.sbgn");
             Document doc = builder.parse(new InputSource(new StringReader(sgbn)));
 
             parseNode(doc.getDocumentElement());
 
             draw(reaction);
+
+            colorElements();
 
         } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
@@ -208,6 +211,10 @@ public class PathwayController implements Initializable {
                                         Double.parseDouble(subNode.getAttributes().getNamedItem("w").getNodeValue()),
                                         Double.parseDouble(subNode.getAttributes().getNamedItem("h").getNodeValue()),
                                         node.getAttributes().getNamedItem("id").getNodeValue(), nodeClass, label);
+
+                                if(element.getType().equals("macromolecule")){
+                                    getMacromoleculeInfo(element);
+                                }
 
 
                                 elements.put(node.getAttributes().getNamedItem("id").getNodeValue(), element);
@@ -497,6 +504,7 @@ public class PathwayController implements Initializable {
                                 scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
                         rectangle.setFill(Color.web("#8DC7BB"));
                         elementGroup.getChildren().add(rectangle);
+                        element.setNode(rectangle);
                         break;
                     }
                     case "unspecified entity": {
@@ -991,5 +999,97 @@ public class PathwayController implements Initializable {
             }
         }
 
+    }
+
+    private void getMacromoleculeInfo(Element element){
+        try{
+            URL yahoo = new URL("https://reactome.org/ContentService/search/query?query="+element.getLabel().replace(" ", "%20"));
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            String inputLine="";
+            JSONObject object=null;
+            while ((inputLine = in.readLine()) != null) {
+
+                object = new JSONObject(inputLine);
+            }
+
+
+            boolean found = false;
+            for(Object o : object.getJSONArray("results")){
+                JSONObject result = (JSONObject) o;
+                for(Object o2: result.getJSONArray("entries")){
+                    JSONObject entry = (JSONObject) o2;
+                    if(entry.getString("name").replaceAll("<.*?>", "").equals(element.getLabel())){
+
+                        element.addGene(new Gene(entry.getString("stId"),
+                                entry.has("referenceName")?entry.getString("referenceName").replaceAll("<.*?>", ""):"",
+                                entry.getString("referenceIdentifier")));
+                        found=true;
+                        break;
+                    }
+                }
+                if(found)
+                    break;
+
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void colorElements(){
+
+        Cursor dgeFindCursor = Database.getDb().getCollection("Nsivssi_dge").find();
+        HashMap<String, Double> dge = new HashMap<>();
+
+        for(org.dizitart.no2.Document doc: dgeFindCursor){
+
+            double dgeFoldChange;
+            if(doc.get("log2fc") instanceof Long)
+                dgeFoldChange = ((Long) doc.get("log2fc")).doubleValue();
+            else
+                dgeFoldChange = (double) doc.get("log2fc");
+            dge.put((String) doc.get("symbol"), dgeFoldChange);
+        }
+
+        double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+
+        for(Element element: elements.values()){
+            if(!element.getClass().equals(Compartment.class) && element.getType().equals("macromolecule")){
+                for(Gene gene: element.getGenes()){
+                    if(dge.containsKey(gene.getName())){
+                        if(dge.get(gene.getName())<min)
+                            min = dge.get(gene.getName());
+                        else if(dge.get(gene.getName())>max)
+                            max = dge.get(gene.getName());
+                    }
+                }
+            }
+        }
+
+        for(Element element: elements.values()){
+            if(!element.getClass().equals(Compartment.class) && element.getType().equals("macromolecule")){
+                for(Gene gene: element.getGenes()){
+                    if(dge.containsKey(gene.getName())){
+                        double hue = Color.BLUE.getHue() + (Color.RED.getHue() - Color.BLUE.getHue()) * (dge.get(gene.getName()) - min) / (max - min) ;
+                        Color color = Color.hsb(hue, 1.0, 1.0);
+                        element.getNode().setStyle("-fx-fill: "+toHexString(color));
+                    }
+                }
+            }
+        }
+    }
+
+    private String format(double val) {
+        String in = Integer.toHexString((int) Math.round(val * 255));
+        return in.length() == 1 ? "0" + in : in;
+    }
+
+    public String toHexString(Color value) {
+        return "#" + (format(value.getRed()) + format(value.getGreen()) + format(value.getBlue()) + format(value.getOpacity()))
+                .toUpperCase();
     }
 }

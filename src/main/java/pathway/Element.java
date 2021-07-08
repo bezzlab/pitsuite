@@ -1,5 +1,9 @@
 package pathway;
 
+import javafx.scene.Node;
+
+import java.util.ArrayList;
+
 public class Element {
 
     private double x;
@@ -9,6 +13,9 @@ public class Element {
     private String id;
     protected String type;
     protected String label;
+
+    private Node node;
+    private ArrayList<Gene> genes = new ArrayList<>();
 
     public Element(double x, double y, double width, double height) {
         this.x = x;
@@ -62,5 +69,21 @@ public class Element {
 
     public String getLabel() {
         return label;
+    }
+
+    public void setNode(Node node) {
+        this.node = node;
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public void addGene(Gene gene){
+        genes.add(gene);
+    }
+
+    public ArrayList<Gene> getGenes() {
+        return genes;
     }
 }
