@@ -8,6 +8,10 @@ import javafx.scene.shape.Line;
 public class Arrow extends Group {
 
     private final Line line;
+    private Line arrow1;
+    private Line arrow2;
+
+
 
     public Arrow() {
         this(new Line(), new Line(), new Line());
@@ -19,6 +23,8 @@ public class Arrow extends Group {
     private Arrow(Line line, Line arrow1, Line arrow2) {
         super(line, arrow1, arrow2);
         this.line = line;
+        this.arrow1 = arrow1;
+        this.arrow2 = arrow2;
         InvalidationListener updater = o -> {
             double ex = getEndX();
             double ey = getEndY();
@@ -111,6 +117,12 @@ public class Arrow extends Group {
 
     public final DoubleProperty endYProperty() {
         return line.endYProperty();
+    }
+
+    public void setStrokeWidth(double width){
+        line.setStrokeWidth(width);
+        arrow1.setStrokeWidth(width);
+        arrow2.setStrokeWidth(width);
     }
 
 }

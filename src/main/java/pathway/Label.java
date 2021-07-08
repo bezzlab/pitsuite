@@ -8,4 +8,8 @@ public class Label extends Element{
         super(x, y, width, height);
         this.label = label;
     }
+
+    public String getLabel(){
+        return label;
+    }
 }

@@ -9,4 +9,9 @@ public class Compartment extends Element{
     }
 
     public void setLabel(Label label){ this.label = label; }
+
+
+    public Label getLabelObj() {
+        return label;
+    }
 }

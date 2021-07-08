@@ -8,7 +8,7 @@ public class Element {
     private double height;
     private String id;
     protected String type;
-    private String label;
+    protected String label;
 
     public Element(double x, double y, double width, double height) {
         this.x = x;
