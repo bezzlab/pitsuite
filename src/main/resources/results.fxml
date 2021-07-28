@@ -74,6 +74,15 @@
                                 </AnchorPane>
                             </content>
                         </Tab>
+                        <Tab fx:id="blastTab" text="BLAST">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                <children>
+                                    <!--                                        <fx:include fx:id="splicingTable" source="peptideMap.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />-->
+                                </children>
+                            </AnchorPane>
+                            </content>
+                        </Tab>
                     </tabs>
                 </TabPane>
             </children>

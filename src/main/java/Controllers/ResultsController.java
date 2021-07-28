@@ -54,6 +54,7 @@ public class ResultsController implements Initializable {
     private PeptideMapController peptideMapController;
     private PeptideTableController peptideTableController;
     private TranscriptUsageController transcriptUsageController;
+    private BlastTabController blastTabController;
     // tabs
     @FXML
     private TabPane resultsTabPane;
@@ -65,6 +66,8 @@ public class ResultsController implements Initializable {
     private Tab dgeTab;
     @FXML
     private Tab splicingTab;
+    //@FXML
+    //private Tab blastTab1;
     @FXML
     private MenuBar menuBar;
 
@@ -218,6 +221,20 @@ public class ResultsController implements Initializable {
                     transcriptUsageController.setParentControler(this, allGenesReader);
 
                     resultsTabPane.getTabs().get(4).setContent(root);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
+
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/blastTab" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader2.load();
+
+                    blastTabController = fxmlLoader2.getController();
+                    blastTabController.setParentController(this);
+                    resultsTabPane.getTabs().get(6).setContent(root);
+                    //ControllersBasket.setBlastTabController(blastTabController);
                 } catch(Exception e){
                     e.printStackTrace();
                 }

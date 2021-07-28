@@ -21,6 +21,9 @@ public class PTM {
         this.assigned = assigned;
         pos = -1;
     }
+
+
+
     public PTM(String residue, int pos, double massShift, boolean assigned) {
         this.residue = residue;
         this.massShift = massShift;
