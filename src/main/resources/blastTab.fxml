@@ -29,7 +29,7 @@
         <children>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="0" GridPane.vgrow="always">
                 <JFXTextField fx:id="querySearchField" promptText="Search for queries" VBox.vgrow="ALWAYS" />
-                <ListView fx:id="listView" onMouseClicked="#click" VBox.vgrow="ALWAYS" />
+                <ListView fx:id="listView" onMouseClicked="#click_on_qlist" VBox.vgrow="ALWAYS" />
             </VBox>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.vgrow="always" spacing="2">
                 <JFXTextField fx:id="searchSpeciesField" promptText="Species" VBox.vgrow="ALWAYS"/>
@@ -46,6 +46,7 @@
                         <TableColumn fx:id="definitionColumn" prefWidth="75.0" text="Definition" />
                         <TableColumn fx:id="queryCoverageColumn" prefWidth="75.0" text="Query coverage" />
                         <TableColumn fx:id="hitCoverageColumn" prefWidth="75.0" text="Hit coverage" />
+                        <TableColumn fx:id="evalueColumn" prefWidth="75.0" text="E-value" />
 
                     </columns>
                 </TableView>

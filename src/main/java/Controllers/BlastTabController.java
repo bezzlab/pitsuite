@@ -35,8 +35,8 @@ public class BlastTabController implements Initializable {
     private TableColumn<Hit, Double> hitCoverageColumn;
     @FXML
     private TableColumn<Hit, String> definitionColumn;
-    //@FXML
-    //private TableColumn<Hit, String> hitHspsNumberColumn;
+    @FXML
+    private TableColumn<Hit, Double> evalueColumn;
     @FXML
     private TableView<Hit> hitTable;
     @FXML
@@ -83,7 +83,7 @@ public class BlastTabController implements Initializable {
         definitionColumn.setCellValueFactory( new PropertyValueFactory<>("definition"));
         queryCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("queryCoverage"));
         hitCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("hitCoverage"));
-        //hitHspsNumberColumn.setCellValueFactory( new PropertyValueFactory<>("hitHspsNumber"));
+        evalueColumn.setCellValueFactory( new PropertyValueFactory<>("Evalue"));
 
         //queryNameColumn.setCellValueFactory(new PropertyValueFactory<>("queryName"));
         //queryNoOfHitsColumn.setCellValueFactory(new PropertyValueFactory<>("hitsPerQuery"));
@@ -94,10 +94,10 @@ public class BlastTabController implements Initializable {
         definitionColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.7));
         queryCoverageColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
         hitCoverageColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
-        //hitHspsNumberColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
+        evalueColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
 
         queryCoverageColumn.setSortType(TableColumn.SortType.DESCENDING);
-        hitTable.getSortOrder().add(queryCoverageColumn);
+        hitTable.getSortOrder().add(evalueColumn);
         hitTable.sort();
 
         hitTable.setRowFactory(tv -> {
@@ -145,7 +145,7 @@ public class BlastTabController implements Initializable {
     }
 
     //handles mouse clicks on query list
-    public void click(){
+    public void click_on_qlist(){
         listView.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
             @Override
@@ -267,17 +267,30 @@ public class BlastTabController implements Initializable {
                                     if (hspMatcher.find()) {
                                         int hitFrom = Integer.parseInt(hspMatcher.group(4));
                                         int hitTo = Integer.parseInt(hspMatcher.group(5));
+
                                         if(hitFrom<hitTo){
+                                            Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                    Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
+                                            if( hsp1.getEvalue()<0.1){
+
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
-                                        }else{
+                                            }
+                                            else{if(hsp1.getEvalue()<0.1){
+
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitLen-hitFrom, hitLen-hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                            }}
                                         }
+
                                     }
+
                                 }
                             }
-                            allHits.add(hit);
+                             if(hit.getEvalue()<0.1) {allHits.add(hit);}
+
+
+
                         }
                     }
                 }
