@@ -15,6 +15,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.control.Spinner?>
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.BlastTabController">
     <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" maxHeight="Infinity" maxWidth="Infinity">
         <columnConstraints>
@@ -35,6 +36,7 @@
                 <JFXTextField fx:id="searchSpeciesField" promptText="Species" VBox.vgrow="ALWAYS"/>
                 <JFXTextField fx:id="searchField" promptText="Search" VBox.vgrow="ALWAYS" />
                 <CheckBox fx:id="predictedCheckbox" mnemonicParsing="false" selected="true" text="Include predicted" VBox.vgrow="ALWAYS" />
+                <Spinner fx:id="evalThresholdSpinner" />
                 <HBox>
                     <children>
                         <Label id="info_label" fx:id="numberOfHits" text="#" style="-fx-font-size: 14px;"/>

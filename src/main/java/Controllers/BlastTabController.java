@@ -16,6 +16,7 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 
@@ -23,12 +24,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.net.URL;
+import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BlastTabController implements Initializable {
 
+    private ResultsController parentController;
     @FXML
     private TableColumn<Hit, Double> queryCoverageColumn;
     @FXML
@@ -53,7 +57,8 @@ public class BlastTabController implements Initializable {
     private TextField searchField;
     @FXML
     private TextField querySearchField;
-    private ResultsController parentController;
+    @FXML
+    private Spinner<Double> evalThresholdSpinner = new Spinner<Double>();
 
     @FXML
     private TableColumn<String, String> geneColumn;
@@ -61,10 +66,14 @@ public class BlastTabController implements Initializable {
     @FXML
     private ListView<String> listView = new ListView<String>();
     private ArrayList<String> queriesList= new ArrayList<String>();
-    private ArrayList<Hsp> sortedHsps = new ArrayList<Hsp>();
-    private TableView<Query> queryTable;
-    private TableColumn<Query, String> queryNameColumn;
-    private TableColumn<Query, Integer> queryNoOfHitsColumn;
+    private ArrayList<Query> queriesList2= new ArrayList<>();
+    private ArrayList<String> queriesToDiscard= new ArrayList<String>();
+
+
+    //private ArrayList<Hsp> sortedHsps = new ArrayList<Hsp>();
+    //private TableView<Query> queryTable;
+    //private TableColumn<Query, String> queryNameColumn;
+    //private TableColumn<Query, Integer> queryNoOfHitsColumn;
 
     @FXML
     private Label numberOfHits;
@@ -74,22 +83,33 @@ public class BlastTabController implements Initializable {
     private Text hitLengthTextField;
 
 
+
+    public BlastTabController() {
+    }
+
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
         blastIndex = new BlastIndex();
         blastIndex.load();
 
+        //evalue spinner
+        SpinnerValueFactory<Double> evalFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 1, 1, 0.001);
+        evalFactory.setConverter(doubleConverter);
+        evalThresholdSpinner.setValueFactory(evalFactory);
+        evalThresholdSpinner.getValueFactory().setValue(0.010);
+        evalThresholdSpinner.setEditable(true);
+
+        //query table
+        ObservableList<String> observableList = FXCollections.observableList(queriesList);
+        listView.setItems(observableList);
+
+        //hit table
         definitionColumn.setCellValueFactory( new PropertyValueFactory<>("definition"));
         queryCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("queryCoverage"));
         hitCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("hitCoverage"));
         evalueColumn.setCellValueFactory( new PropertyValueFactory<>("Evalue"));
-
-        //queryNameColumn.setCellValueFactory(new PropertyValueFactory<>("queryName"));
-        //queryNoOfHitsColumn.setCellValueFactory(new PropertyValueFactory<>("hitsPerQuery"));
-        //queryNoOfHitsColumn.setSortType(TableColumn.SortType.DESCENDING);
-        //queryTable.getSortOrder().add(queryNoOfHitsColumn);
-        //queryTable.sort();
 
         definitionColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.7));
         queryCoverageColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
@@ -132,6 +152,15 @@ public class BlastTabController implements Initializable {
             filterQueries();
         });
 
+        evalThresholdSpinner.valueProperty().addListener((observable, oldValue, newValue) -> {
+            String g = listView.getSelectionModel().getSelectedItem();
+            selectGene(g);
+            filterHits();
+
+        });
+
+
+
 
 
 
@@ -161,6 +190,34 @@ public class BlastTabController implements Initializable {
         });
     }
 
+    StringConverter<Double> doubleConverter = new StringConverter<>() {
+        final DecimalFormat df = new DecimalFormat("#.#####");
+
+        @Override
+        public String toString(Double object) {
+            if (object == null) {
+                return "";
+            }
+            return df.format(object);
+        }
+
+        @Override
+        public Double fromString(String string) {
+            try {
+                if (string == null) {
+                    return null;
+                }
+                string = string.trim();
+                if (string.length() < 1) {
+                    return null;
+                }
+                return df.parse(string).doubleValue();
+            } catch (ParseException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+    };
+
     public class BlastIndex{
 
         HashMap<String, BlastIndex.BlastIndexRecord> records = new HashMap<>();
@@ -180,17 +237,19 @@ public class BlastTabController implements Initializable {
                 System.out.println("An error occurred.");
                 e.printStackTrace();
             }
-            addToListview(getKeys());
+            getKeys();
         }
 
-        public ArrayList<String> getKeys(){
-            return new ArrayList<>(records.keySet());
+        public void getKeys(){
+            queriesList.clear();
+            queriesList.addAll(records.keySet());
         }
 
         public void addToListview(ArrayList<String> x){
             ObservableList<String> observableList = FXCollections.observableList(x);
             listView.setItems(observableList);
-            queriesList.addAll(observableList);
+            queriesList.addAll(x);
+
         }
 
         public HashMap<String, BlastIndex.BlastIndexRecord> getRecords() {
@@ -215,19 +274,26 @@ public class BlastTabController implements Initializable {
                 return end;
             }
 
+            public String getGene() {
+                return gene;
+            }
         }
     }
 
 
     public void selectGene(String geneId){
 
+        Double eValThreshold = evalThresholdSpinner.getValue();
+
         hitTable.getItems().clear();
         alignmentPane.getChildren().clear();
         allHits = new ArrayList<>();
 
+
         try {
             long positionToRead = blastIndex.getRecords().get(geneId).getStart();
             int amountBytesToRead = (int) (blastIndex.getRecords().get(geneId).getEnd()-positionToRead);
+            String geneName = blastIndex.getRecords().get(geneId).getGene();
 
             RandomAccessFile f = new RandomAccessFile(new File("C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/output.xml"),"r");
             //f.seek(2643);
@@ -271,12 +337,12 @@ public class BlastTabController implements Initializable {
                                         if(hitFrom<hitTo){
                                             Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
-                                            if( hsp1.getEvalue()<0.1){
+                                            if( hsp1.getEvalue()< eValThreshold){
 
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
                                             }
-                                            else{if(hsp1.getEvalue()<0.1){
+                                            else{if(hsp1.getEvalue()< eValThreshold){
 
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitLen-hitFrom, hitLen-hitTo, hspMatcher.group(6), hspMatcher.group(7)));
@@ -287,7 +353,8 @@ public class BlastTabController implements Initializable {
 
                                 }
                             }
-                             if(hit.getEvalue()<0.1) {allHits.add(hit);}
+                             if(hit.getEvalue()< eValThreshold) {allHits.add(hit);}
+
 
 
 
@@ -295,10 +362,13 @@ public class BlastTabController implements Initializable {
                     }
                 }
             }
+
+
             hitTable.getItems().addAll(allHits);
             //sortedHsps = hitTable.getSelectionModel().getSelectedItem().getHsps();
             //sortedHsps.sort(Comparator.comparing(Hsp::getQueryFrom));
             hitTable.sort();
+            numberOfHits.setText(hitTable.getItems().size()+"");
 
         } catch (Exception e) {
             e.printStackTrace();
