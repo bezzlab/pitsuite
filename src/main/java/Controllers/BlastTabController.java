@@ -1,5 +1,6 @@
 package Controllers;
 
+import Cds.Peptide;
 import com.jfoenix.controls.JFXTextField;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -12,9 +13,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
@@ -333,35 +336,33 @@ public class BlastTabController implements Initializable {
                                     if (hspMatcher.find()) {
                                         int hitFrom = Integer.parseInt(hspMatcher.group(4));
                                         int hitTo = Integer.parseInt(hspMatcher.group(5));
+                                        Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
 
-                                        if(hitFrom<hitTo){
-                                            Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                    Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
-                                            if( hsp1.getEvalue()< eValThreshold){
+                                        if(hitFrom < hitTo){
+                                            if(hsp1.getEvalue() < eValThreshold){
 
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
                                             }
-                                            else{if(hsp1.getEvalue()< eValThreshold){
+                                        }
+                                            else{
+                                                if(hsp1.getEvalue() < eValThreshold){
 
                                             hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                     Integer.parseInt(hspMatcher.group(3)), hitLen-hitFrom, hitLen-hitTo, hspMatcher.group(6), hspMatcher.group(7)));
-                                            }}
-                                        }
-
+                                                }
+                                            }
                                     }
-
                                 }
                             }
-                             if(hit.getEvalue()< eValThreshold) {allHits.add(hit);}
-
-
-
-
+                            boolean hspsNotEmpty = true;
+                            if (hit.getHsps().isEmpty()){hspsNotEmpty=false;}
+                            if(hspsNotEmpty){allHits.add(hit);}}
                         }
                     }
                 }
-            }
+
 
 
             hitTable.getItems().addAll(allHits);
@@ -372,8 +373,8 @@ public class BlastTabController implements Initializable {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
+        }}
+
 
     private void filterHits(){
 
@@ -434,6 +435,8 @@ public class BlastTabController implements Initializable {
 
         alignmentPane.getChildren().clear();
 
+        Double eValThreshold = evalThresholdSpinner.getValue();
+
         double width = alignmentPane.getWidth();
 
         int dashQueryCount = 0;
@@ -448,6 +451,14 @@ public class BlastTabController implements Initializable {
 
         ArrayList<Hsp> sortedHsp = hit.getHsps();
         sortedHsp.sort(Comparator.comparing(Hsp::getQueryFrom));
+
+        //filter evalue
+    //    Iterator<Hsp> it = sortedHsp.iterator();
+     //   while (it.hasNext()){
+     //       Hsp hsp = it.next();
+     //       if(hsp.getEvalue()<eValThreshold){}
+     //   }
+
 
         int hspIndex = 0;
         for(Hsp hsp: sortedHsp){
@@ -495,8 +506,8 @@ public class BlastTabController implements Initializable {
             Rectangle queryHspRectangle = new Rectangle();
             Rectangle hitHspRectangle = new Rectangle();
 
-            queryHspRectangle.setStyle("-fx-fill: red; -fx-stroke: black; -fx-stroke-width: 3;");
-            hitHspRectangle.setStyle("-fx-fill: red; -fx-stroke: black; -fx-stroke-width: 3;");
+            queryHspRectangle.setStyle("-fx-fill: #34568B; -fx-stroke: black; -fx-stroke-width: 3;");
+            hitHspRectangle.setStyle("-fx-fill: #34568B; -fx-stroke: black; -fx-stroke-width: 3;");
 
             queryHspRectangle.setX((hsp.getQueryFrom()+Math.max(0, hitOffsetStart-queryOffsetStart))*pixelsPerNucleotide);
             hitHspRectangle.setX((hsp.getHitFrom()+Math.max(0, queryOffsetStart-hitOffsetStart))*pixelsPerNucleotide);
@@ -540,9 +551,10 @@ public class BlastTabController implements Initializable {
 
         for (int i = 0; i < hsp.getHseq().length(); i++) {
             Text queryNucleotide = new Text(String.valueOf(hsp.getQseq().charAt(i)));
-            queryNucleotide.setFont(Font.font("monospace", 20));
+            FontWeight fontWeight  = FontWeight.SEMI_BOLD;
+            queryNucleotide.setFont(Font.font("monospace", fontWeight, 20));
             Text hitNucleotide = new Text(String.valueOf(hsp.getHseq().charAt(i)));
-            hitNucleotide.setFont(Font.font("monospace", 20));
+            hitNucleotide.setFont(Font.font("monospace", fontWeight, 20));
 
             Rectangle queryRectangle = new Rectangle();
             Rectangle hitRectangle = new Rectangle();
@@ -553,11 +565,11 @@ public class BlastTabController implements Initializable {
             hitRectangle.setHeight(queryNucleotide.getLayoutBounds().getHeight());
 
             if(hsp.getQseq().charAt(i) == hsp.getHseq().charAt(i)){
-                queryRectangle.setFill(Color.GREEN);
-                hitRectangle.setFill(Color.GREEN);
+                queryRectangle.setFill(Paint.valueOf("#88B04B"));
+                hitRectangle.setFill(Paint.valueOf("#88B04B"));
             }else{
-                queryRectangle.setFill(Color.RED);
-                hitRectangle.setFill(Color.RED);
+                queryRectangle.setFill(Paint.valueOf("#FF6F61"));
+                hitRectangle.setFill(Paint.valueOf("#FF6F61"));
             }
 
             queryNucleotide.setX(i*queryNucleotide.getLayoutBounds().getWidth());
