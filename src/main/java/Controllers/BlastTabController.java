@@ -46,6 +46,8 @@ public class BlastTabController implements Initializable {
     @FXML
     private TableColumn<Hit, Double> evalueColumn;
     @FXML
+    private TableColumn<Hit, Integer> hspsColumn;
+    @FXML
     private TableView<Hit> hitTable;
     @FXML
     private Pane alignmentPane;
@@ -69,10 +71,9 @@ public class BlastTabController implements Initializable {
 
     @FXML
     private ListView<String> listView = new ListView<String>();
-    private ArrayList<String> queriesList= new ArrayList<String>();
+    private ArrayList<String> queriesList = new ArrayList<String>();
     private ObservableList<String> observableList = FXCollections.observableArrayList();
     private Hashtable<String, Integer> queries_dict = new Hashtable<String, Integer>();
-
 
 
     @FXML
@@ -83,7 +84,6 @@ public class BlastTabController implements Initializable {
     private Text hitLengthTextField;
     @FXML
     private Label noOfQueries;
-
 
 
     public BlastTabController() {
@@ -104,18 +104,18 @@ public class BlastTabController implements Initializable {
         evalThresholdSpinner.setEditable(true);
 
 
-
-
         //hit table
-        definitionColumn.setCellValueFactory( new PropertyValueFactory<>("definition"));
-        queryCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("queryCoverage"));
-        hitCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("hitCoverage"));
-        evalueColumn.setCellValueFactory( new PropertyValueFactory<>("Evalue"));
+        definitionColumn.setCellValueFactory(new PropertyValueFactory<>("definition"));
+        queryCoverageColumn.setCellValueFactory(new PropertyValueFactory<>("queryCoverage"));
+        hitCoverageColumn.setCellValueFactory(new PropertyValueFactory<>("hitCoverage"));
+        evalueColumn.setCellValueFactory(new PropertyValueFactory<>("EValue"));
+        hspsColumn.setCellValueFactory(new PropertyValueFactory<>("noOfHsps"));
 
-        definitionColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.7));
+        definitionColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.6));
         queryCoverageColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
         hitCoverageColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
         evalueColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
+        hspsColumn.prefWidthProperty().bind(hitTable.widthProperty().multiply(0.1));
 
         queryCoverageColumn.setSortType(TableColumn.SortType.DESCENDING);
         hitTable.getSortOrder().add(evalueColumn);
@@ -125,11 +125,11 @@ public class BlastTabController implements Initializable {
             TableRow<Hit> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!(row.isEmpty())) {
-                    if (event.getButton().equals(MouseButton.PRIMARY)){
+                    if (event.getButton().equals(MouseButton.PRIMARY)) {
 
-                        if ( event.getClickCount() == 1 ) {
+                        if (event.getClickCount() == 1) {
                             drawAlignment(hitTable.getSelectionModel().getSelectedItem());
-                            eValueTextField.setText(String.valueOf(hitTable.getSelectionModel().getSelectedItem().getEvalue()));
+                            eValueTextField.setText(String.valueOf(hitTable.getSelectionModel().getSelectedItem().getEValue()));
                             hitLengthTextField.setText(String.valueOf(hitTable.getSelectionModel().getSelectedItem().getLength()));
                         }
                     }
@@ -151,7 +151,7 @@ public class BlastTabController implements Initializable {
 
         querySearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterQueries();
-            if (querySearchField.getText().length()==0){
+            if (querySearchField.getText().length() == 0) {
                 listView.getItems().clear();
                 listView.getItems().addAll(queriesList);
             }
@@ -165,21 +165,16 @@ public class BlastTabController implements Initializable {
         });
 
 
-
-
-
-
-
     }
 
-    public void setParentController(ResultsController parentController){
+    public void setParentController(ResultsController parentController) {
         this.parentController = parentController;
         //blastIndex.load();
         //selectGene("TRINITY_DN155677_c0_g1_i1.p1");
     }
 
     //handles mouse clicks on query list
-    public void click_on_qlist(){
+    public void click_on_qlist() {
         listView.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
             @Override
@@ -189,7 +184,7 @@ public class BlastTabController implements Initializable {
                     //Use ListView's getSelected Item
                     String currentItemSelected = listView.getSelectionModel().getSelectedItem();
                     selectGene(currentItemSelected);
-                    numberOfHits.setText(hitTable.getItems().size()+"");
+                    numberOfHits.setText(hitTable.getItems().size() + "");
                 }
             }
         });
@@ -223,11 +218,11 @@ public class BlastTabController implements Initializable {
         }
     };
 
-    public class BlastIndex{
+    public class BlastIndex {
 
         HashMap<String, BlastIndex.BlastIndexRecord> records = new HashMap<>();
 
-        public void load(){
+        public void load() {
             String filepath = "C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/blastIndex.csv";
             try {
                 File myObj = new File(filepath);
@@ -248,12 +243,12 @@ public class BlastTabController implements Initializable {
 
         }
 
-        public void getKeys(){
+        public void getKeys() {
             queriesList.clear();
             queriesList.addAll(records.keySet());
         }
 
-        public void addToListview(ArrayList<String> x){
+        public void addToListview(ArrayList<String> x) {
             //ObservableList<String> observableList = FXCollections.observableList(x);
             observableList.addAll(queriesList);
             listView.setItems(observableList);
@@ -264,7 +259,7 @@ public class BlastTabController implements Initializable {
             return records;
         }
 
-        public class BlastIndexRecord{
+        public class BlastIndexRecord {
             private String gene;
             private long start;
             private long end;
@@ -289,7 +284,7 @@ public class BlastTabController implements Initializable {
     }
 
 
-    public void selectGene(String geneId){
+    public void selectGene(String geneId) {
 
         Double eValThreshold = evalThresholdSpinner.getValue();
 
@@ -300,10 +295,10 @@ public class BlastTabController implements Initializable {
 
         try {
             long positionToRead = blastIndex.getRecords().get(geneId).getStart();
-            int amountBytesToRead = (int) (blastIndex.getRecords().get(geneId).getEnd()-positionToRead);
+            int amountBytesToRead = (int) (blastIndex.getRecords().get(geneId).getEnd() - positionToRead);
             String geneName = blastIndex.getRecords().get(geneId).getGene();
 
-            RandomAccessFile f = new RandomAccessFile(new File("C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/output.xml"),"r");
+            RandomAccessFile f = new RandomAccessFile(new File("C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/output.xml"), "r");
             //f.seek(2643);
             byte[] b = new byte[amountBytesToRead];
             f.seek(positionToRead);
@@ -313,11 +308,11 @@ public class BlastTabController implements Initializable {
 
             Pattern queryLengthPattern = Pattern.compile("<Iteration_query-len>(\\d+)</Iteration_query-len>");
             Matcher queryLengthMatcher = queryLengthPattern.matcher(str);
-            if(queryLengthMatcher.find()) {
+            if (queryLengthMatcher.find()) {
                 int queryLength = Integer.parseInt(queryLengthMatcher.group(1));
                 Pattern pattern = Pattern.compile("<Hit>(.*?)</Hit>", Pattern.DOTALL);
                 Matcher hitsMatcher = pattern.matcher(str);
-                while(hitsMatcher.find()){
+                while (hitsMatcher.find()) {
                     for (int i = 1; i <= hitsMatcher.groupCount(); i++) {
                         String hitStr = hitsMatcher.group(i);
 
@@ -344,26 +339,27 @@ public class BlastTabController implements Initializable {
                                         Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
                                                 Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
 
-                                        if(hitFrom < hitTo){
-                                            if(hsp1.getEvalue() < eValThreshold){
+                                        if (hitFrom < hitTo) {
+                                            if (hsp1.getEvalue() < eValThreshold) {
 
-                                            hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                    Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                                hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                        Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                            }
+                                        } else {
+                                            if (hsp1.getEvalue() < eValThreshold) {
+
+                                                hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                        Integer.parseInt(hspMatcher.group(3)), hitLen - hitFrom, hitLen - hitTo, hspMatcher.group(6), hspMatcher.group(7)));
                                             }
                                         }
-                                            else{
-                                                if(hsp1.getEvalue() < eValThreshold){
-
-                                            hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                    Integer.parseInt(hspMatcher.group(3)), hitLen-hitFrom, hitLen-hitTo, hspMatcher.group(6), hspMatcher.group(7)));
-                                                }
-                                            }
                                     }
                                 }
                             }
                             boolean hspsNotEmpty = true;
-                            if (hit.getHsps().isEmpty()){hspsNotEmpty=false;}
-                            if(hspsNotEmpty){
+                            if (hit.getHsps().isEmpty()) {
+                                hspsNotEmpty = false;
+                            }
+                            if (hspsNotEmpty) {
                                 allHits.add(hit);
                                 //queries_dict.put(geneName, allHits.size());
                             }
@@ -376,10 +372,7 @@ public class BlastTabController implements Initializable {
             //sortedHsps = hitTable.getSelectionModel().getSelectedItem().getHsps();
             //sortedHsps.sort(Comparator.comparing(Hsp::getQueryFrom));
             hitTable.sort();
-            numberOfHits.setText(hitTable.getItems().size()+"");
-
-
-
+            numberOfHits.setText(hitTable.getItems().size() + "");
 
 
         } catch (Exception e) {
@@ -388,19 +381,19 @@ public class BlastTabController implements Initializable {
     }
 
 
-    private void filterHits(){
+    private void filterHits() {
 
         System.out.println("phio;hhohio");
         ArrayList<Hit> filteredHits = new ArrayList<>();
         for (Hit hit : allHits) {
 
-            if (searchField.getText().length()>0 &&!hit.getDefinition().toUpperCase(Locale.ROOT).contains(searchField.getText().toUpperCase(Locale.ROOT))) {
+            if (searchField.getText().length() > 0 && !hit.getDefinition().toUpperCase(Locale.ROOT).contains(searchField.getText().toUpperCase(Locale.ROOT))) {
                 continue;
             }
-            if (searchSpeciesField.getText().length()>0 && !hit.getSpecies().toUpperCase(Locale.ROOT).contains(searchSpeciesField.getText().toUpperCase(Locale.ROOT))) {
+            if (searchSpeciesField.getText().length() > 0 && !hit.getSpecies().toUpperCase(Locale.ROOT).contains(searchSpeciesField.getText().toUpperCase(Locale.ROOT))) {
                 continue;
             }
-            if(!predictedCheckbox.isSelected() && hit.isPredicted()) {
+            if (!predictedCheckbox.isSelected() && hit.isPredicted()) {
                 continue;
             }
             filteredHits.add(hit);
@@ -413,11 +406,11 @@ public class BlastTabController implements Initializable {
         hitTable.sort();
 
         HashSet<String> species = new HashSet<>();
-        for(Hit hit: filteredHits){
+        for (Hit hit : filteredHits) {
             species.add(hit.getSpecies());
         }
 
-        if(speciesAutocompleteBinding!=null){
+        if (speciesAutocompleteBinding != null) {
             speciesAutocompleteBinding.dispose();
         }
         speciesAutocompleteBinding = TextFields.bindAutoCompletion(searchSpeciesField, species);
@@ -425,11 +418,11 @@ public class BlastTabController implements Initializable {
 
     }
 
-    private void filterQueries(){
+    private void filterQueries() {
         ArrayList<String> filteredQueries = new ArrayList<>();
         //listView.getItems().clear();
         for (String q : queriesList) {
-            if (querySearchField.getText().length()>0 && q.toUpperCase(Locale.ROOT).contains(querySearchField.getText().toUpperCase(Locale.ROOT))){
+            if (querySearchField.getText().length() > 0 && q.toUpperCase(Locale.ROOT).contains(querySearchField.getText().toUpperCase(Locale.ROOT))) {
                 filteredQueries.add(q);
             }
         }
@@ -437,13 +430,13 @@ public class BlastTabController implements Initializable {
         listView.getItems().clear();
         listView.getItems().addAll(filteredQueries);
 
-        if (querySearchField.getText().isBlank()){
+        if (querySearchField.getText().isBlank()) {
             listView.getItems().clear();
             listView.getItems().addAll(queriesList);
         }
     }
 
-    private void drawAlignment(Hit hit){
+    private void drawAlignment(Hit hit) {
 
         alignmentPane.getChildren().clear();
 
@@ -465,23 +458,23 @@ public class BlastTabController implements Initializable {
         sortedHsp.sort(Comparator.comparing(Hsp::getQueryFrom));
 
         //filter evalue
-    //    Iterator<Hsp> it = sortedHsp.iterator();
-     //   while (it.hasNext()){
-     //       Hsp hsp = it.next();
-     //       if(hsp.getEvalue()<eValThreshold){}
-     //   }
+        //    Iterator<Hsp> it = sortedHsp.iterator();
+        //   while (it.hasNext()){
+        //       Hsp hsp = it.next();
+        //       if(hsp.getEvalue()<eValThreshold){}
+        //   }
 
 
         int hspIndex = 0;
-        for(Hsp hsp: sortedHsp){
+        for (Hsp hsp : sortedHsp) {
 
-            if(hspIndex==0) {
+            if (hspIndex == 0) {
 
                 queryOffsetStart = hsp.getQueryFrom();
                 hitOffsetStart = hsp.getHitFrom();
 
 
-            }else if(hspIndex==sortedHsp.size()-1){
+            } else if (hspIndex == sortedHsp.size() - 1) {
 
                 queryOffsetEnd = hit.getQueryLength() - hsp.getQueryTo();
                 hitOffsetEnd = hit.getLength() - hsp.getHitTo();
@@ -493,20 +486,20 @@ public class BlastTabController implements Initializable {
         }
 
         int totalSeqLength = Math.max(queryOffsetStart, hitOffsetStart)
-                + Math.max(hit.getQueryLength()+dashQueryCount, hit.getLength()+dashHitCount)
+                + Math.max(hit.getQueryLength() + dashQueryCount, hit.getLength() + dashHitCount)
                 + Math.max(queryOffsetEnd, hitOffsetEnd);
 
         double pixelsPerNucleotide = width / totalSeqLength;
 
         Rectangle queryRectangle = new Rectangle();
-        queryRectangle.setWidth(hit.getQueryLength()*pixelsPerNucleotide);
-        queryRectangle.setX(Math.max(0, hitOffsetStart-queryOffsetStart)*pixelsPerNucleotide);
+        queryRectangle.setWidth(hit.getQueryLength() * pixelsPerNucleotide);
+        queryRectangle.setX(Math.max(0, hitOffsetStart - queryOffsetStart) * pixelsPerNucleotide);
         queryRectangle.setHeight(50);
         queryRectangle.setStyle("-fx-fill: #F4F4F4; -fx-stroke: black; -fx-stroke-width: 1;");
 
         Rectangle hitRectangle = new Rectangle();
-        hitRectangle.setWidth(hit.getLength()*pixelsPerNucleotide);
-        hitRectangle.setX(Math.max(0, queryOffsetStart-hitOffsetStart)*pixelsPerNucleotide);
+        hitRectangle.setWidth(hit.getLength() * pixelsPerNucleotide);
+        hitRectangle.setX(Math.max(0, queryOffsetStart - hitOffsetStart) * pixelsPerNucleotide);
         hitRectangle.setHeight(50);
         hitRectangle.setStyle("-fx-fill: #F4F4F4; -fx-stroke: black; -fx-stroke-width: 1;");
         hitRectangle.setY(100);
@@ -514,18 +507,20 @@ public class BlastTabController implements Initializable {
         alignmentPane.getChildren().add(queryRectangle);
         alignmentPane.getChildren().add(hitRectangle);
 
-        for(Hsp hsp: sortedHsp){
+        for (Hsp hsp : sortedHsp) {
             Rectangle queryHspRectangle = new Rectangle();
             Rectangle hitHspRectangle = new Rectangle();
 
             queryHspRectangle.setStyle("-fx-fill: #34568B; -fx-stroke: black; -fx-stroke-width: 3;");
+            queryHspRectangle.setOpacity(0.55);
             hitHspRectangle.setStyle("-fx-fill: #34568B; -fx-stroke: black; -fx-stroke-width: 3;");
+            hitHspRectangle.setOpacity(0.55);
 
-            queryHspRectangle.setX((hsp.getQueryFrom()+Math.max(0, hitOffsetStart-queryOffsetStart))*pixelsPerNucleotide);
-            hitHspRectangle.setX((hsp.getHitFrom()+Math.max(0, queryOffsetStart-hitOffsetStart))*pixelsPerNucleotide);
+            queryHspRectangle.setX((hsp.getQueryFrom() + Math.max(0, hitOffsetStart - queryOffsetStart)) * pixelsPerNucleotide);
+            hitHspRectangle.setX((hsp.getHitFrom() + Math.max(0, queryOffsetStart - hitOffsetStart)) * pixelsPerNucleotide);
 
-            queryHspRectangle.setWidth((hsp.getQueryTo()-hsp.getQueryFrom())*pixelsPerNucleotide);
-            hitHspRectangle.setWidth((hsp.getHitTo()-hsp.getHitFrom())*pixelsPerNucleotide);
+            queryHspRectangle.setWidth((hsp.getQueryTo() - hsp.getQueryFrom()) * pixelsPerNucleotide);
+            hitHspRectangle.setWidth((hsp.getHitTo() - hsp.getHitFrom()) * pixelsPerNucleotide);
 
             hitHspRectangle.setY(100);
 
@@ -539,9 +534,9 @@ public class BlastTabController implements Initializable {
                 drawHsp(hsp, width);
             });
 
-            Line line = new Line((hsp.getQueryFrom()+Math.max(0, hitOffsetStart-queryOffsetStart))*pixelsPerNucleotide+
-                    ((hsp.getQueryTo()-hsp.getQueryFrom())*pixelsPerNucleotide)/2, 50, (hsp.getHitFrom()+Math.max(0, queryOffsetStart-hitOffsetStart))*pixelsPerNucleotide+
-                    ((hsp.getHitTo()-hsp.getHitFrom())*pixelsPerNucleotide)/2, 100);
+            Line line = new Line((hsp.getQueryFrom() + Math.max(0, hitOffsetStart - queryOffsetStart)) * pixelsPerNucleotide +
+                    ((hsp.getQueryTo() - hsp.getQueryFrom()) * pixelsPerNucleotide) / 2, 50, (hsp.getHitFrom() + Math.max(0, queryOffsetStart - hitOffsetStart)) * pixelsPerNucleotide +
+                    ((hsp.getHitTo() - hsp.getHitFrom()) * pixelsPerNucleotide) / 2, 100);
             line.setStrokeWidth(4);
 
 
@@ -552,7 +547,7 @@ public class BlastTabController implements Initializable {
         }
     }
 
-    private void drawHsp(Hsp hsp, double width){
+    private void drawHsp(Hsp hsp, double width) {
 
         alignmentPane.getChildren().remove(seqAlignmentPane);
         seqAlignmentPane = new ScrollPane();
@@ -563,7 +558,7 @@ public class BlastTabController implements Initializable {
 
         for (int i = 0; i < hsp.getHseq().length(); i++) {
             Text queryNucleotide = new Text(String.valueOf(hsp.getQseq().charAt(i)));
-            FontWeight fontWeight  = FontWeight.SEMI_BOLD;
+            FontWeight fontWeight = FontWeight.SEMI_BOLD;
             queryNucleotide.setFont(Font.font("monospace", fontWeight, 20));
             Text hitNucleotide = new Text(String.valueOf(hsp.getHseq().charAt(i)));
             hitNucleotide.setFont(Font.font("monospace", fontWeight, 20));
@@ -576,25 +571,25 @@ public class BlastTabController implements Initializable {
             hitRectangle.setWidth(queryNucleotide.getLayoutBounds().getWidth());
             hitRectangle.setHeight(queryNucleotide.getLayoutBounds().getHeight());
 
-            if(hsp.getQseq().charAt(i) == hsp.getHseq().charAt(i)){
+            if (hsp.getQseq().charAt(i) == hsp.getHseq().charAt(i)) {
                 queryRectangle.setFill(Paint.valueOf("#88B04B"));
                 hitRectangle.setFill(Paint.valueOf("#88B04B"));
-            }else{
+            } else {
                 queryRectangle.setFill(Paint.valueOf("#FF6F61"));
                 hitRectangle.setFill(Paint.valueOf("#FF6F61"));
             }
 
-            queryNucleotide.setX(i*queryNucleotide.getLayoutBounds().getWidth());
-            hitNucleotide.setX(i*hitNucleotide.getLayoutBounds().getWidth());
+            queryNucleotide.setX(i * queryNucleotide.getLayoutBounds().getWidth());
+            hitNucleotide.setX(i * hitNucleotide.getLayoutBounds().getWidth());
 
-            queryRectangle.setX(i*queryNucleotide.getLayoutBounds().getWidth());
-            hitRectangle.setX(i*hitNucleotide.getLayoutBounds().getWidth());
+            queryRectangle.setX(i * queryNucleotide.getLayoutBounds().getWidth());
+            hitRectangle.setX(i * hitNucleotide.getLayoutBounds().getWidth());
 
             queryNucleotide.setY(queryNucleotide.getLayoutBounds().getHeight());
-            hitNucleotide.setY(2*queryNucleotide.getLayoutBounds().getHeight()+20);
+            hitNucleotide.setY(2 * queryNucleotide.getLayoutBounds().getHeight() + 20);
 
             queryRectangle.setY(0);
-            hitRectangle.setY(queryNucleotide.getLayoutBounds().getHeight()+20);
+            hitRectangle.setY(queryNucleotide.getLayoutBounds().getHeight() + 20);
 
             pane.getChildren().add(queryRectangle);
             pane.getChildren().add(hitRectangle);
@@ -611,7 +606,7 @@ public class BlastTabController implements Initializable {
     }
 
 
-    public static class Hit{
+    public static class Hit {
         private String definition;
         private int length;
         private ArrayList<Hsp> hsps = new ArrayList<>();
@@ -631,7 +626,7 @@ public class BlastTabController implements Initializable {
             return length;
         }
 
-        public void addHsp(Hsp hsp){
+        public void addHsp(Hsp hsp) {
             hsps.add(hsp);
         }
 
@@ -639,50 +634,57 @@ public class BlastTabController implements Initializable {
             return hsps;
         }
 
-        public int getQueryLength(){
+        public Integer getNoOfHsps(){
+            Integer n = hsps.size();
+            return n;
+        }
+
+        public int getQueryLength() {
             return queryLength;
         }
 
-        public double getEvalue(){
+        public double getEValue() {
             double minEval = 1.;
-            for(Hsp hsp: hsps){
-                if(hsp.getEvalue()<minEval){
+            for (Hsp hsp : hsps) {
+                if (hsp.getEvalue() < minEval) {
                     minEval = hsp.getEvalue();
                 }
             }
             return minEval;
         }
 
-        public double getQueryCoverage(){
+        public double getQueryCoverage() {
 
             int lengthCoveredByHsp = 0;
-            for(Hsp hsp: hsps){
-                lengthCoveredByHsp+=hsp.getQueryTo()-hsp.getQueryFrom()+1;
+            for (Hsp hsp : hsps) {
+                lengthCoveredByHsp += hsp.getQueryTo() - hsp.getQueryFrom() + 1;
             }
-            return (double) lengthCoveredByHsp/queryLength;
-        }
-        public double getHitCoverage(){
-            int lengthCoveredByHsp = 0;
-            for(Hsp hsp: hsps){
-                lengthCoveredByHsp+=hsp.getHitTo()-hsp.getHitFrom()+1;
-            }
-            return (double) lengthCoveredByHsp/length;
+            return (double) lengthCoveredByHsp / queryLength;
         }
 
-        public String getSpecies(){
+        public double getHitCoverage() {
+            int lengthCoveredByHsp = 0;
+            for (Hsp hsp : hsps) {
+                lengthCoveredByHsp += hsp.getHitTo() - hsp.getHitFrom() + 1;
+            }
+            return (double) lengthCoveredByHsp / length;
+        }
+
+        public String getSpecies() {
             Pattern pattern = Pattern.compile("(?:PREDICTED: )*([a-zA-Z]+\\s[a-zA-Z]+).*");
             Matcher m = pattern.matcher(definition);
-            if(m.find()){
+            if (m.find()) {
                 return m.group(1);
             }
             return null;
         }
-        public boolean isPredicted(){
+
+        public boolean isPredicted() {
             return definition.contains("PREDICTED");
         }
     }
 
-    public static class Hsp{
+    public static class Hsp {
         private double evalue;
         private Integer queryFrom;
         private int queryTo;
@@ -731,22 +733,33 @@ public class BlastTabController implements Initializable {
         }
     }
 
-    public static class Query{
+    public static class Query {
         private String queryName;
         private Integer numberOfHits;
 
-        public Query(String queryName, Integer numberOfHits){
+        public Query(String queryName, Integer numberOfHits) {
 
             this.queryName = queryName;
             this.numberOfHits = numberOfHits;
         }
-        public int getQueryNumberOfHits(){return numberOfHits;};
     }
 
-    private void getNoOfQueries(){
+    private void getNoOfQueries() {
         Integer number = listView.getItems().size();
         noOfQueries.setText(number.toString());
     }
+
+    public void filterDrawnHsps(Hit hit) {
+        String hitname = hitTable.getSelectionModel().getSelectedItem().getDefinition();
+        String qName = listView.getSelectionModel().getSelectedItem();
+        ArrayList<Hsp> hspsList = hit.getHsps();
+
+
+
+    }
+
+
+
 
 
 }

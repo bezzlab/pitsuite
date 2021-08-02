@@ -44,8 +44,8 @@
                 <CheckBox fx:id="predictedCheckbox" mnemonicParsing="false" selected="true" text="Include predicted" VBox.vgrow="ALWAYS" />
                 <HBox>
                     <children>
-                        <Label id="info_label" text="eVal" style="-fx-font-size: 12px;" />
                         <Spinner fx:id="evalThresholdSpinner" prefWidth="80.0" />
+                        <Label id="info_label" text="eVal" style="-fx-font-size: 12px;" />
                     </children>
                 </HBox>
                 <HBox>
@@ -60,6 +60,7 @@
                         <TableColumn fx:id="queryCoverageColumn" prefWidth="75.0" text="Query coverage" />
                         <TableColumn fx:id="hitCoverageColumn" prefWidth="75.0" text="Hit coverage" />
                         <TableColumn fx:id="evalueColumn" prefWidth="75.0" text="E-value" />
+                        <TableColumn fx:id="hspsColumn" prefWidth="75.0" text="Hsps" />
                     </columns>
                 </TableView>
                 <HBox>
