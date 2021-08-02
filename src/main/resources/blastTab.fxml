@@ -29,6 +29,12 @@
         </rowConstraints>
         <children>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="0" GridPane.vgrow="always">
+                <HBox>
+                    <children>
+                        <Label id="info_label" text="No. of queries: " style="-fx-font-size: 12px;"/>
+                        <Label fx:id="noOfQueries" text="#" style="-fx-font-size: 12px;"/>
+                    </children>
+                </HBox>
                 <JFXTextField fx:id="querySearchField" promptText="Search for queries" VBox.vgrow="ALWAYS" />
                 <ListView fx:id="listView" onMouseClicked="#click_on_qlist" VBox.vgrow="ALWAYS" />
             </VBox>
@@ -38,14 +44,14 @@
                 <CheckBox fx:id="predictedCheckbox" mnemonicParsing="false" selected="true" text="Include predicted" VBox.vgrow="ALWAYS" />
                 <HBox>
                     <children>
-                    <Spinner fx:id="evalThresholdSpinner" prefWidth="80.0" />
-                    <Label id="info_label" text="eVal" style="-fx-font-size: 14px;" />
+                        <Label id="info_label" text="eVal" style="-fx-font-size: 12px;" />
+                        <Spinner fx:id="evalThresholdSpinner" prefWidth="80.0" />
                     </children>
                 </HBox>
                 <HBox>
                     <children>
-                        <Label id="info_label" fx:id="numberOfHits" text="#" style="-fx-font-size: 14px;"/>
-                        <Label id="info_label" text="hits" style="-fx-font-size: 14px;"/>
+                        <Label id="info_label" fx:id="numberOfHits" text="#" style="-fx-font-size: 12px;"/>
+                        <Label id="info_label" text="hits" style="-fx-font-size: 12px;"/>
                     </children>
                 </HBox>
                 <TableView fx:id="hitTable" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">

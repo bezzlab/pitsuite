@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 public class BlastTabController implements Initializable {
 
+
     private ResultsController parentController;
     @FXML
     private TableColumn<Hit, Double> queryCoverageColumn;
@@ -69,14 +70,10 @@ public class BlastTabController implements Initializable {
     @FXML
     private ListView<String> listView = new ListView<String>();
     private ArrayList<String> queriesList= new ArrayList<String>();
-    private ArrayList<Query> queriesList2= new ArrayList<>();
-    private ArrayList<String> queriesToDiscard= new ArrayList<String>();
+    private ObservableList<String> observableList = FXCollections.observableArrayList();
+    private Hashtable<String, Integer> queries_dict = new Hashtable<String, Integer>();
 
 
-    //private ArrayList<Hsp> sortedHsps = new ArrayList<Hsp>();
-    //private TableView<Query> queryTable;
-    //private TableColumn<Query, String> queryNameColumn;
-    //private TableColumn<Query, Integer> queryNoOfHitsColumn;
 
     @FXML
     private Label numberOfHits;
@@ -84,6 +81,8 @@ public class BlastTabController implements Initializable {
     private Text eValueTextField;
     @FXML
     private Text hitLengthTextField;
+    @FXML
+    private Label noOfQueries;
 
 
 
@@ -98,15 +97,14 @@ public class BlastTabController implements Initializable {
         blastIndex.load();
 
         //evalue spinner
-        SpinnerValueFactory<Double> evalFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 1, 1, 0.001);
+        SpinnerValueFactory<Double> evalFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 5, 1, 0.001);
         evalFactory.setConverter(doubleConverter);
         evalThresholdSpinner.setValueFactory(evalFactory);
         evalThresholdSpinner.getValueFactory().setValue(0.010);
         evalThresholdSpinner.setEditable(true);
 
-        //query table
-        ObservableList<String> observableList = FXCollections.observableList(queriesList);
-        listView.setItems(observableList);
+
+
 
         //hit table
         definitionColumn.setCellValueFactory( new PropertyValueFactory<>("definition"));
@@ -153,6 +151,10 @@ public class BlastTabController implements Initializable {
 
         querySearchField.textProperty().addListener((observable, oldValue, newValue) -> {
             filterQueries();
+            if (querySearchField.getText().length()==0){
+                listView.getItems().clear();
+                listView.getItems().addAll(queriesList);
+            }
         });
 
         evalThresholdSpinner.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -241,6 +243,9 @@ public class BlastTabController implements Initializable {
                 e.printStackTrace();
             }
             getKeys();
+            addToListview(queriesList);
+            getNoOfQueries();
+
         }
 
         public void getKeys(){
@@ -249,9 +254,9 @@ public class BlastTabController implements Initializable {
         }
 
         public void addToListview(ArrayList<String> x){
-            ObservableList<String> observableList = FXCollections.observableList(x);
+            //ObservableList<String> observableList = FXCollections.observableList(x);
+            observableList.addAll(queriesList);
             listView.setItems(observableList);
-            queriesList.addAll(x);
 
         }
 
@@ -358,12 +363,14 @@ public class BlastTabController implements Initializable {
                             }
                             boolean hspsNotEmpty = true;
                             if (hit.getHsps().isEmpty()){hspsNotEmpty=false;}
-                            if(hspsNotEmpty){allHits.add(hit);}}
+                            if(hspsNotEmpty){
+                                allHits.add(hit);
+                                //queries_dict.put(geneName, allHits.size());
+                            }
                         }
                     }
                 }
-
-
+            }
 
             hitTable.getItems().addAll(allHits);
             //sortedHsps = hitTable.getSelectionModel().getSelectedItem().getHsps();
@@ -371,9 +378,14 @@ public class BlastTabController implements Initializable {
             hitTable.sort();
             numberOfHits.setText(hitTable.getItems().size()+"");
 
+
+
+
+
         } catch (Exception e) {
             e.printStackTrace();
-        }}
+        }
+    }
 
 
     private void filterHits(){
@@ -415,9 +427,9 @@ public class BlastTabController implements Initializable {
 
     private void filterQueries(){
         ArrayList<String> filteredQueries = new ArrayList<>();
-        listView.getItems().clear();
+        //listView.getItems().clear();
         for (String q : queriesList) {
-            if (querySearchField.getText().length()>0 && q.contains(querySearchField.getText())){
+            if (querySearchField.getText().length()>0 && q.toUpperCase(Locale.ROOT).contains(querySearchField.getText().toUpperCase(Locale.ROOT))){
                 filteredQueries.add(q);
             }
         }
@@ -425,7 +437,7 @@ public class BlastTabController implements Initializable {
         listView.getItems().clear();
         listView.getItems().addAll(filteredQueries);
 
-        if (querySearchField.getText().length()==0){
+        if (querySearchField.getText().isBlank()){
             listView.getItems().clear();
             listView.getItems().addAll(queriesList);
         }
@@ -724,11 +736,19 @@ public class BlastTabController implements Initializable {
         private Integer numberOfHits;
 
         public Query(String queryName, Integer numberOfHits){
+
             this.queryName = queryName;
             this.numberOfHits = numberOfHits;
         }
         public int getQueryNumberOfHits(){return numberOfHits;};
     }
+
+    private void getNoOfQueries(){
+        Integer number = listView.getItems().size();
+        noOfQueries.setText(number.toString());
+    }
+
+
 }
 
 
