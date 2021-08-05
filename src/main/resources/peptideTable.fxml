@@ -55,15 +55,15 @@
                     <tabs>
                       <Tab text="PSMs">
                            <content>
-                              <GridPane fx:id="peptideDetailsGrid" gridLinesVisible="false">
+                              <GridPane fx:id="peptideDetailsGrid" gridLinesVisible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                 <columnConstraints>
                                   <ColumnConstraints hgrow="SOMETIMES" percentWidth="40" />
                                   <ColumnConstraints hgrow="ALWAYS" percentWidth="60" />
                                 </columnConstraints>
                                 <rowConstraints>
-                                  <RowConstraints percentHeight="20" vgrow="SOMETIMES" />
-                                  <RowConstraints percentHeight="40" vgrow="ALWAYS" />
-                                  <RowConstraints percentHeight="40" vgrow="ALWAYS" />
+                                  <RowConstraints percentHeight="20" vgrow="NEVER" />
+                                  <RowConstraints percentHeight="40" vgrow="NEVER" />
+                                  <RowConstraints percentHeight="40" vgrow="NEVER" />
                                 </rowConstraints>
                                  <children>
                                     <TableView fx:id="psmTable" GridPane.rowIndex="2">
@@ -91,7 +91,7 @@
                                              <NumberAxis side="LEFT" />
                                          </yAxis>
                                      </BarChart>
-                                     <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2" />
+                                     <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2"/>
 <!--                                     <WebView fx:id="specWebview" GridPane.columnIndex="1"-->
 <!--                                                 GridPane.rowIndex="0" GridPane.rowSpan="1"/>-->
                                  </children>
@@ -150,10 +150,10 @@
                                          <Button fx:id="resetModFilter" mnemonicParsing="false" onMouseClicked="#resetModFilter" text="Reset mod filter"  prefWidth="100"/>
                                      </VBox>
                                      <VBox GridPane.rowIndex="2" spacing="2">
-                                         <TextField fx:id="geneSymbolSearchBox" styleClass="transparent" promptText="Enter gene symbol" />
-                                         <TextField fx:id="geneNumberSearchBox" styleClass="transparent" promptText="Enter number of genes"/>
-                                         <TextField fx:id="sequenceSearchBox" styleClass="transparent" promptText="Enter amino acid sequence"/>
-                                         <TextField fx:id="foldChangeSearchBox" styleClass="transparent" promptText="Enter fold change (>)" />
+                                         <TextField fx:id="sequenceSearchBox" styleClass="transparent" promptText="Amino acid sequence"/>
+                                         <TextField fx:id="geneSymbolSearchBox" styleClass="transparent" promptText="Gene symbol" />
+                                         <TextField fx:id="geneNumberSearchBox" styleClass="transparent" promptText="Number of genes"/>
+                                         <TextField fx:id="foldChangeSearchBox" styleClass="transparent" promptText="Fold change (>)" />
                                          <Button onMouseClicked="#secondFilter" mnemonicParsing="false" text="Run Filter" prefWidth="100"/>
                                          <Button fx:id="resetSecondFilter" onMouseClicked="#resetSecondFilter" mnemonicParsing="false" text="Reset Filter" prefWidth="100"/>
 
