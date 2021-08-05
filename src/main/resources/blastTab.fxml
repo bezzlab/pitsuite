@@ -29,6 +29,7 @@
         </rowConstraints>
         <children>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="0" GridPane.vgrow="always">
+
                 <HBox>
                     <children>
                         <Label id="info_label" text="No. of queries: " style="-fx-font-size: 12px;"/>
@@ -37,6 +38,12 @@
                 </HBox>
                 <JFXTextField fx:id="querySearchField" promptText="Search for queries" VBox.vgrow="ALWAYS" />
                 <ListView fx:id="listView" onMouseClicked="#click_on_qlist" VBox.vgrow="ALWAYS" />
+                <Label id="info_label" text="Conservative substitution legend:" style="-fx-font-size: 12px; -fx-text-fill: black" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Small (small+ hydrophobic (incl.aromatic -Y))" style="-fx-font-size: 12px; -fx-text-fill: #DC143C;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Acidic" style="-fx-font-size: 12px; -fx-text-fill: #0000FF;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Basic - H" style="-fx-font-size: 12px; -fx-text-fill: #8A2BE2;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Hydroxyl + sulfhydryl + amine + G" style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
+
             </VBox>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.vgrow="always" spacing="2">
                 <JFXTextField fx:id="searchSpeciesField" promptText="Species" VBox.vgrow="ALWAYS"/>
@@ -54,7 +61,7 @@
                         <Label id="info_label" text="hits" style="-fx-font-size: 12px;"/>
                     </children>
                 </HBox>
-                <TableView fx:id="hitTable" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+                <TableView fx:id="hitTable" prefHeight="300.0"  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                     <columns>
                         <TableColumn fx:id="definitionColumn" prefWidth="75.0" text="Definition" />
                         <TableColumn fx:id="queryCoverageColumn" prefWidth="75.0" text="Query coverage" />
@@ -72,7 +79,9 @@
                     </children>
                 </HBox>
                 <Pane fx:id="alignmentPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="      " style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
             </VBox>
+
 
 
 
