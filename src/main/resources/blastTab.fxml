@@ -29,7 +29,6 @@
         </rowConstraints>
         <children>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="0" GridPane.vgrow="always">
-
                 <HBox>
                     <children>
                         <Label id="info_label" text="No. of queries: " style="-fx-font-size: 12px;"/>
@@ -43,7 +42,6 @@
                 <Label id="info_label" text="* - Acidic" style="-fx-font-size: 12px; -fx-text-fill: #0000FF;" VBox.vgrow="ALWAYS"/>
                 <Label id="info_label" text="* - Basic - H" style="-fx-font-size: 12px; -fx-text-fill: #8A2BE2;" VBox.vgrow="ALWAYS"/>
                 <Label id="info_label" text="* - Hydroxyl + sulfhydryl + amine + G" style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
-
             </VBox>
             <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.vgrow="always" spacing="2">
                 <JFXTextField fx:id="searchSpeciesField" promptText="Species" VBox.vgrow="ALWAYS"/>
@@ -79,12 +77,12 @@
                     </children>
                 </HBox>
                 <Pane fx:id="alignmentPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS"/>
-                <Label id="info_label" text="      " style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
+                <Label fx:id="peptideSeqs"  style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
+                <HBox>
+                    <Label id="info_label" text="Number of peptides: " style="-fx-font-size: 12px; -fx-text-fill: #483D8B;" VBox.vgrow="ALWAYS"/>
+                    <Label fx:id="numberOfPeptides"  style="-fx-font-size: 12px; -fx-text-fill: #483D8B;" VBox.vgrow="ALWAYS"/>
+                </HBox>
             </VBox>
-
-
-
-
         </children>
     </GridPane>
 </AnchorPane>
