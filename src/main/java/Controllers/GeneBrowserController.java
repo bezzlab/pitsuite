@@ -287,11 +287,16 @@ public class GeneBrowserController implements Initializable {
     private int previousStart;
     private int previousEnd;
 
+    private static GeneBrowserController instance;
+
 
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
+        instance = this;
+
         isAGeneDisplayed = false;
         queryGeneDataBaseButton.setDisable(true);
         showCdsInGeneBrowserBool = true;
@@ -2888,9 +2893,7 @@ public class GeneBrowserController implements Initializable {
             geneSlider.setLowValue(start);
             transcriptOrCdsCentricView();
         }
-
-
-
-
     }
+
+    public static GeneBrowserController getInstance() { return instance; }
 }

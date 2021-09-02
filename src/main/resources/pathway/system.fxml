@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.web.WebView?>
+
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.SystemController">
+   <children>
+       <GridPane fx:id="gridPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0"
+                 AnchorPane.topAnchor="0.0">
+           <columnConstraints>
+               <ColumnConstraints percentWidth="15" hgrow="NEVER"/>
+               <ColumnConstraints percentWidth="65" hgrow="NEVER"/>
+               <ColumnConstraints percentWidth="20"/>
+           </columnConstraints>
+           <rowConstraints>
+               <RowConstraints percentHeight="100" vgrow="ALWAYS"/>
+           </rowConstraints>
+           <fx:include source="pathwaytree.fxml" fx:id="pathwayTree"/>
+           <fx:include source="pathway.fxml" fx:id="pathway" GridPane.columnIndex="1"/>
+           <fx:include source="pathwayside.fxml" fx:id="pathwaySide" GridPane.columnIndex="2"/>
+       </GridPane>
+   </children>
+</AnchorPane>

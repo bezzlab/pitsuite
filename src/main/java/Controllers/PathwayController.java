@@ -1,61 +1,63 @@
 package Controllers;
 
+import FileReading.PhosphoParser;
+import FileReading.Phosphosite;
 import Singletons.Database;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
-import javafx.scene.control.ChoiceDialog;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import org.dizitart.no2.Cursor;
-import org.dizitart.no2.Filter;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import pathway.*;
 import pathway.Arc;
-import pathway.Reaction;
+import pathway.Label;
+import pathway.*;
+import pathway.alerts.DgeAlert;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.dizitart.no2.filters.Filters.and;
-
 
 public class PathwayController implements Initializable {
 
-    @FXML
-    private javafx.scene.control.Label summationField;
-    @FXML
-    private ListView<String> pathwayListview;
-    @FXML
-    private ListView<String> reactionListview;
-    @FXML
-    private GridPane gridPane;
-    @FXML
-    private TextField searchField;
+    public static PathwayController instance;
+
     @FXML
     private Pane container;
 
@@ -68,12 +70,10 @@ public class PathwayController implements Initializable {
     private double maxX=0, maxY=0;
 
     private double xOffset, yOffset;
-    private DoubleProperty fontSize = new SimpleDoubleProperty(14);
+    private DoubleProperty fontSize = new SimpleDoubleProperty(10);
 
     private HashMap<String, Reaction> reactions = new HashMap<>();
 
-    private HashMap<String, SearchResult> searchPathways;
-    private HashMap<String, SearchResult> searchReactions;
 
     private HashMap<String, ArrayList<javafx.scene.Node>> reactionNodes;
     private HashMap<String, String> reactionLabelId;
@@ -81,21 +81,26 @@ public class PathwayController implements Initializable {
     private Group arcBackgroundGroup;
     private Group arcGroup;
     private Group elementGroup;
+    private Group heatmapScaleGroup;
+
+    private PhosphoParser phosphoParser = new PhosphoParser();
 
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
+        instance = this;
+
         container.setOnScroll((ScrollEvent event) -> {
-            // Adjust the zoom factor as per your requirement
+
             double zoomFactor = 1.05;
             double deltaY = event.getDeltaY();
             if (deltaY < 0){
                 zoomFactor = 1.9 - zoomFactor;
-                fontSize.set(fontSize.getValue()*0.90);
+                fontSize.set(fontSize.getValue()*0.98);
             }else{
 
-                fontSize.set(fontSize.getValue()*1.03);
+                fontSize.set(fontSize.getValue()*1.01);
             }
 
 
@@ -125,20 +130,10 @@ public class PathwayController implements Initializable {
 
         });
 
-        pathwayListview.setOnMouseClicked(click -> {
-            if (click.getClickCount() == 2) {
-                summationField.setText(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getSummation());
-                loadPathway(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getId(), null);
-            }
-        });
-        reactionListview.setOnMouseClicked(click -> {
-            if (click.getClickCount() == 2) {
-                summationField.setText(searchReactions.get(reactionListview.getSelectionModel().getSelectedItem()).getSummation());
-                loadReaction(reactionListview.getSelectionModel().getSelectedItem());
-            }
-        });
+
     }
 
+    public static PathwayController getInstance(){ return instance; }
 
 
     public void parseSbgn(String sgbn, String reaction){
@@ -214,6 +209,8 @@ public class PathwayController implements Initializable {
 
                                 if(element.getType().equals("macromolecule")){
                                     getMacromoleculeInfo(element);
+                                }else if(element.getType().equals("complex")){
+                                    getComplexInfo(element);
                                 }
 
 
@@ -487,15 +484,27 @@ public class PathwayController implements Initializable {
                         ellipse.setRadiusX(scaleCoordinates(element.getWidth() / 2, "x"));
                         ellipse.setRadiusY(scaleCoordinates(element.getHeight() / 2, "y"));
                         ellipse.setFill(Color.web("#A5D791"));
-                        elementGroup.getChildren().add(ellipse);
+
+                        element.setNode(ellipse);
+
+                        elementGroup.getChildren().add(element.getNodeGroups());
 
                         break;
                     case "complex": {
                         Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX(), "x"),
                                 scaleCoordinates(element.getY(), "y"),
                                 scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+
+
+                        element.getNodeGroups().setOnMouseClicked(event -> {
+                            if(event.getClickCount()==2){
+                                PathwaySideController.getInstance().populateSelectionTable(element);
+                            }
+                        });
+
                         rectangle.setFill(Color.web("#A2C6D7"));
-                        elementGroup.getChildren().add(rectangle);
+                        elementGroup.getChildren().add(element.getNodeGroups());
+                        element.setNode(rectangle);
                         break;
                     }
                     case "macromolecule": {
@@ -503,7 +512,13 @@ public class PathwayController implements Initializable {
                                 scaleCoordinates(element.getY(), "y"),
                                 scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
                         rectangle.setFill(Color.web("#8DC7BB"));
-                        elementGroup.getChildren().add(rectangle);
+                        elementGroup.getChildren().add(element.getNodeGroups());
+
+                        element.getNodeGroups().setOnMouseClicked(event -> {
+                            if(event.getClickCount()==2){
+                                PathwaySideController.getInstance().populateSelectionTable(element);
+                            }
+                        });
                         element.setNode(rectangle);
                         break;
                     }
@@ -512,7 +527,8 @@ public class PathwayController implements Initializable {
                                 scaleCoordinates(element.getY(), "y"),
                                 scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
                         rectangle.setFill(Color.web("#A0BBCD"));
-                        elementGroup.getChildren().add(rectangle);
+                        elementGroup.getChildren().add(element.getNodeGroups());
+                        element.setNode(rectangle);
                         break;
                     }
                 }
@@ -532,7 +548,8 @@ public class PathwayController implements Initializable {
                 text.setPrefHeight(scaleCoordinates(element.getHeight(), "y"));
                 text.setTextFill(Color.web("#3C4ED7"));
 
-                elementGroup.getChildren().add(text);
+                element.setNodeLabel(text);
+
             }else if(element.getClass().equals(Reaction.class)){
 
                 Reaction reaction = (Reaction) element;
@@ -588,16 +605,16 @@ public class PathwayController implements Initializable {
                         rect.setFill(Color.web("#FEFEFE"));
 
                         Line l1 = new Line();
-                        l1.setStartX(scaleCoordinates(reaction.getX()+reaction.getX()+reaction.getWidth()*0.2, "x"));
-                        l1.setStartY(scaleCoordinates(reaction.getY()+reaction.getY()+reaction.getHeight()*0.2, "y"));
-                        l1.setEndX(scaleCoordinates(reaction.getX()+reaction.getX()+reaction.getWidth()*0.4, "x"));
-                        l1.setEndY(scaleCoordinates(reaction.getY()+reaction.getY()+reaction.getHeight()*0.8, "y"));
+                        l1.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.2, "x"));
+                        l1.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2, "y"));
+                        l1.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.4, "x"));
+                        l1.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8, "y"));
 
                         Line l2 = new Line();
-                        l2.setStartX(scaleCoordinates(reaction.getX()+reaction.getX()+reaction.getWidth()*0.6, "x"));
-                        l2.setStartY(scaleCoordinates(reaction.getY()+reaction.getY()+reaction.getHeight()*0.2, "y"));
-                        l2.setEndX(scaleCoordinates(reaction.getX()+reaction.getX()+reaction.getWidth()*0.8, "x"));
-                        l2.setEndY(scaleCoordinates(reaction.getY()+reaction.getY()+reaction.getHeight()*0.8, "y"));
+                        l2.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.6, "x"));
+                        l2.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2, "y"));
+                        l2.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.8, "x"));
+                        l2.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8, "y"));
 
                         g.getChildren().add(rect);
                         g.getChildren().add(l1);
@@ -636,6 +653,7 @@ public class PathwayController implements Initializable {
                 }
 
             }
+            setAlerts(element);
         }
 
         for(Arc arc: arcs){
@@ -809,7 +827,7 @@ public class PathwayController implements Initializable {
             }else{ //bottom
                 symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
                 symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
-                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(reaction.getY()-(reaction.getY()+reaction.getHeight())/2), "y"));
+                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(symbol.getRadius()/2), "y"));
             }
 
         }else if(y<reaction.getY()+ reaction.getHeight() && y>reaction.getY()){
@@ -819,7 +837,7 @@ public class PathwayController implements Initializable {
                 symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
             }else{ //right
                 symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()+(reaction.getX()-(reaction.getX()+reaction.getWidth())/2), "x"));
+                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()+(symbol.getRadius()/2), "x"));
                 symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
             }
         }
@@ -830,61 +848,7 @@ public class PathwayController implements Initializable {
     }
 
 
-    public void search() {
 
-        searchPathways = new HashMap<>();
-        searchReactions = new HashMap<>();
-        reactionListview.getItems().clear();
-        pathwayListview.getItems().clear();
-
-        try{
-            URL yahoo = new URL("https://reactome.org/ContentService/search/query?query="+searchField.getText().replace(" ", "%20"));
-            URLConnection yc = yahoo.openConnection();
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(
-                            yc.getInputStream()));
-            String inputLine="";
-            JSONObject object=null;
-            while ((inputLine = in.readLine()) != null) {
-
-                object = new JSONObject(inputLine);
-            }
-
-            for(Object o: object.getJSONArray("results")){
-                JSONObject result = (JSONObject) o;
-                for(Object o2: result.getJSONArray("entries")){
-                    JSONObject entry = (JSONObject) o2;
-
-
-                    if(entry.getJSONArray("species").getString(0).equals("Homo sapiens")){
-
-                        SearchResult searchResult = new SearchResult(entry.getString("exactType"), entry.getString("stId"),
-                                entry.getString("name").replaceAll("<.*?>", ""),
-                                entry.has("summation")?entry.getString("summation").replaceAll("<.*?>", ""):"");
-
-
-                        if(searchResult.getType().equals("Pathway")) {
-                            searchPathways.put(searchResult.getName(), searchResult);
-                            pathwayListview.getItems().add(searchResult.getName());
-                        }
-                        else if(searchResult.getType().equals("Reaction") || searchResult.getType().equals("BlackBoxEvent")) {
-                            searchReactions.put(searchResult.getName(), searchResult);
-                            reactionListview.getItems().add(searchResult.getName());
-                        }
-                    }
-                }
-            }
-
-
-            in.close();
-
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-
-    }
 
     public void loadPathway(String pathwayId, String reaction){
 
@@ -909,11 +873,11 @@ public class PathwayController implements Initializable {
 
     }
 
-    private void loadReaction(String reaction) {
+    public void loadReaction(String reaction) {
 
 
         try{
-            URL url = new URL("https://reactome.org/ContentService/data/pathways/low/entity/"+searchReactions.get(reaction).getId()+"?species=9606");
+            URL url = new URL("https://reactome.org/ContentService/data/pathways/low/entity/"+PathwaySideController.getInstance().getSearchReactions().get(reaction).getId()+"?species=9606");
             URLConnection yc = url.openConnection();
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(
@@ -1023,7 +987,7 @@ public class PathwayController implements Initializable {
                     JSONObject entry = (JSONObject) o2;
                     if(entry.getString("name").replaceAll("<.*?>", "").equals(element.getLabel())){
 
-                        element.addGene(new Gene(entry.getString("stId"),
+                        element.addEntity(new Gene(entry.getString("stId"),
                                 entry.has("referenceName")?entry.getString("referenceName").replaceAll("<.*?>", ""):"",
                                 entry.getString("referenceIdentifier")));
                         found=true;
@@ -1040,47 +1004,237 @@ public class PathwayController implements Initializable {
         }
     }
 
+    private void getComplexInfo(Element element){
+        try{
+            URL yahoo = new URL("https://reactome.org/ContentService/search/query?query="+element.getLabel().replace(" ", "%20"));
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            String inputLine="";
+            JSONObject object=null;
+            while ((inputLine = in.readLine()) != null) {
+
+                object = new JSONObject(inputLine);
+            }
+
+            String id="";
+
+
+            boolean found = false;
+            for(Object o : object.getJSONArray("results")){
+                JSONObject result = (JSONObject) o;
+                for(Object o2: result.getJSONArray("entries")){
+                    JSONObject entry = (JSONObject) o2;
+                    if(entry.getString("exactType").equals("Complex") && entry.getString("stId").contains("HSA")){
+
+                        id=entry.getString("stId");
+
+                        found=true;
+                        break;
+                    }
+                }
+                if(found)
+                    break;
+            }
+
+
+
+
+            yahoo = new URL("https://reactome.org/ContentService/data/complex/"+id+"/subunits?excludeStructures=true");
+            yc = yahoo.openConnection();
+            in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            inputLine="";
+            JSONArray array =null;
+            while ((inputLine = in.readLine()) != null) {
+
+                array = new JSONArray(inputLine);
+            }
+
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject entityEntry = array.getJSONObject(i);
+
+                if(entityEntry.getString("className").equals("Protein") || entityEntry.getString("className").equals("Genes and Transcripts")
+                        || entityEntry.getString("className").equals("DNA Sequence") || entityEntry.getString("className").equals("RNA Sequence")){
+                    element.addEntity(new Gene(entityEntry.getString("stId"),
+                            entityEntry.getJSONArray("name").getString(0)));
+                }else if(entityEntry.getString("className").equals("Chemical Compound")){
+                    element.addEntity(new Entity(entityEntry.getJSONArray("name").getString(0),
+                            entityEntry.getString("className"), entityEntry.getString("stId")));
+                }else{
+                    element.addEntity(new Entity(entityEntry.getJSONArray("name").getString(0),
+                            entityEntry.getString("className"), entityEntry.getString("stId")));
+                    System.out.println(entityEntry.getString("className"));
+                }
+
+
+            }
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     public void colorElements(){
 
         Cursor dgeFindCursor = Database.getDb().getCollection("Nsivssi_dge").find();
         HashMap<String, Double> dge = new HashMap<>();
+        HashMap<Element, ArrayList<Phosphosite>> phosphosites = new HashMap<>();
 
         for(org.dizitart.no2.Document doc: dgeFindCursor){
 
             double dgeFoldChange;
-            if(doc.get("log2fc") instanceof Long)
-                dgeFoldChange = ((Long) doc.get("log2fc")).doubleValue();
-            else
-                dgeFoldChange = (double) doc.get("log2fc");
-            dge.put((String) doc.get("symbol"), dgeFoldChange);
+            JSONObject json = new JSONObject(doc);
+
+            if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
+                if(json.get("log2fc") instanceof Long)
+                    dgeFoldChange = ((Long) json.get("log2fc")).doubleValue();
+                else
+                    dgeFoldChange = (double) json.get("log2fc");
+                dge.put((String) json.get("symbol"), dgeFoldChange);
+            }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Differencial protein abundance")){
+                if(json.has("ms") && json.getJSONObject("ms").getJSONObject("FWD").has("log2fc")){
+                    dge.put((String) json.get("symbol"), json.getJSONObject("ms").getJSONObject("FWD").getDouble("log2fc"));
+                }
+            }
+
+
+
         }
 
         double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
 
         for(Element element: elements.values()){
-            if(!element.getClass().equals(Compartment.class) && element.getType().equals("macromolecule")){
-                for(Gene gene: element.getGenes()){
-                    if(dge.containsKey(gene.getName())){
-                        if(dge.get(gene.getName())<min)
-                            min = dge.get(gene.getName());
-                        else if(dge.get(gene.getName())>max)
-                            max = dge.get(gene.getName());
+
+            element.getColorRectangles().getChildren().clear();
+
+            if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))){
+
+                if(element.getLabel().contains("ATF2")){
+                    System.out.println(element.getLabel());
+                }
+
+                if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Phosphorylation")){
+                    for(Phosphosite phosphosite: phosphoParser.getPhosphosites()){
+                        if(phosphosite.matchesElement(element.getLabel())){
+                            if(!phosphosites.containsKey(element)){
+                                phosphosites.put(element, new ArrayList<>());
+                            }
+                            double fc = phosphosite.getFc();
+                            if(fc<min)
+                                min = fc;
+                            else if(fc>max)
+                                max = fc;
+                            phosphosites.get(element).add(phosphosite);
+                        }
+                    }
+
+                }else{
+                    for(Gene gene: element.getEntities().stream().filter(e-> e.getClass().equals(Gene.class)).toArray(Gene[]::new)){
+
+                        String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
+
+                        if(dge.containsKey(geneName)){
+                            gene.setValue(dge.get(geneName));
+                            if(dge.get(geneName)<min)
+                                min = dge.get(geneName);
+                            else if(dge.get(geneName)>max)
+                                max = dge.get(geneName);
+                        }
+                    }
+                }
+
+            }
+        }
+
+        for(Element element: elements.values()){
+            if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule")|| element.getType().equals("complex"))){
+                int i=0;
+
+                if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Phosphorylation") && phosphosites.containsKey(element)){
+                    int nbSites = Phosphosite.getPhosphositesNumberInElement(element.getLabel());
+                    for(Phosphosite phosphosite: phosphosites.get(element)){
+                        Rectangle r = new Rectangle();
+
+                        Rectangle complexRectangle = (Rectangle) element.getNode();
+
+                        r.setX(complexRectangle.getX() + (((double) i / nbSites) * complexRectangle.getWidth()));
+                        r.setY(complexRectangle.getY());
+                        r.setHeight(complexRectangle.getHeight());
+                        r.setWidth((complexRectangle.getWidth() / nbSites));
+                        element.getColorRectangles().getChildren().add(r);
+                        element.getColorRectangles().toFront();
+                        element.getNodeLabel().toFront();
+
+                        double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (phosphosite.getFc() - min) / (max - min);
+                        Color color = Color.hsb(hue, 1.0, 1.0);
+                        r.setStyle("-fx-fill: " + toHexString(color));
+                        i++;
+                    }
+                }else {
+
+                    Gene[] genes = element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new);
+
+
+                    for (Gene gene : genes) {
+
+                        String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
+                        if (dge.containsKey(geneName)) {
+
+                            Rectangle r = new Rectangle();
+
+                            Rectangle complexRectangle = (Rectangle) element.getNode();
+
+                            r.setX(complexRectangle.getX() + (((double) i / genes.length) * complexRectangle.getWidth()));
+                            r.setY(complexRectangle.getY());
+                            r.setHeight(complexRectangle.getHeight());
+                            r.setWidth((complexRectangle.getWidth() / genes.length));
+                            element.getColorRectangles().getChildren().add(r);
+                            element.getColorRectangles().toFront();
+                            element.getNodeLabel().toFront();
+
+                            double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (dge.get(geneName) - min) / (max - min);
+                            Color color = Color.hsb(hue, 1.0, 1.0);
+                            r.setStyle("-fx-fill: " + toHexString(color));
+                        }
+                        i++;
                     }
                 }
             }
         }
 
-        for(Element element: elements.values()){
-            if(!element.getClass().equals(Compartment.class) && element.getType().equals("macromolecule")){
-                for(Gene gene: element.getGenes()){
-                    if(dge.containsKey(gene.getName())){
-                        double hue = Color.BLUE.getHue() + (Color.RED.getHue() - Color.BLUE.getHue()) * (dge.get(gene.getName()) - min) / (max - min) ;
-                        Color color = Color.hsb(hue, 1.0, 1.0);
-                        element.getNode().setStyle("-fx-fill: "+toHexString(color));
-                    }
-                }
-            }
-        }
+        if(heatmapScaleGroup!=null)
+            container.getChildren().remove(heatmapScaleGroup);
+        heatmapScaleGroup = new Group();
+
+        Stop[] stops = new Stop[] { new Stop(0, Color.hsb(Color.GREEN.getHue(), 1.0, 1.0)),
+                new Stop(0.5,Color.hsb(Color.YELLOW.getHue(), 1.0, 1.0)),
+                new Stop(1,Color.hsb(Color.RED.getHue(), 1.0, 1.0))};
+        LinearGradient lg1 = new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE, stops);
+        Rectangle r1 = new Rectangle(0, 0, 100, 100);
+        r1.setFill(lg1);
+        r1.setHeight(50);
+        r1.setWidth(200);
+        r1.setX(container.getWidth()-250);
+        heatmapScaleGroup.getChildren().add(r1);
+
+        NumberFormat formatter = new DecimalFormat("#0.00");
+
+        javafx.scene.control.Label minLabel = new javafx.scene.control.Label(formatter.format(min));
+        minLabel.setLayoutX(container.getWidth()-260);
+        minLabel.setLayoutY(50);
+        javafx.scene.control.Label maxLabel = new javafx.scene.control.Label(formatter.format(max));
+        maxLabel.setLayoutX(container.getWidth()-65);
+        maxLabel.setLayoutY(50);
+        heatmapScaleGroup.getChildren().add(minLabel);
+        heatmapScaleGroup.getChildren().add(maxLabel);
+
+        container.getChildren().add(heatmapScaleGroup);
+        container.toFront();
+
     }
 
     private String format(double val) {
@@ -1092,4 +1246,44 @@ public class PathwayController implements Initializable {
         return "#" + (format(value.getRed()) + format(value.getGreen()) + format(value.getBlue()) + format(value.getOpacity()))
                 .toUpperCase();
     }
+
+    public void setAlerts(Element element){
+
+        Cursor dgeFindCursor = Database.getDb().getCollection("Nsivssi_dge").find();
+        HashMap<String, JSONObject> dge = new HashMap<>();
+
+        for(org.dizitart.no2.Document doc: dgeFindCursor){
+
+            double dgeFoldChange;
+            JSONObject json = new JSONObject(doc);
+
+            if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
+                if(json.get("log2fc") instanceof Long)
+                    dgeFoldChange = ((Long) json.get("log2fc")).doubleValue();
+                else
+                    dgeFoldChange = (double) json.get("log2fc");
+                dge.put((String) json.get("symbol"), json);
+            }
+
+        }
+
+
+
+
+
+        if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))) {
+
+            for (Gene gene : element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new)) {
+
+                String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
+                if(dge.containsKey(geneName) && dge.get(geneName).has("padj") && dge.get(geneName).getDouble("padj")<0.05){
+                    element.setAlert(new DgeAlert(geneName, dge.get(geneName).getDouble("fc"), dge.get(geneName).getDouble("padj")), this);
+                }
+            }
+        }
+
+
+    }
+
+
 }

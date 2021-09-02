@@ -121,13 +121,15 @@ public class DgeTableController extends Controller {
     private int fontSize;
     private JSONObject settings;
 
+    private static DgeTableController instance;
+
 
 
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
-
+        instance = this;
 
         // fold Change Table: reflection for the getters
         geneSymbolFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("geneSymbol"));
@@ -1212,6 +1214,18 @@ public class DgeTableController extends Controller {
         return null;
     }
 
+    public void selectGene(String gene){
+        Optional<FoldChangeTableModel> row = foldChangeTableView.getItems().stream().filter(e-> e.getGeneSymbol().equals(gene)).findFirst();
+        if(row.isPresent()){
+            foldChangeTableView.getSelectionModel().select(row.get());
+            foldChangeTableView.scrollTo(row.get());
+            drawSelectedGeneReadCount(gene);
+            drawSelectedGeneProteinQuant(gene);
+        }else{
+
+        }
+    }
+
     public void resize(){
 //        dgeWebview.resize();
 //        proteinDeWebview.resize();
@@ -1227,5 +1241,7 @@ public class DgeTableController extends Controller {
     public String getSelectedComparison(){
         return dgeComparisonCombobox.getValue();
     }
+
+    public static DgeTableController getInstance(){ return instance; }
 
 }

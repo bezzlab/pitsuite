@@ -37,7 +37,6 @@ import pitguiv2.Settings;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ResourceBundle;
 import java.util.Scanner;
@@ -55,7 +54,7 @@ public class ResultsController implements Initializable {
     private PeptideMapController peptideMapController;
     private PeptideTableController peptideTableController;
     private TranscriptUsageController transcriptUsageController;
-    private PathwayController pathwayController;
+    private SystemController systemController;
     // tabs
     @FXML
     private TabPane resultsTabPane;
@@ -71,6 +70,7 @@ public class ResultsController implements Initializable {
     private MenuBar menuBar;
 
     private HostServices hostServices;
+    private static ResultsController instance;
 
 
 
@@ -92,6 +92,8 @@ public class ResultsController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
+
+        instance = this;
 
         ControllersBasket.setResultsController(this);
 
@@ -139,15 +141,15 @@ public class ResultsController implements Initializable {
     public void load(){
 
         resultsTabPane.getSelectionModel().select(2);
-//        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
-//        try {
-//            Parent root = fxmlLoader1.load();
-//            dgeTableController = fxmlLoader1.getController();
-//            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
-//            resultsTabPane.getTabs().get(2).setContent(root);
-//        } catch(Exception e){
-//            e.printStackTrace();
-//        }
+        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
+        try {
+            Parent root = fxmlLoader1.load();
+            dgeTableController = fxmlLoader1.getController();
+            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
+            resultsTabPane.getTabs().get(2).setContent(root);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
 //
 //
 //
@@ -182,18 +184,18 @@ public class ResultsController implements Initializable {
 //            });
 //
 //
-//            Platform.runLater(() -> {
-//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
-//                try {
-//                    Parent root = fxmlLoader2.load();
-//
-//                    browserController = fxmlLoader2.getController();
-//                    browserController.setParentControler(this, settings, hostServices, projectName, allGenesReader);
-//                    resultsTabPane.getTabs().get(1).setContent(root);
-//                } catch(Exception e){
-//                    e.printStackTrace();
-//                }
-//            });
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader2.load();
+
+                    browserController = fxmlLoader2.getController();
+                    browserController.setParentControler(this, settings, hostServices, projectName, allGenesReader);
+                    resultsTabPane.getTabs().get(1).setContent(root);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
 //
 //
 //            Platform.runLater(() -> {
@@ -233,12 +235,12 @@ public class ResultsController implements Initializable {
         pauseTransition.play();
 
         Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/pathway.fxml"));
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/pathway/system.fxml"));
                 try {
                     Parent root = fxmlLoader2.load();
                     resultsTabPane.getTabs().get(6).setContent(root);
 
-                    pathwayController = fxmlLoader2.getController();
+                    systemController = fxmlLoader2.getController();
 
 
 
@@ -506,6 +508,8 @@ public class ResultsController implements Initializable {
     public void moveToTab(int tabIndex){
         resultsTabPane.getSelectionModel().select(tabIndex);
     }
+
+    public static ResultsController getInstance(){ return instance; }
 
 
 }

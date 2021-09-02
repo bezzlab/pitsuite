@@ -56,7 +56,7 @@ public class BrowserController implements Initializable {
     }
 
     private void setTabsParents(ResultsController parent, JSONObject settings, String databaseProjectName, AllGenesReader keggReader){
-        genomeBrowserController.setParentControler(parent);
+        //genomeBrowserController.setParentControler(parent);
         geneBrowserController.setParentControler(parent, settings, hostServices, databaseProjectName, keggReader);
     }
 
