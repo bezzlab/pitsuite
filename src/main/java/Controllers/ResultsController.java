@@ -47,14 +47,15 @@ public class ResultsController implements Initializable {
 
     @FXML
     public AnchorPane mainPane;
+
     private MutationsTableController mutationsTableController;
     private BrowserController browserController;
     private DgeTableController dgeTableController;
     private SplicingTableController splicingTableController;
-    private PeptideMapController peptideMapController;
     private PeptideTableController peptideTableController;
     private TranscriptUsageController transcriptUsageController;
     private SystemController systemController;
+    private PhosphoController phosphoController;
     // tabs
     @FXML
     private TabPane resultsTabPane;
@@ -66,6 +67,8 @@ public class ResultsController implements Initializable {
     private Tab dgeTab;
     @FXML
     private Tab splicingTab;
+    @FXML
+    private Tab PhosphoTab;
     @FXML
     private MenuBar menuBar;
 
@@ -198,19 +201,19 @@ public class ResultsController implements Initializable {
             });
 //
 //
-//            Platform.runLater(() -> {
-//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
-//                try {
-//                    Parent root = fxmlLoader2.load();
-//
-//                    peptideTableController = fxmlLoader2.getController();
-//                    peptideTableController.setParentController(this);
-//                    resultsTabPane.getTabs().get(5).setContent(root);
-//                    ControllersBasket.setPeptideTableController(peptideTableController);
-//                } catch(Exception e){
-//                    e.printStackTrace();
-//                }
-//            });
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader2.load();
+
+                    peptideTableController = fxmlLoader2.getController();
+                    peptideTableController.setParentController(this);
+                    resultsTabPane.getTabs().get(5).setContent(root);
+                    ControllersBasket.setPeptideTableController(peptideTableController);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
 //
 //            Platform.runLater(() -> {
 //                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/transcriptUsage.fxml"));
@@ -248,6 +251,21 @@ public class ResultsController implements Initializable {
                     e.printStackTrace();
                 }
             });
+
+        Platform.runLater(() -> {
+            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
+            try {
+                Parent root = fxmlLoader2.load();
+                resultsTabPane.getTabs().get(7).setContent(root);
+
+                phosphoController = fxmlLoader2.getController();
+
+
+
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        });
 
 
     }

@@ -20,17 +20,18 @@ module pitguivTwo {
     exports Controllers;
     exports mongoDB;
     exports pitguiv2;
+    exports pathway;
+    exports pathway.alerts;
     exports Controllers.drawerControllers;
     requires grep4j;
 
     opens Cds;
     opens Controllers;
     opens mongoDB;
-
     opens TablesModels;
     opens graphics;
     opens Controllers.drawerControllers;
-
+    opens pathway.alerts;
     opens utilities;
 
     requires org.kordamp.iconli.core;
@@ -43,6 +44,7 @@ module pitguivTwo {
     requires commons.fileupload;
     requires java.desktop;
     requires javafx.swing;
+    requires JavaFXSmartGraph;
 
 
 }

@@ -21,7 +21,6 @@ import java.util.zip.Inflater;
  */
 public class App extends Application {
 
-    private static Scene scene;
     public static App app;
 
     @Override
@@ -33,7 +32,7 @@ public class App extends Application {
         Parent root = loader.load();
         FXMLDocumentController controller = loader.getController();
         controller.setStage(stage);
-        scene = new Scene(root, 1200, 1000);
+        Scene scene = new Scene(root, 1200, 1000);
         stage.setScene(scene);
         stage.getIcons().add(new Image(this.getClass().getResourceAsStream("/logo.png")));
         stage.show();

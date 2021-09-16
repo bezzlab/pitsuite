@@ -1,6 +1,7 @@
 package pathway;
 
 import Controllers.PathwayController;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -8,8 +9,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import org.w3c.dom.Text;
-import pathway.alerts.Alert;
-import pathway.alerts.DgeAlert;
+import pathway.alerts.*;
 
 import java.util.ArrayList;
 
@@ -29,6 +29,7 @@ public class Element {
     private Shape node;
     private ArrayList<Entity> entities = new ArrayList<>();
     private ArrayList<Alert> alerts = new ArrayList<>();
+    private double alertXOffset = 0;
 
     public Element(double x, double y, double width, double height) {
         this.x = x;
@@ -47,6 +48,10 @@ public class Element {
         this.id = id;
         nodeGroups.getChildren().add(colorRectangles);
 
+    }
+
+    public Element(String type){
+        this.type = type;
     }
 
     public Element(double x, double y, double width, double height, String id, String type, String label) {
@@ -128,17 +133,55 @@ public class Element {
 
     public void setAlert(Alert alert, PathwayController pathwayController) {
 
-        if(alert.getClass().equals(DgeAlert.class)){
-            if(alerts.stream().filter(e->e.getClass().equals(DgeAlert.class)).findFirst().isEmpty()){
-                Label t = new Label("G");
-                t.setFont(Font.font(8));
-                t.setLayoutX(pathwayController.scaleCoordinates(x, "x"));
-                t.setLayoutY(pathwayController.scaleCoordinates(y, "y")-10);
-                nodeGroups.getChildren().add(t);
-            }
-        }
+        ArrayList<Alert> alertsCopy = new ArrayList<>(alerts);
         alerts.add(alert);
+        if(pathwayController!=null) {
+            Platform.runLater(() -> {
+
+                if (alert.getClass().equals(DgeAlert.class)) {
+                    if (alertsCopy.stream().filter(e -> e.getClass().equals(DgeAlert.class)).findFirst().isEmpty()) {
+                        Label t = new Label("G");
+                        t.setFont(Font.font(8));
+                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        nodeGroups.getChildren().add(t);
+                        alertXOffset += t.getLayoutBounds().getWidth() + 5;
+                    }
+                } else if (alert.getClass().equals(SplicingAlert.class)) {
+                    if (alertsCopy.stream().filter(e -> e.getClass().equals(SplicingAlert.class)).findFirst().isEmpty()) {
+                        Label t = new Label("S");
+                        t.setFont(Font.font(8));
+                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        nodeGroups.getChildren().add(t);
+                        alertXOffset += t.getLayoutBounds().getWidth() + 5;
+                    }
+                } else if (alert.getClass().equals(MutationAlert.class)) {
+                    if (alertsCopy.stream().filter(e -> e.getClass().equals(MutationAlert.class)).findFirst().isEmpty()) {
+                        Label t = new Label("M");
+                        t.setFont(Font.font(8));
+                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        nodeGroups.getChildren().add(t);
+                        alertXOffset += t.getLayoutBounds().getWidth() + 5;
+                    }
+                } else if (alert.getClass().equals(PTMAlert.class)) {
+                    if (alertsCopy.stream().filter(e -> e.getClass().equals(PTMAlert.class)).findFirst().isEmpty()) {
+                        Label t = new Label("P");
+                        t.setFont(Font.font(8));
+                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        nodeGroups.getChildren().add(t);
+                        alertXOffset += t.getLayoutBounds().getWidth() + 5;
+                    }
+                }
+
+            });
+        }
 
     }
-    
+
+    public ArrayList<Alert> getAlerts() {
+        return alerts;
+    }
 }

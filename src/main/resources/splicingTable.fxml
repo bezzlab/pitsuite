@@ -141,6 +141,7 @@
                                          </rowConstraints>
 
                                      </GridPane>
+                                     <AnchorPane fx:id="psiChartContainer" GridPane.rowIndex="1" GridPane.columnSpan="3" />
 
                                  </children>
                               </GridPane>

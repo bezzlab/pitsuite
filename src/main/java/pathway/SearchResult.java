@@ -14,6 +14,12 @@ public class SearchResult {
         this.summation = summation;
     }
 
+    public SearchResult(String type, String id, String name) {
+        this.type = type;
+        this.id = id;
+        this.name = name;
+    }
+
     public String getType() {
         return type;
     }

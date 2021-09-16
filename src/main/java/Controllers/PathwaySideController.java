@@ -1,6 +1,7 @@
 package Controllers;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -9,7 +10,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
+import org.json.JSONArray;
 import pathway.Entity;
 import pathway.Gene;
 import javafx.fxml.FXML;
@@ -18,6 +21,10 @@ import javafx.scene.layout.GridPane;
 import org.json.JSONObject;
 import pathway.Element;
 import pathway.SearchResult;
+import pathway.alerts.DgeAlert;
+import pathway.alerts.MutationAlert;
+import pathway.alerts.PTMAlert;
+import pathway.alerts.SplicingAlert;
 import pitguiv2.App;
 
 import java.awt.*;
@@ -29,25 +36,21 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.ResourceBundle;
 
 public class PathwaySideController implements Initializable {
 
-
-    public static PathwaySideController instance;
-
+    @FXML
+    private AnchorPane PTMPane;
+    @FXML
+    private AnchorPane mutationPane;
+    @FXML
+    private AnchorPane splicingPane;
+    @FXML
+    private AnchorPane dgePane;
     @FXML
     private ComboBox<String> colorbyCombobox;
-    @FXML
-    private javafx.scene.control.Label selectionLabel;
-    @FXML
-    private TableView<GeneValueTable> selectionTable;
-    @FXML
-    private TableColumn<GeneValueTable, String> entityNameSelectionColumn;
-    @FXML
-    private TableColumn<GeneValueTable, String> entityTypeSelectionColumn;
-    @FXML
-    private TableColumn<GeneValueTable, Double> entityValueSelectionColumn;
     @FXML
     private TabPane tabPane;
     @FXML
@@ -65,12 +68,13 @@ public class PathwaySideController implements Initializable {
 
     private HashMap<String, SearchResult> searchPathways;
     private HashMap<String, SearchResult> searchReactions;
+    public static PathwaySideController instance;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         instance = this;
 
-        colorbyCombobox.setItems(FXCollections.observableArrayList("RNA DGE", "Differencial protein abundance", "Phosphorylation"));
+        colorbyCombobox.setItems(FXCollections.observableArrayList("RNA DGE", "Differencial protein abundance", "Splicing", "Phosphorylation"));
         colorbyCombobox.getSelectionModel().select(0);
 
         colorbyCombobox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
@@ -79,33 +83,17 @@ public class PathwaySideController implements Initializable {
 
         pathwayListview.setOnMouseClicked(click -> {
             if (click.getClickCount() == 2) {
-                summationField.setText(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getSummation());
+                //summationField.setText(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getSummation());
                 PathwayController.getInstance().loadPathway(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getId(), null);
             }
         });
         reactionListview.setOnMouseClicked(click -> {
             if (click.getClickCount() == 2) {
-                summationField.setText(searchReactions.get(reactionListview.getSelectionModel().getSelectedItem()).getSummation());
+                //summationField.setText(searchReactions.get(reactionListview.getSelectionModel().getSelectedItem()).getSummation());
                 PathwayController.getInstance().loadReaction(reactionListview.getSelectionModel().getSelectedItem());
             }
         });
 
-        entityNameSelectionColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        entityValueSelectionColumn.setCellValueFactory(new PropertyValueFactory<>("value"));
-        entityTypeSelectionColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-        entityNameSelectionColumn.prefWidthProperty().bind(selectionTable.widthProperty().divide(3));
-        entityValueSelectionColumn.prefWidthProperty().bind(selectionTable.widthProperty().divide(3));
-        entityTypeSelectionColumn.prefWidthProperty().bind(selectionTable.widthProperty().divide(3));
-
-        selectionTable.setRowFactory( tv -> {
-            TableRow<GeneValueTable> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 1 && (! row.isEmpty()) ) {
-                    showGeneDetails(row.getItem().getId());
-                }
-            });
-            return row ;
-        });
 
     }
 
@@ -119,6 +107,8 @@ public class PathwaySideController implements Initializable {
         searchReactions = new HashMap<>();
         reactionListview.getItems().clear();
         pathwayListview.getItems().clear();
+
+        final HashSet<String> geneProductsIds = new HashSet<>();
 
         try{
             URL yahoo = new URL("https://reactome.org/ContentService/search/query?query="+searchField.getText().replace(" ", "%20"));
@@ -153,9 +143,15 @@ public class PathwaySideController implements Initializable {
                         else if(searchResult.getType().equals("Reaction") || searchResult.getType().equals("BlackBoxEvent")) {
                             searchReactions.put(searchResult.getName(), searchResult);
                             reactionListview.getItems().add(searchResult.getName());
+                        }else if(searchResult.getType().equals("ReferenceGeneProduct")) {
+                            geneProductsIds.add(entry.getString("stId"));
                         }
                     }
                 }
+            }
+
+            for(String entity: geneProductsIds){
+                searchEntityPathways(entity);
             }
 
 
@@ -168,17 +164,46 @@ public class PathwaySideController implements Initializable {
 
     }
 
+    public void searchEntityPathways(String entityId){
+        try{
+            URL yahoo = new URL("https://reactome.org/ContentService/data/pathways/low/entity/"+entityId);
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            String inputLine="";
+            JSONArray results=null;
+            while ((inputLine = in.readLine()) != null) {
+
+                results = new JSONArray(inputLine);
+            }
+
+            for(Object o: results){
+                JSONObject result = (JSONObject) o;
+                SearchResult searchResult = new SearchResult("Pathway", result.getString("stId"),
+                        result.getString("displayName"));
+                searchPathways.put(searchResult.getName(), searchResult);
+                if(!pathwayListview.getItems().contains(searchResult.getName())) {
+                    Platform.runLater(()->{
+                        pathwayListview.getItems().add(searchResult.getName());
+                    });
+                }
+            }
+            in.close();
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
     public void populateSelectionTable(Element element){
 
-        selectionLabel.setText(element.getLabel());
+        pathway.alerts.Alert.populateGenes(dgePane, element, DgeAlert.class);
+        pathway.alerts.Alert.populateGenes(splicingPane, element, SplicingAlert.class);
+        pathway.alerts.Alert.populateGenes(mutationPane, element, MutationAlert.class);
+        pathway.alerts.Alert.populateGenes(PTMPane, element, PTMAlert.class);
 
-        ArrayList<GeneValueTable> rows = new ArrayList<>();
-        for(Entity entity: element.getEntities()){
-            rows.add(new GeneValueTable(entity.getId(), entity.getName(), entity.getType(), entity.getValue()));
-        }
-        selectionTable.getItems().clear();
-        selectionTable.getItems().addAll(rows);
-        tabPane.getSelectionModel().select(1);
+
     }
 
     public HashMap<String, SearchResult> getSearchReactions() {
@@ -220,12 +245,12 @@ public class PathwaySideController implements Initializable {
 
     @FXML
     public void openDGE() {
-        DgeTableController.getInstance().selectGene(selectionTable.getSelectionModel().getSelectedItem().getName());
+
         ResultsController.getInstance().moveToTab(2);
     }
     @FXML
     public void openBrowser() {
-        GeneBrowserController.getInstance().showGeneBrowser(selectionTable.getSelectionModel().getSelectedItem().getName());
+
         ResultsController.getInstance().moveToTab(1);
 
     }

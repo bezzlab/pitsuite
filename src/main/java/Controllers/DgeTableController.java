@@ -10,16 +10,12 @@ import graphics.ConfidentBarChart;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -28,7 +24,6 @@ import javafx.util.StringConverter;
 import org.dizitart.no2.*;
 import org.dizitart.no2.filters.Filters;
 import org.json.JSONObject;
-import pitguiv2.Settings;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,7 +31,6 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.*;
-import java.util.function.DoubleBinaryOperator;
 
 import static org.dizitart.no2.filters.Filters.*;
 
@@ -258,18 +252,6 @@ public class DgeTableController extends Controller {
             });
             return row;
         });
-//        foldChangeTableView.setRowFactory( tv -> {
-//            TableRow<FoldChangeTableModel> row = new TableRow<>();
-//            row.setOnMouseClicked(event -> {
-//                if (event.getClickCount() == 1 && (! row.isEmpty()) ) {
-//                    FoldChangeTableModel rowData = row.getItem();
-//                    selectedGeneCharts.getChildren().clear();
-//                    drawSelectedGeneReadCount(rowData.getGeneSymbol());
-//                    drawSelectedGeneProteinQuant(rowData.getGeneSymbol());
-//                }
-//            });
-//            return row ;
-//        });
 
 
     }
@@ -759,7 +741,7 @@ public class DgeTableController extends Controller {
 
 
 
-    private void drawSelectedGeneReadCount(String gene){
+    public static ConfidentBarChart drawSelectedGeneReadCount(String gene, Pane container, double fontSize){
 
         NitriteCollection collection = Database.getDb().getCollection("readCounts");
         Cursor documents = collection.find(Filters.eq("gene", gene));
@@ -767,8 +749,7 @@ public class DgeTableController extends Controller {
         final CategoryAxis xAxis = new CategoryAxis();
         final NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("Normalised read counts");
-        BarChart<String,Number> bc =
-                new BarChart<>(xAxis, yAxis);
+
 
         xAxis.tickLabelFontProperty().set(Font.font(fontSize));
 
@@ -777,11 +758,11 @@ public class DgeTableController extends Controller {
         ArrayList<XYChart.Series> allSeries = new ArrayList<>();
 
         ConfidentBarChart bc2 = new ConfidentBarChart();
+        AnchorPane.setBottomAnchor(bc2, 0.);
+        AnchorPane.setTopAnchor(bc2, 0.);
+        AnchorPane.setLeftAnchor(bc2, 0.);
+        AnchorPane.setRightAnchor(bc2, 0.);
         bc2.setTitle("Normalised read counts");
-        //bc2.setMaxSize(250,400);
-        //bc2.setStyle("-fx-font-size: 10px;");
-
-
 
 
         for(Document result: documents){
@@ -835,11 +816,12 @@ public class DgeTableController extends Controller {
         bc2.draw();
         HBox.setHgrow(bc2, Priority.ALWAYS);
 
-        selectedGeneCharts.getChildren().add(bc2);
+        container.getChildren().add(bc2);
+        return bc2;
     }
 
 
-    private void drawSelectedGeneProteinQuant(String gene){
+    public static void drawSelectedGeneProteinQuant(String gene, Pane container, double fontSize, String msRun){
 
 
 
@@ -883,14 +865,14 @@ public class DgeTableController extends Controller {
         //proteinConfidentBarChart.setStyle("-fx-font-size: 30px;");
 
 
-        String referenceCondition = Config.getReferenceMSCondition(protComparisonCombobox.getValue());
+        String referenceCondition = Config.getReferenceMSCondition(msRun);
 
         proteinConfidentBarChart.setReference(referenceCondition);
 
         for(Document result: documents){
 
 
-            if(Config.getRunType(protComparisonCombobox.getValue()).equals("SILAC")){
+            if(Config.getRunType(msRun).equals("SILAC")){
 
                 JSONObject res = new JSONObject(result).getJSONObject("peptides");
 
@@ -952,7 +934,7 @@ public class DgeTableController extends Controller {
 
                     }
                 }
-            }else if (Config.getRunType(protComparisonCombobox.getValue()).equals("LABELFREE")){
+            }else if (Config.getRunType(msRun).equals("LABELFREE")){
 
 
                 JSONObject res = new JSONObject(result);
@@ -1055,7 +1037,7 @@ public class DgeTableController extends Controller {
                         .getJSONObject("intensity").keys();
 
 
-                Set<String> samples = Config.getRunSamples(protComparisonCombobox.getValue());
+                Set<String> samples = Config.getRunSamples(msRun);
 //                for(String sample: samples){
 //                    groups.put(sample, new HashMap<>());
 //                }
@@ -1080,10 +1062,7 @@ public class DgeTableController extends Controller {
                     ArrayList<Double> referenceIntensities = new ArrayList<>();
 
 
-
-                    String run = protComparisonCombobox.getValue();
-
-                    JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(run);
+                    JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(msRun);
 
                     ArrayList<Double> referenceIntensitiesPeptide = new ArrayList<>();
                     for(String sample: samples){
@@ -1150,8 +1129,9 @@ public class DgeTableController extends Controller {
 
 
         HBox.setHgrow(proteinConfidentBarChart, Priority.ALWAYS);
+        VBox.setVgrow(proteinConfidentBarChart, Priority.ALWAYS);
 
-        selectedGeneCharts.getChildren().add(proteinConfidentBarChart);
+        container.getChildren().add(proteinConfidentBarChart);
         proteinConfidentBarChart.draw();
 
         ArrayList<XYChart.Series> allSeries = new ArrayList<>();
@@ -1160,7 +1140,8 @@ public class DgeTableController extends Controller {
             allSeries.add(series);
         }
         HBox.setHgrow(lineChart, Priority.ALWAYS);
-        selectedGeneCharts.getChildren().add(lineChart);
+        VBox.setVgrow(lineChart, Priority.ALWAYS);
+        container.getChildren().add(lineChart);
 
 
         final MenuItem resizeItem = new MenuItem("Save plot");
@@ -1191,8 +1172,8 @@ public class DgeTableController extends Controller {
             String gene = foldChangeTableView.getSelectionModel().getSelectedItem().getGeneSymbol();
 
             selectedGeneCharts.getChildren().clear();
-            drawSelectedGeneReadCount(gene);
-            drawSelectedGeneProteinQuant(gene);
+            drawSelectedGeneReadCount(gene, selectedGeneCharts, fontSize);
+            drawSelectedGeneProteinQuant(gene, selectedGeneCharts, fontSize, protComparisonCombobox.getValue());
         }
 
 
@@ -1214,17 +1195,7 @@ public class DgeTableController extends Controller {
         return null;
     }
 
-    public void selectGene(String gene){
-        Optional<FoldChangeTableModel> row = foldChangeTableView.getItems().stream().filter(e-> e.getGeneSymbol().equals(gene)).findFirst();
-        if(row.isPresent()){
-            foldChangeTableView.getSelectionModel().select(row.get());
-            foldChangeTableView.scrollTo(row.get());
-            drawSelectedGeneReadCount(gene);
-            drawSelectedGeneProteinQuant(gene);
-        }else{
 
-        }
-    }
 
     public void resize(){
 //        dgeWebview.resize();

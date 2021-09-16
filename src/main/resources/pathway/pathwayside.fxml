@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -7,13 +8,10 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.PathwaySideController">
@@ -46,36 +44,32 @@
                 <Tab text="Selection">
                     <content>
                         <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                            <children>
-                                <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                    <Label fx:id="selectionLabel" text="Label" />
-                                    <TableView fx:id="selectionTable">
-                                        <columns>
-                                            <TableColumn fx:id="entityNameSelectionColumn" text="Gene" />
-                                            <TableColumn fx:id="entityTypeSelectionColumn" text="Type" />
-                                            <TableColumn fx:id="entityValueSelectionColumn" text="Value" />
-                                        </columns>
-                                    </TableView>
-                                    <VBox fx:id="infoSelectionBox">
-
-                                    </VBox>
-                                    <GridPane>
-                                        <columnConstraints>
-                                            <ColumnConstraints hgrow="SOMETIMES"/>
-                                            <ColumnConstraints hgrow="SOMETIMES"/>
-                                        </columnConstraints>
-                                        <rowConstraints>
-                                            <RowConstraints  vgrow="SOMETIMES" />
-                                            <RowConstraints  vgrow="SOMETIMES" />
-
-                                        </rowConstraints>
-                                        <Button mnemonicParsing="false" onMouseClicked="#openDGE" text="DGE" GridPane.columnIndex="1" />
-                                        <Button mnemonicParsing="false" onMouseClicked="#openBrowser" text="Gene browser" />
-                                        <Button mnemonicParsing="false" onMouseClicked="#openSplicing" text="Splicing" GridPane.rowIndex="1" />
-                                        <Button mnemonicParsing="false" onMouseClicked="#openMutations" text="Mutations" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    </GridPane>
-                                </VBox>
-                            </children>
+                     <children>
+                        <Accordion AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                          <panes>
+                            <TitledPane animated="false" text="Gene expression">
+                              <content>
+                                <AnchorPane fx:id="dgePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              </content>
+                            </TitledPane>
+                            <TitledPane animated="false" text="Alternative splicing">
+                              <content>
+                                <AnchorPane fx:id="splicingPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              </content>
+                            </TitledPane>
+                            <TitledPane animated="false" text="Mutations">
+                              <content>
+                                <AnchorPane fx:id="mutationPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                              </content>
+                            </TitledPane>
+                              <TitledPane animated="false" text="PTM">
+                                  <content>
+                                      <AnchorPane fx:id="PTMPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                  </content>
+                              </TitledPane>
+                          </panes>
+                        </Accordion>
+                     </children>
                         </AnchorPane>
                     </content>
                 </Tab>

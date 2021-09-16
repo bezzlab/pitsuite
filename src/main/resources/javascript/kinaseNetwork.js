@@ -19,12 +19,7 @@ function genNetwork(nodes, edges, height) {
   var options = {
     autoResize: true,
     height: height,
-    width: '100%',
-    layout: {
-      hierarchical: {
-        direction: 'UD'
-      }
-    }
+    width: '100%'
   };
 
   var network = new vis.Network(container, data, options);

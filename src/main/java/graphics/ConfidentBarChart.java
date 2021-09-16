@@ -1,11 +1,7 @@
 package graphics;
 
-import javafx.application.Platform;
 import javafx.geometry.Orientation;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Separator;
-import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -17,15 +13,9 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
 import org.json.JSONObject;
-import pitguiv2.Settings;
-
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import javax.imageio.ImageIO;
-import javafx.embed.swing.SwingFXUtils;
 
 public class ConfidentBarChart extends Pane {
 
@@ -110,7 +100,6 @@ public class ConfidentBarChart extends Pane {
 
 
         clear();
-
         double titleHeight = makeTitle();
 
         double max = Double.NEGATIVE_INFINITY;

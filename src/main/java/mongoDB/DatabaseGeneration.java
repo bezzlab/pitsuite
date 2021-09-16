@@ -145,10 +145,6 @@ public class DatabaseGeneration {
                         parseEventPeptides(filePathString);
                         break;
                     }
-                    case "heatMapsPngs":
-                        String comparison = filePath.getFileName().toString().split("_")[0];
-//                    heatmapPngToDatabase(comparison, filePathString, databasePathAndName);
-                        break;
                     case "readCounts":
                         readCountsParser(filePathString);
                         break;
@@ -163,6 +159,9 @@ public class DatabaseGeneration {
                         break;
                     case "config":
                         configParser(filePathString);
+                        break;
+                    case "ptm":
+                        ptmParser(filePathString);
                         break;
                     case "transcriptCount":
                         transcriptCountsParser(filePath);
@@ -201,6 +200,7 @@ public class DatabaseGeneration {
         pathsMap.put("eventPeptides", new ArrayList<>());
         pathsMap.put("transcriptUsage", new ArrayList<>());
         pathsMap.put("transcriptCount", new ArrayList<>());
+        pathsMap.put("ptm", new ArrayList<>());
 
 
         Stream<Path> filePathStream = null;
@@ -251,6 +251,8 @@ public class DatabaseGeneration {
                     pathsMap.get("transcriptUsage").add(filePath);
                 }else if (filePath.getFileName().toString().contains("transcriptReadCount_normalised")){
                     pathsMap.get("transcriptCount").add(filePath);
+                }else if (filePath.toAbsolutePath().toString().contains("phosphorylation") && filePath.getFileName().toString().equals("ptm.json")){
+                    pathsMap.get("ptm").add(filePath);
                 }
 
             }
@@ -1262,6 +1264,64 @@ public class DatabaseGeneration {
             }
 
             dgeCollection.createIndex("event", IndexOptions.indexOptions(IndexType.Unique, false));
+
+            db.close();
+
+
+
+        } catch (ParseException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void ptmParser(String filePath){
+        Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
+        NitriteCollection ptmCollection = db.getCollection("ptm");
+
+
+        ArrayList<Document> dgeDocsToDBList = new ArrayList<>();
+
+        JSONParser parser = new JSONParser();
+
+        try {
+
+            Object obj = parser.parse(new FileReader(filePath));
+
+            JSONObject ptms = (JSONObject) obj;
+            for (Object o: ptms.keySet()) {
+
+                String ptmId = (String) o;
+
+                JSONObject ptm = (JSONObject) ptms.get(ptmId);
+                if (dgeDocsToDBList.size() >= 10000) {
+                    Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                    splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                    ptmCollection.insert(splicDocsArray);
+                    dgeDocsToDBList = new ArrayList<>();
+                }
+
+
+                Document doc = new Document(ptm);
+                doc.put("id", ptmId);
+                if(filePath.contains("phosphorylation")){
+                    doc.put("type", "phosphorylation");
+                }
+
+                dgeDocsToDBList.add(doc);
+
+
+            }
+
+            if(dgeDocsToDBList.size() > 0){
+                Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                ptmCollection.insert(splicDocsArray);
+            }
+
+            ptmCollection.createIndex("type", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("gene", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("id", IndexOptions.indexOptions(IndexType.Unique, false));
+            ptmCollection.createIndex("run", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
             db.close();
 

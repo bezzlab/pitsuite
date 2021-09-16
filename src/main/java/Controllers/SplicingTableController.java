@@ -7,6 +7,7 @@ import TablesModels.SplicingEventsTableModel;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import exonSplicingEvent.SplicingEvent;
+import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
 import graphics.DoughnutChart;
 import javafx.application.Platform;
@@ -25,6 +26,7 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -51,7 +53,9 @@ import static org.dizitart.no2.filters.Filters.*;
 public class SplicingTableController extends Controller {
 
     @FXML
-    public JFXComboBox<String> comparisonSplicingComboboxProtein;
+    private JFXComboBox<String> comparisonSplicingComboboxProtein;
+    @FXML
+    private AnchorPane psiChartContainer;
     @FXML
     private GridPane rightGrid;
     @FXML
@@ -145,7 +149,7 @@ public class SplicingTableController extends Controller {
 
     // parent controller
     ResultsController parentController;
-    private ConfidentBarChart psiChart;
+
 
     // fold change list to Table
     private HashMap<String, SplicingEvent> exonSplicingMap; // map key = event key
@@ -252,7 +256,7 @@ public class SplicingTableController extends Controller {
         ChangeListener runRepresentationListener = (ChangeListener<String>) (observable, oldValue, newValue) -> {
             SplicingEventsTableModel se = splicingEventsTableView.getSelectionModel().getSelectedItem();
             if(se.getEventKey().equals(selectedEvent)){
-                drawSplicingEventRepresentation(se.getEventKey(), se.getStrand(), se.getEventType());
+                drawSplicingEventRepresentation(exonRepresentationPane, se.getEventKey(), se.getStrand(), se.getEventType());
             }
 
         };
@@ -557,21 +561,31 @@ public class SplicingTableController extends Controller {
         // clear charts
         //tpmWithBarChart.getData().clear();
 
-
         // display the key
         setEventTypeLabel(eventType);
 
-//        SplicingEvent splicingEvent = exonSplicingMap.get(splicingEventKey); // TODO: remove the map
-        // open database
-        NitriteCollection splicingEventsCollection = Database.getDb().getCollection("SplicingEvents_"+comparisonSplicingCombobox.getValue());
+        drawPsiChart(splicingEventKey, psiChartContainer);
+
+
+        // draw the representation
+        drawSplicingEventRepresentation(exonRepresentationPane, splicingEventKey, strand, eventType);
+
+        selectedEvent = splicingEventKey;
+
+    }
+
+    public static void drawPsiChart(String splicingEventKey, Pane container){
+
+        container.getChildren().clear();
         NitriteCollection splicingPsiCollection = Database.getDb().getCollection("SplicingPsi");
 
+
         // get domains
-        Cursor splicingEventCursor = splicingEventsCollection.find(eq("event", splicingEventKey));
+
         Cursor splicingPsiCursor = splicingPsiCollection.find(eq("event", splicingEventKey));
 
         // get splicing info
-        Document splicingEventInfoDoc = splicingEventCursor.firstOrDefault();
+
         Document splicingPsiDoc = splicingPsiCursor.firstOrDefault();
 
 
@@ -602,18 +616,15 @@ public class SplicingTableController extends Controller {
 
         }
 
-        if(psiChart!=null){
-            rightGrid.getChildren().remove(psiChart);
-        }
-
-        psiChart = new ConfidentBarChart();
+        ConfidentBarChart psiChart = new ConfidentBarChart();
+        AnchorFitter.fitAnchor(psiChart);
         psiChart.addAll(psiValues);
         psiChart.setMin(0.);
         psiChart.setMax(1.);
-        psiChart.setPrefWidth(rightGrid.getWidth());
+        //psiChart.setPrefWidth(width);
 
 
-        rightGrid.add(psiChart, 0, 1, 3, 1);
+        container.getChildren().add(psiChart);
 
         // Barcharts
         //tpmWithBarChart.getData().add(samplCondTpmBarChartSeries);
@@ -632,22 +643,11 @@ public class SplicingTableController extends Controller {
                 resizeItem
         );
 
-
-
         psiChart.setOnMouseClicked(event -> {
             if (MouseButton.SECONDARY.equals(event.getButton())) {
                 menu.show(psiChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
             }
         });
-
-
-
-
-        // draw the representation
-        drawSplicingEventRepresentation(splicingEventKey, strand, eventType);
-
-        selectedEvent = splicingEventKey;
-
     }
 
     /**
@@ -657,28 +657,36 @@ public class SplicingTableController extends Controller {
     private void setEventTypeLabel(String eventType){
 
         String typeLabel = "";
-        if(eventType.equals("SE")){
-            typeLabel = "Skipping Exon";
-        } else if(eventType.equals("MX")){
-            typeLabel = "Mutually Exclusive Exons";
-        } else if(eventType.equals("A5")){
-            typeLabel = "Alternative 5' Splice-site";
-        } else if(eventType.equals("A3")){
-            typeLabel = "Alternative 3' Splice site";
-        } else if(eventType.equals("RI")){
-            typeLabel = "Retained Intron";
-        } else if(eventType.equals("AF")){
-            typeLabel = "Alternative First Exon";
-        } else if(eventType.equals("AL")){
-            typeLabel = "Alternative Last Exon";
+        switch (eventType) {
+            case "SE":
+                typeLabel = "Skipping Exon";
+                break;
+            case "MX":
+                typeLabel = "Mutually Exclusive Exons";
+                break;
+            case "A5":
+                typeLabel = "Alternative 5' Splice-site";
+                break;
+            case "A3":
+                typeLabel = "Alternative 3' Splice site";
+                break;
+            case "RI":
+                typeLabel = "Retained Intron";
+                break;
+            case "AF":
+                typeLabel = "Alternative First Exon";
+                break;
+            case "AL":
+                typeLabel = "Alternative Last Exon";
+                break;
         }
 
         eventTypeLabel.setText("Event type: "+typeLabel);
     }
 
-    private void drawSplicingEventRepresentation(String spliceEventKey, String strand, String eventType){
+    public static void drawSplicingEventRepresentation(Pane container, String spliceEventKey, String strand, String eventType){
         // clear representation hbox
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
 
         // parse splice event key to extract values (https://github.com/comprna/SUPPA)
         String[] spliceEventKeySplitted = spliceEventKey.split(";",1);
@@ -696,7 +704,7 @@ public class SplicingTableController extends Controller {
 
         // if forward strand
         if (strand.equals("+")) {
-            drawArrow(strand); // draw arrow
+            drawArrow(container, strand); // draw arrow
             if (eventType.equals("SE")) {
                 // eg. "SE:chr1:960800-961293:961552-961629:+"
                 //      0  1    2             3
@@ -708,7 +716,7 @@ public class SplicingTableController extends Controller {
                 currentExonEnd = Integer.parseInt(secondPartSplit.get(0));
                 lastExonStart = Integer.parseInt(secondPartSplit.get(1));
 
-                drawSEPosNeg(spliceEventKey, firstExonEnd, currentExonStart, currentExonEnd, lastExonStart);
+                drawSEPosNeg(container, spliceEventKey, firstExonEnd, currentExonStart, currentExonEnd, lastExonStart);
 
             } else if (eventType.equals("MX")) {
                 // eg. "MX:chr1:1315618-1319296:1319524-1324581:1315618-1320996:1321093-1324581:-";
@@ -724,7 +732,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd = Integer.parseInt(fourthPartSplit.get(0));
 
-                drawMXPosNeg(firstExonEnd, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
+                drawMXPosNeg(container, firstExonEnd, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
 
             } else  if (eventType.equals("A5")){
                 // eg. "A5:chr1:964180-964349:964167-964349:+";
@@ -735,7 +743,7 @@ public class SplicingTableController extends Controller {
                 List<String> secondPartSplit = Arrays.asList(keyElementsColonSplit.get(3).split("-"));
                 firstExonEnd = Integer.parseInt(secondPartSplit.get(0));
 
-                drawA5PosA3Neg(firstExonEnd, currentExonEnd, lastExonStart);
+                drawA5PosA3Neg(container, firstExonEnd, currentExonEnd, lastExonStart);
             } else  if (eventType.equals("A3")){
                 // eg. "A3:chr1:962917-963032:962917-963109:+";
                 //      0  1    2         1S  3        1E
@@ -745,7 +753,7 @@ public class SplicingTableController extends Controller {
                 List<String> secondPartSplit = Arrays.asList(keyElementsColonSplit.get(3).split("-"));
                 lastExonStart = Integer.parseInt(secondPartSplit.get(1));
 
-                drawA3PosA5Neg(firstExonEnd, currentExonStart, lastExonStart);
+                drawA3PosA5Neg(container, firstExonEnd, currentExonStart, lastExonStart);
             }  else  if (eventType.equals("RI")) {
                 // eg. "RI:chr1:961449:961552-961629:961750:+";
                 //      0  1    2      3  0S    1E   4
@@ -755,7 +763,7 @@ public class SplicingTableController extends Controller {
                 currentExonEnd = Integer.parseInt(secondPartSplit.get(1));
                 int lastExonEnd = Integer.parseInt(keyElementsColonSplit.get(4));
 
-                drawRIPosNeg(spliceEventKey, firstExonStart, currentExonStart, currentExonEnd, lastExonEnd);
+                drawRIPosNeg(container, spliceEventKey, firstExonStart, currentExonStart, currentExonEnd, lastExonEnd);
             } else  if (eventType.equals("AF")) {
                 // eg. "AF:chr1:1623122:1623482-1623774:1623581:1623699-1623774:+";
                 //      0  1    2  S    3 0E            4       5
@@ -767,7 +775,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd =  Integer.parseInt(fourthPartSplit.get(0));
 
-                drawAFPosALNeg(spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
+                drawAFPosALNeg(container, spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
             } else  if (eventType.equals("AL")) {
                 // eg. "AL:chr1:1060393-1061020:1061117:1060393-1065830:1066274:+";
                 //      0  1    2               3       4         1S     5 E
@@ -779,11 +787,11 @@ public class SplicingTableController extends Controller {
                 currentExonStart = Integer.parseInt(thidPartSplit.get(1));
                 currentExonEnd = Integer.parseInt(keyElementsColonSplit.get(5));
 
-                drawALPosAFNeg(spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
+                drawALPosAFNeg(container, spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
             }
 
         } else { // reverse strand
-            drawArrow(strand); // draw arrow
+            drawArrow(container, strand); // draw arrow
             if (eventType.equals("SE")) {
                 // eg. "SE:chr1:1315618-1320996:1321093-1324581:-";
                 //      0  1    2              3
@@ -794,7 +802,7 @@ public class SplicingTableController extends Controller {
                 currentExonEnd = Integer.parseInt(secondPartSplit.get(0));
                 lastExonStart = Integer.parseInt(secondPartSplit.get(1));
 
-                drawSEPosNeg(spliceEventKey, firstExonEnd, currentExonStart, currentExonEnd, lastExonStart);
+                drawSEPosNeg(container, spliceEventKey, firstExonEnd, currentExonStart, currentExonEnd, lastExonStart);
             } else if (eventType.equals("MX")) {
                 // eg. "MX:chr1:183565779-183566920:183566988-183569142:183565779-183567204:183567345-183569142:-";
                 //      0  1    2                   3                   4                   5
@@ -809,7 +817,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd = Integer.parseInt(fourthPartSplit.get(0));
 
-                drawMXPosNeg(firstExonEnd, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart );
+                drawMXPosNeg(container, firstExonEnd, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart );
 
             } else  if (eventType.equals("A5")){
                 // eg. "A5:chr2:6915967-6916816:6915967-6916850:-";
@@ -820,7 +828,7 @@ public class SplicingTableController extends Controller {
                 List<String> secondPartSplit = Arrays.asList(keyElementsColonSplit.get(3).split("-"));
                 lastExonStart = Integer.parseInt(secondPartSplit.get(1));
 
-                drawA3PosA5Neg(firstExonEnd, currentExonStart, lastExonStart);
+                drawA3PosA5Neg(container, firstExonEnd, currentExonStart, lastExonStart);
             } else  if (eventType.equals("A3")){
                 // eg. "A3:chr1:42659370-42659522:42659251-42659522:-";
                 //      0  1    2  0E             3 0S
@@ -830,7 +838,7 @@ public class SplicingTableController extends Controller {
                 List<String> secondPartSplit = Arrays.asList(keyElementsColonSplit.get(3).split("-"));
                 firstExonEnd = Integer.parseInt(secondPartSplit.get(0));
 
-                drawA5PosA3Neg(firstExonEnd, currentExonEnd, lastExonStart);
+                drawA5PosA3Neg(container, firstExonEnd, currentExonEnd, lastExonStart);
             }  else  if (eventType.equals("RI")) {
                 // eg. "RI:chr1:42658443:42658512-42658844:42658908:-";
                 //      0  1    2        3  0S    1E       4
@@ -842,7 +850,7 @@ public class SplicingTableController extends Controller {
                 lastExonStart = Integer.parseInt(secondPartSplit.get(1));
                 int lastExonEnd = Integer.parseInt(keyElementsColonSplit.get(4));
 
-                drawRIPosNeg(spliceEventKey, firstExonStart, currentExonStart, currentExonEnd, lastExonEnd);
+                drawRIPosNeg(container, spliceEventKey, firstExonStart, currentExonStart, currentExonEnd, lastExonEnd);
             } else  if (eventType.equals("AF")) {
                 // eg. "AF:chr2:9420100-9422479:9423228:9420100-9423373:9423480:-";
                 //      0  1    2               3       4           1S  5  E
@@ -854,7 +862,7 @@ public class SplicingTableController extends Controller {
                 currentExonStart =  Integer.parseInt(thirdPartSplit.get(1));
                 currentExonEnd =  Integer.parseInt(keyElementsColonSplit.get(5));
 
-                drawALPosAFNeg(spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
+                drawALPosAFNeg(container, spliceEventKey, firstExonEnd, prevExonStart, prevExonEnd, currentExonStart, currentExonEnd);
             } else  if (eventType.equals("AL")) {
                 // eg. "AL:chr2:9405684:9406905-9408113:9407572:9407598-9408113:-";
                 //      0  1    2  S    3  0E           4       5
@@ -866,7 +874,7 @@ public class SplicingTableController extends Controller {
                 List<String> fourthPartSplit = Arrays.asList(keyElementsColonSplit.get(5).split("-"));
                 int nextExonEnd = Integer.parseInt(fourthPartSplit.get(0));
 
-                drawAFPosALNeg(spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
+                drawAFPosALNeg(container, spliceEventKey, currentExonStart, currentExonEnd, nextExonStart, nextExonEnd, lastExonStart);
             }
 
         }
@@ -875,218 +883,218 @@ public class SplicingTableController extends Controller {
 
     }
 
-    private void addPeptideToRepresentation(String splicingEventKey, Group group, double xstart, double xend,
-                                            double leftExonXstart, double leftExonXend, double rightExonXstart, double rightExonXend){
+    private static void addPeptideToRepresentation(String splicingEventKey, Group group, double xstart, double xend,
+                                                   double leftExonXstart, double leftExonXend, double rightExonXstart, double rightExonXend){
 
-        representationChartsBox.getChildren().clear();
-        NitriteCollection splicingEventsCollection = Database.getDb().getCollection("eventPeptides");
-
-        // get domains
-        Document doc = splicingEventsCollection.find(eq("event", splicingEventKey)).firstOrDefault();
-
-
-        if(doc!=null){
-
-
-            if(selectedEvent==null || !selectedEvent.equals(splicingEventKey)){
-                selectedRunRepresentation.getItems().clear();
-                HashSet<String> runs = new HashSet<>();
-                runs.addAll(doc.get("peptidesIn", JSONObject.class).keySet());
-                runs.addAll(doc.get("peptidesOut", JSONObject.class).keySet());
-                selectedRunRepresentation.getItems().addAll(runs);
-                selectedRunRepresentation.getSelectionModel().select(0);
-
-            }
-
-            if(doc.get("peptidesIn", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                    JSONObject peptideObj = (JSONObject) o;
-                    String peptideSeq = (String) peptideObj.get("sequence");
-                    int startInExon = Math.toIntExact((Long) peptideObj.get("startInExon"));
-                    int exonLength = Math.toIntExact((Long) doc.get("exonLength"));
-
-                    Rectangle rec = new Rectangle();
-                    rec.setStroke(Color.BLACK);
-                    rec.setStrokeWidth(3);
-                    rec.setWidth((xend - xstart) * 0.6);
-                    rec.setY(30);
-                    rec.setHeight(20);
-                    rec.setFill(RED);
-                    if (startInExon < 0) {
-                        rec.setX((leftExonXstart + leftExonXend) / 2);
-                        int lengthInExon = peptideSeq.length() * 3 + startInExon;
-                        double lengthInExonRatio = (double) lengthInExon / exonLength;
-                        if (lengthInExonRatio < 1) {
-                            rec.setWidth(xstart + (xend - xstart) * lengthInExonRatio);
-                        } else {
-                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
-                        }
-                    } else {
-                        rec.setX(xstart + (xend - xstart) * ((double) startInExon / exonLength));
-
-                        int lengthInExon = peptideSeq.length() * 3;
-                        if (startInExon + lengthInExon < exonLength) {
-                            rec.setWidth((xend - xstart) * ((double) lengthInExon / exonLength));
-                        } else {
-                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (xstart+ (xend - xstart) * ((double) startInExon / exonLength)));
-                        }
-                    }
-
-
-                    group.getChildren().add(rec);
-                }
-            }
-
-            if(doc.get("peptidesOut", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-
-                    Rectangle rec = new Rectangle();
-                    rec.setStroke(Color.BLACK);
-                    rec.setStrokeWidth(3);
-                    rec.setWidth((xend - xstart) * 0.6);
-                    rec.setY(100);
-                    rec.setHeight(20);
-                    rec.setFill(RED);
-
-                    rec.setX((leftExonXstart + leftExonXend) / 2);
-                    rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
-
-
-                    group.getChildren().add(rec);
-                }
-            }
-
-
-
-            if(doc.containsKey("proteinCorrectedRatios") &&
-                    doc.get("proteinCorrectedRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
-
-                final CategoryAxis xAxis = new CategoryAxis();
-                final NumberAxis yAxis = new NumberAxis();
-
-                BarChart<String,Number> bc =
-                        new BarChart<>(xAxis, yAxis);
-                bc.setTitle("Differential protein splicing");
-                bc.setLegendVisible(false);
-
-                XYChart.Series proteinCorrectedRatiosSeries = new XYChart.Series<>();
-
-                JSONObject intensities = (JSONObject) doc.get("proteinCorrectedRatios", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
-
-                HashMap<String, ArrayList<Double>> groups = new HashMap();
-
-                for(Object channel: intensities.keySet()){
-                    if(intensities.get(channel)!=null){
-                        proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
-                    }
-
-                    String channelStr = (String) channel;
-                    if(channelStr.contains("/")){
-                        String condition = channelStr.split("/")[0];
-                        if(!groups.containsKey(condition)){
-                            groups.put(condition, new ArrayList<>());
-                        }
-                        groups.get(condition).add((Double) intensities.get(channel));
-                    }else{
-                        ArrayList<Double> val = new ArrayList<>();
-                        val.add((Double) intensities.get(channel));
-                        groups.put(channelStr, val);
-                    }
-
-                }
-
-                ConfidentBarChart cbc = new ConfidentBarChart();
-                cbc.addAll(groups);
-                cbc.setTitle("Normalised protein psi");
-
-                
-                bc.getData().add(proteinCorrectedRatiosSeries);
-                GridPane.setColumnIndex(bc, 0);
-                representationChartsBox.getChildren().add(cbc);
-
-
-
-
-
-                if(doc.containsKey("proteinPeptidesRatios") &&
-                        doc.get("proteinPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
-
-                    ConfidentBarChart proteinPeptidesRatiosChart = new ConfidentBarChart();
-                    JSONArray peptidesRatios = (JSONArray) doc.get("proteinPeptidesRatios", JSONObject.class)
-                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
-
-                    HashMap<String, ArrayList<Double>> channels = new HashMap<>();
-
-                    for(Object o: peptidesRatios){
-                        JSONObject peptideChannels = ((JSONObject) o);
-
-                        for(Object c: peptideChannels.keySet()){
-                            String channel = (String) c;
-                            if(!channels.containsKey(channel)){
-                                channels.put(channel, new ArrayList<>());
-                            }
-                            channels.get(channel).add((double) peptideChannels.get(channel));
-
-                        }
-                    }
-
-                    proteinPeptidesRatiosChart.addAll(channels);
-                    proteinPeptidesRatiosChart.draw();
-                    proteinPeptidesRatiosChart.setTitle("Non event peptides ratios");
-                    GridPane.setColumnIndex(proteinPeptidesRatiosChart, 1);
-                    representationChartsBox.getChildren().add(proteinPeptidesRatiosChart);
-
-                }
-
-                if(doc.containsKey("eventPeptidesRatios") &&
-                        doc.get("eventPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
-
-                    ConfidentBarChart eventPeptidesRatiosChart = new ConfidentBarChart();
-                    JSONArray peptidesRatios = (JSONArray) doc.get("eventPeptidesRatios", JSONObject.class)
-                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
-
-                    HashMap<String, ArrayList<Double>> channels = new HashMap<>();
-
-                    for(Object o: peptidesRatios){
-                        JSONObject peptideChannels = ((JSONObject) o);
-
-                        for(Object c: peptideChannels.keySet()){
-                            String channel = (String) c;
-                            if(!channels.containsKey(channel)){
-                                channels.put(channel, new ArrayList<>());
-                            }
-                            channels.get(channel).add((double) peptideChannels.get(channel));
-
-                        }
-                    }
-
-                    eventPeptidesRatiosChart.addAll(channels);
-                    eventPeptidesRatiosChart.draw();
-                    eventPeptidesRatiosChart.setTitle("Event peptides ratios");
-                    GridPane.setColumnIndex(eventPeptidesRatiosChart, 2);
-                    representationChartsBox.getChildren().add(eventPeptidesRatiosChart);
-
-                }
-
-
-
-            }
-
-        }
+//        representationChartsBox.getChildren().clear();
+//        NitriteCollection splicingEventsCollection = Database.getDb().getCollection("eventPeptides");
+//
+//        // get domains
+//        Document doc = splicingEventsCollection.find(eq("event", splicingEventKey)).firstOrDefault();
+//
+//
+//        if(doc!=null){
+//
+//
+//            if(selectedEvent==null || !selectedEvent.equals(splicingEventKey)){
+//                selectedRunRepresentation.getItems().clear();
+//                HashSet<String> runs = new HashSet<>();
+//                runs.addAll(doc.get("peptidesIn", JSONObject.class).keySet());
+//                runs.addAll(doc.get("peptidesOut", JSONObject.class).keySet());
+//                selectedRunRepresentation.getItems().addAll(runs);
+//                selectedRunRepresentation.getSelectionModel().select(0);
+//
+//            }
+//
+//            if(doc.get("peptidesIn", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+//                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
+//                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+//                    JSONObject peptideObj = (JSONObject) o;
+//                    String peptideSeq = (String) peptideObj.get("sequence");
+//                    int startInExon = Math.toIntExact((Long) peptideObj.get("startInExon"));
+//                    int exonLength = Math.toIntExact((Long) doc.get("exonLength"));
+//
+//                    Rectangle rec = new Rectangle();
+//                    rec.setStroke(Color.BLACK);
+//                    rec.setStrokeWidth(3);
+//                    rec.setWidth((xend - xstart) * 0.6);
+//                    rec.setY(30);
+//                    rec.setHeight(20);
+//                    rec.setFill(RED);
+//                    if (startInExon < 0) {
+//                        rec.setX((leftExonXstart + leftExonXend) / 2);
+//                        int lengthInExon = peptideSeq.length() * 3 + startInExon;
+//                        double lengthInExonRatio = (double) lengthInExon / exonLength;
+//                        if (lengthInExonRatio < 1) {
+//                            rec.setWidth(xstart + (xend - xstart) * lengthInExonRatio);
+//                        } else {
+//                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
+//                        }
+//                    } else {
+//                        rec.setX(xstart + (xend - xstart) * ((double) startInExon / exonLength));
+//
+//                        int lengthInExon = peptideSeq.length() * 3;
+//                        if (startInExon + lengthInExon < exonLength) {
+//                            rec.setWidth((xend - xstart) * ((double) lengthInExon / exonLength));
+//                        } else {
+//                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (xstart+ (xend - xstart) * ((double) startInExon / exonLength)));
+//                        }
+//                    }
+//
+//
+//                    group.getChildren().add(rec);
+//                }
+//            }
+//
+//            if(doc.get("peptidesOut", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+//                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
+//                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+//
+//                    Rectangle rec = new Rectangle();
+//                    rec.setStroke(Color.BLACK);
+//                    rec.setStrokeWidth(3);
+//                    rec.setWidth((xend - xstart) * 0.6);
+//                    rec.setY(100);
+//                    rec.setHeight(20);
+//                    rec.setFill(RED);
+//
+//                    rec.setX((leftExonXstart + leftExonXend) / 2);
+//                    rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
+//
+//
+//                    group.getChildren().add(rec);
+//                }
+//            }
+//
+//
+//
+//            if(doc.containsKey("proteinCorrectedRatios") &&
+//                    doc.get("proteinCorrectedRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+//
+//                final CategoryAxis xAxis = new CategoryAxis();
+//                final NumberAxis yAxis = new NumberAxis();
+//
+//                BarChart<String,Number> bc =
+//                        new BarChart<>(xAxis, yAxis);
+//                bc.setTitle("Differential protein splicing");
+//                bc.setLegendVisible(false);
+//
+//                XYChart.Series proteinCorrectedRatiosSeries = new XYChart.Series<>();
+//
+//                JSONObject intensities = (JSONObject) doc.get("proteinCorrectedRatios", JSONObject.class)
+//                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+//
+//                HashMap<String, ArrayList<Double>> groups = new HashMap();
+//
+//                for(Object channel: intensities.keySet()){
+//                    if(intensities.get(channel)!=null){
+//                        proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
+//                    }
+//
+//                    String channelStr = (String) channel;
+//                    if(channelStr.contains("/")){
+//                        String condition = channelStr.split("/")[0];
+//                        if(!groups.containsKey(condition)){
+//                            groups.put(condition, new ArrayList<>());
+//                        }
+//                        groups.get(condition).add((Double) intensities.get(channel));
+//                    }else{
+//                        ArrayList<Double> val = new ArrayList<>();
+//                        val.add((Double) intensities.get(channel));
+//                        groups.put(channelStr, val);
+//                    }
+//
+//                }
+//
+//                ConfidentBarChart cbc = new ConfidentBarChart();
+//                cbc.addAll(groups);
+//                cbc.setTitle("Normalised protein psi");
+//
+//
+//                bc.getData().add(proteinCorrectedRatiosSeries);
+//                GridPane.setColumnIndex(bc, 0);
+//                representationChartsBox.getChildren().add(cbc);
+//
+//
+//
+//
+//
+//                if(doc.containsKey("proteinPeptidesRatios") &&
+//                        doc.get("proteinPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+//
+//                    ConfidentBarChart proteinPeptidesRatiosChart = new ConfidentBarChart();
+//                    JSONArray peptidesRatios = (JSONArray) doc.get("proteinPeptidesRatios", JSONObject.class)
+//                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+//
+//                    HashMap<String, ArrayList<Double>> channels = new HashMap<>();
+//
+//                    for(Object o: peptidesRatios){
+//                        JSONObject peptideChannels = ((JSONObject) o);
+//
+//                        for(Object c: peptideChannels.keySet()){
+//                            String channel = (String) c;
+//                            if(!channels.containsKey(channel)){
+//                                channels.put(channel, new ArrayList<>());
+//                            }
+//                            channels.get(channel).add((double) peptideChannels.get(channel));
+//
+//                        }
+//                    }
+//
+//                    proteinPeptidesRatiosChart.addAll(channels);
+//                    proteinPeptidesRatiosChart.draw();
+//                    proteinPeptidesRatiosChart.setTitle("Non event peptides ratios");
+//                    GridPane.setColumnIndex(proteinPeptidesRatiosChart, 1);
+//                    representationChartsBox.getChildren().add(proteinPeptidesRatiosChart);
+//
+//                }
+//
+//                if(doc.containsKey("eventPeptidesRatios") &&
+//                        doc.get("eventPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+//
+//                    ConfidentBarChart eventPeptidesRatiosChart = new ConfidentBarChart();
+//                    JSONArray peptidesRatios = (JSONArray) doc.get("eventPeptidesRatios", JSONObject.class)
+//                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+//
+//                    HashMap<String, ArrayList<Double>> channels = new HashMap<>();
+//
+//                    for(Object o: peptidesRatios){
+//                        JSONObject peptideChannels = ((JSONObject) o);
+//
+//                        for(Object c: peptideChannels.keySet()){
+//                            String channel = (String) c;
+//                            if(!channels.containsKey(channel)){
+//                                channels.put(channel, new ArrayList<>());
+//                            }
+//                            channels.get(channel).add((double) peptideChannels.get(channel));
+//
+//                        }
+//                    }
+//
+//                    eventPeptidesRatiosChart.addAll(channels);
+//                    eventPeptidesRatiosChart.draw();
+//                    eventPeptidesRatiosChart.setTitle("Event peptides ratios");
+//                    GridPane.setColumnIndex(eventPeptidesRatiosChart, 2);
+//                    representationChartsBox.getChildren().add(eventPeptidesRatiosChart);
+//
+//                }
+//
+//
+//
+//            }
+//
+//        }
 
     }
 
 
-    private void drawArrow(String strand){
+    private static void drawArrow(Pane container, String strand){
 
-        arrowRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = arrowRepresentationPane.getWidth();
-        double prefH = arrowRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
 
 
         if (strand.equals("+")){
@@ -1130,17 +1138,17 @@ public class SplicingTableController extends Controller {
 
         }
 
-        arrowRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
     }
 
 
-    private void drawSEPosNeg(String eventID, int firstExonEnd, int currentExonStart, int currentExonEnd, int lastExonStart){
+    private static void drawSEPosNeg(Pane container, String eventID, int firstExonEnd, int currentExonStart, int currentExonEnd, int lastExonStart){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1234,17 +1242,17 @@ public class SplicingTableController extends Controller {
                 perctToVal(80,prefW), perctToVal(100,prefW));
 
 
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
     }
 
 
-    private void drawMXPosNeg(int firstExonEnd, int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd,  int lastExonStart){
+    private static void drawMXPosNeg(Pane container, int firstExonEnd, int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd, int lastExonStart){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1372,17 +1380,17 @@ public class SplicingTableController extends Controller {
         group.getChildren().add(text);
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
     }
 
 
-    private void drawA5PosA3Neg(int firstExonEnd, int currentExonEnd, int lastExonStart){
+    private static void drawA5PosA3Neg(Pane container, int firstExonEnd, int currentExonEnd, int lastExonStart){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1463,19 +1471,19 @@ public class SplicingTableController extends Controller {
         group.getChildren().add(text);
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
     }
 
 
-    private void drawA3PosA5Neg(int firstExonEnd, int currentExonStart, int lastExonStart){
+    private static void drawA3PosA5Neg(Pane container, int firstExonEnd, int currentExonStart, int lastExonStart){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
-        int fontSize = (int) Math.round(perctToVal(10, prefH));
+        int fontSize = 15;
         text.setFont(Font.font("monospace", fontSize));
         double fontHeight  = text.getLayoutBounds().getHeight();
         double textWidth;
@@ -1561,17 +1569,17 @@ public class SplicingTableController extends Controller {
 
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
     }
 
 
-    private void drawRIPosNeg(String eventID, int firstExonStart, int currentExonStart, int currentExonEnd, int lastExonEnd){
+    private static void drawRIPosNeg(Pane container, String eventID, int firstExonStart, int currentExonStart, int currentExonEnd, int lastExonEnd){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1652,20 +1660,20 @@ public class SplicingTableController extends Controller {
 
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
 
         addPeptideToRepresentation(eventID, group, perctToVal(35,prefW), perctToVal(65,prefW), 0, perctToVal(20,prefW),
                 perctToVal(80,prefW), perctToVal(100,prefW));
     }
 
 
-    private void drawAFPosALNeg(String eventID, int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd, int lastExonStart){
+    private static void drawAFPosALNeg(Pane container, String eventID, int currentExonStart, int currentExonEnd, int nextExonStart, int nextExonEnd, int lastExonStart){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1761,7 +1769,7 @@ public class SplicingTableController extends Controller {
 
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
 
         addPeptideToRepresentation(eventID, group, perctToVal(35,prefW), perctToVal(65,prefW), 0, perctToVal(20,prefW),
                 perctToVal(80,prefW), perctToVal(100,prefW));
@@ -1769,13 +1777,13 @@ public class SplicingTableController extends Controller {
 
 
 
-    private void drawALPosAFNeg(String eventID, int firstExonEnd, int prevExonStart, int prevExonEnd, int currentExonStart, int currentExonEnd){
+    private static void drawALPosAFNeg(Pane container, String eventID, int firstExonEnd, int prevExonStart, int prevExonEnd, int currentExonStart, int currentExonEnd){
 
-        exonRepresentationPane.getChildren().clear();
+        container.getChildren().clear();
         Group group = new Group();
 
-        double prefW = exonRepresentationPane.getWidth();
-        double prefH = exonRepresentationPane.getHeight();
+        double prefW = container.getWidth();
+        double prefH = container.getHeight();
         Text text = new Text("I");
         int fontSize = (int) Math.round(perctToVal(10, prefH));
         text.setFont(Font.font("monospace", fontSize));
@@ -1874,21 +1882,21 @@ public class SplicingTableController extends Controller {
 
 
         // add the representation
-        exonRepresentationPane.getChildren().add(group);
+        container.getChildren().add(group);
 
         addPeptideToRepresentation(eventID, group, perctToVal(35,prefW), perctToVal(65,prefW), 0, perctToVal(20,prefW),
                 perctToVal(80,prefW), perctToVal(100,prefW));
     }
 
 
-    private Double perctToVal(int value, double prefValue){
+    private static Double perctToVal(int value, double prefValue){
         return ( ((double) value / 100.0)  * prefValue );
     }
 
     public void resize(){
         if(splicingEventsTableView.getSelectionModel().getSelectedItem()!=null){
             SplicingEventsTableModel se = splicingEventsTableView.getSelectionModel().getSelectedItem();
-            drawSplicingEventRepresentation(se.getEventKey(), se.getStrand(), se.getEventType());
+            drawSplicingEventRepresentation(exonRepresentationPane, se.getEventKey(), se.getStrand(), se.getEventType());
         }
     }
 

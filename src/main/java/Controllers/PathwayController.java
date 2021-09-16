@@ -1,20 +1,16 @@
 package Controllers;
 
-import FileReading.PhosphoParser;
+import Cds.PTM;
 import FileReading.Phosphosite;
-import Singletons.Database;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -24,19 +20,20 @@ import javafx.scene.shape.*;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import javafx.util.Pair;
-import org.dizitart.no2.Cursor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import pathway.Arc;
 import pathway.Label;
 import pathway.*;
 import pathway.alerts.DgeAlert;
+import pathway.alerts.MutationAlert;
+import pathway.alerts.PTMAlert;
+import pathway.alerts.SplicingAlert;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -78,12 +75,14 @@ public class PathwayController implements Initializable {
     private HashMap<String, ArrayList<javafx.scene.Node>> reactionNodes;
     private HashMap<String, String> reactionLabelId;
 
+    private HashMap<String, JSONObject> entitiesInfo;
+
     private Group arcBackgroundGroup;
     private Group arcGroup;
     private Group elementGroup;
     private Group heatmapScaleGroup;
 
-    private PhosphoParser phosphoParser = new PhosphoParser();
+
 
 
     @Override
@@ -208,9 +207,9 @@ public class PathwayController implements Initializable {
                                         node.getAttributes().getNamedItem("id").getNodeValue(), nodeClass, label);
 
                                 if(element.getType().equals("macromolecule")){
-                                    getMacromoleculeInfo(element);
+                                    addEntitiesInfo(element);
                                 }else if(element.getType().equals("complex")){
-                                    getComplexInfo(element);
+                                    addEntitiesInfo(element);
                                 }
 
 
@@ -472,7 +471,7 @@ public class PathwayController implements Initializable {
 
 
 
-
+        ArrayList<Thread> threads = new ArrayList(elements.size());
         for(Element element: elements.values()){
 
             if(element.getClass().equals(Element.class)){
@@ -653,7 +652,14 @@ public class PathwayController implements Initializable {
                 }
 
             }
-            setAlerts(element);
+            threads.add(setAlerts(element));
+        }
+        for(Thread thread: threads){
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         for(Arc arc: arcs){
@@ -866,12 +872,16 @@ public class PathwayController implements Initializable {
                 sbgn.append(inputLine);
             }
 
+            getEntitiesInfo(pathwayId);
+
             parseSbgn(sbgn.toString(), reaction);
         }catch (Exception e){
             e.printStackTrace();
         }
 
     }
+
+
 
     public void loadReaction(String reaction) {
 
@@ -1004,74 +1014,44 @@ public class PathwayController implements Initializable {
         }
     }
 
-    private void getComplexInfo(Element element){
+    public void getEntitiesInfo(String pathwayId){
+        entitiesInfo = new HashMap<>();
+
         try{
-            URL yahoo = new URL("https://reactome.org/ContentService/search/query?query="+element.getLabel().replace(" ", "%20"));
+            URL yahoo = new URL("https://reactome.org/ContentService/data/participants/"+pathwayId);
             URLConnection yc = yahoo.openConnection();
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(
                             yc.getInputStream()));
             String inputLine="";
-            JSONObject object=null;
+            StringBuilder l = new StringBuilder();
             while ((inputLine = in.readLine()) != null) {
 
-                object = new JSONObject(inputLine);
-            }
-
-            String id="";
-
-
-            boolean found = false;
-            for(Object o : object.getJSONArray("results")){
-                JSONObject result = (JSONObject) o;
-                for(Object o2: result.getJSONArray("entries")){
-                    JSONObject entry = (JSONObject) o2;
-                    if(entry.getString("exactType").equals("Complex") && entry.getString("stId").contains("HSA")){
-
-                        id=entry.getString("stId");
-
-                        found=true;
-                        break;
-                    }
-                }
-                if(found)
-                    break;
+                l.append(inputLine);
             }
 
 
-
-
-            yahoo = new URL("https://reactome.org/ContentService/data/complex/"+id+"/subunits?excludeStructures=true");
-            yc = yahoo.openConnection();
-            in = new BufferedReader(
-                    new InputStreamReader(
-                            yc.getInputStream()));
-            inputLine="";
-            JSONArray array =null;
-            while ((inputLine = in.readLine()) != null) {
-
-                array = new JSONArray(inputLine);
-            }
-
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject entityEntry = array.getJSONObject(i);
-
-                if(entityEntry.getString("className").equals("Protein") || entityEntry.getString("className").equals("Genes and Transcripts")
-                        || entityEntry.getString("className").equals("DNA Sequence") || entityEntry.getString("className").equals("RNA Sequence")){
-                    element.addEntity(new Gene(entityEntry.getString("stId"),
-                            entityEntry.getJSONArray("name").getString(0)));
-                }else if(entityEntry.getString("className").equals("Chemical Compound")){
-                    element.addEntity(new Entity(entityEntry.getJSONArray("name").getString(0),
-                            entityEntry.getString("className"), entityEntry.getString("stId")));
-                }else{
-                    element.addEntity(new Entity(entityEntry.getJSONArray("name").getString(0),
-                            entityEntry.getString("className"), entityEntry.getString("stId")));
-                    System.out.println(entityEntry.getString("className"));
-                }
-
+            JSONArray res = new JSONArray(l.toString());
+            for(Object o : res){
+                JSONObject entity = (JSONObject) o;
+                entitiesInfo.put(entity.getString("displayName").split(" \\[")[0], entity);
 
             }
 
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void addEntitiesInfo(Element element){
+        try{
+
+
+            for (Object o: entitiesInfo.get(element.getLabel()).getJSONArray("refEntities")) {
+                JSONObject entityEntry = (JSONObject) o;
+                element.addEntity(new Gene(String.valueOf(entityEntry.getLong("dbId")), entityEntry.getString("displayName").split(" ")[1]));
+            }
 
         }catch (Exception e){
             e.printStackTrace();
@@ -1079,31 +1059,6 @@ public class PathwayController implements Initializable {
     }
 
     public void colorElements(){
-
-        Cursor dgeFindCursor = Database.getDb().getCollection("Nsivssi_dge").find();
-        HashMap<String, Double> dge = new HashMap<>();
-        HashMap<Element, ArrayList<Phosphosite>> phosphosites = new HashMap<>();
-
-        for(org.dizitart.no2.Document doc: dgeFindCursor){
-
-            double dgeFoldChange;
-            JSONObject json = new JSONObject(doc);
-
-            if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
-                if(json.get("log2fc") instanceof Long)
-                    dgeFoldChange = ((Long) json.get("log2fc")).doubleValue();
-                else
-                    dgeFoldChange = (double) json.get("log2fc");
-                dge.put((String) json.get("symbol"), dgeFoldChange);
-            }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Differencial protein abundance")){
-                if(json.has("ms") && json.getJSONObject("ms").getJSONObject("FWD").has("log2fc")){
-                    dge.put((String) json.get("symbol"), json.getJSONObject("ms").getJSONObject("FWD").getDouble("log2fc"));
-                }
-            }
-
-
-
-        }
 
         double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
 
@@ -1113,40 +1068,56 @@ public class PathwayController implements Initializable {
 
             if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))){
 
-                if(element.getLabel().contains("ATF2")){
-                    System.out.println(element.getLabel());
-                }
-
                 if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Phosphorylation")){
-                    for(Phosphosite phosphosite: phosphoParser.getPhosphosites()){
-                        if(phosphosite.matchesElement(element.getLabel())){
-                            if(!phosphosites.containsKey(element)){
-                                phosphosites.put(element, new ArrayList<>());
+                    for(PTMAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(PTMAlert.class)).toArray(PTMAlert[]::new)){
+                        ArrayList<PTM> ptms = alert.getPtms();
+
+                        double maxAmplitude = 0;
+                        for(PTM ptm: ptms){
+                            if(Math.abs(ptm.getLog2fc())>maxAmplitude) {
+                                if (ptm.getLog2fc() < min)
+                                    min = ptm.getLog2fc();
+                                else if (ptm.getLog2fc() > max)
+                                    max = ptm.getLog2fc();
+                                maxAmplitude = Math.abs(ptm.getLog2fc());
                             }
-                            double fc = phosphosite.getFc();
-                            if(fc<min)
-                                min = fc;
-                            else if(fc>max)
-                                max = fc;
-                            phosphosites.get(element).add(phosphosite);
                         }
                     }
 
-                }else{
-                    for(Gene gene: element.getEntities().stream().filter(e-> e.getClass().equals(Gene.class)).toArray(Gene[]::new)){
-
-                        String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
-
-                        if(dge.containsKey(geneName)){
-                            gene.setValue(dge.get(geneName));
-                            if(dge.get(geneName)<min)
-                                min = dge.get(geneName);
-                            else if(dge.get(geneName)>max)
-                                max = dge.get(geneName);
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
+                    for(DgeAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(DgeAlert.class)).toArray(DgeAlert[]::new)){
+                        double fc = alert.getFc();
+                        if(fc<min)
+                            min = fc;
+                        else if(fc>max)
+                            max = fc;
+                    }
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Differencial protein abundance")){
+                    for(DgeAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(DgeAlert.class)).toArray(DgeAlert[]::new)){
+                        double meanFc = alert.getProteins().values().stream().mapToDouble(Pair::getKey).average().orElse(Double.NaN);
+                        if(!Double.isNaN(meanFc)) {
+                            if (meanFc < min)
+                                min = meanFc;
+                            else if (meanFc > max)
+                                max = meanFc;
+                        }
+                    }
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Splicing")){
+                    for(SplicingAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(SplicingAlert.class)).toArray(SplicingAlert[]::new)){
+                        ArrayList<SplicingAlert.SplicingEvent> events = alert.getEvents();
+                        
+                        double maxAmplitude = 0;
+                        for(SplicingAlert.SplicingEvent event: events){
+                            if(Math.abs(event.getDpsi())>maxAmplitude) {
+                                if (event.getDpsi() < min)
+                                    min = event.getDpsi();
+                                else if (event.getDpsi() > max)
+                                    max = event.getDpsi();
+                                maxAmplitude = Math.abs(event.getDpsi());
+                            }
                         }
                     }
                 }
-
             }
         }
 
@@ -1154,36 +1125,76 @@ public class PathwayController implements Initializable {
             if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule")|| element.getType().equals("complex"))){
                 int i=0;
 
-                if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Phosphorylation") && phosphosites.containsKey(element)){
+                if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Phosphorylation")){
                     int nbSites = Phosphosite.getPhosphositesNumberInElement(element.getLabel());
-                    for(Phosphosite phosphosite: phosphosites.get(element)){
+                    if(nbSites>0) {
+                        for (PTMAlert alert : element.getAlerts().stream().filter(e -> e.getClass().equals(PTMAlert.class)).toArray(PTMAlert[]::new)) {
+
+
+                            double maxAmplitude = 0;
+                            PTM maxAmplitudePtm = null;
+                            for (PTM ptm : alert.getPtms()) {
+                                if (Math.abs(ptm.getLog2fc()) > maxAmplitude) {
+                                    maxAmplitude = Math.abs(ptm.getLog2fc());
+                                    maxAmplitudePtm = ptm;
+                                }
+
+                            }
+
+                            Rectangle r = new Rectangle();
+
+                            Rectangle complexRectangle = (Rectangle) element.getNode();
+
+                            System.out.println(nbSites + " " + maxAmplitudePtm.getGene() + " " + maxAmplitudePtm.getPos());
+                            r.setX(complexRectangle.getX() + (((double) i / nbSites) * complexRectangle.getWidth()));
+                            r.setY(complexRectangle.getY());
+                            r.setHeight(complexRectangle.getHeight());
+                            r.setWidth((complexRectangle.getWidth() / nbSites));
+                            element.getColorRectangles().getChildren().add(r);
+                            element.getColorRectangles().toFront();
+                            element.getNodeLabel().toFront();
+
+                            alert.getPtms().stream().mapToDouble(PTM::getLog2fc).map(Math::abs).max().getAsDouble();
+                            double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (maxAmplitudePtm.getLog2fc() - min) / (max - min);
+                            Color color = Color.hsb(hue, 1.0, 1.0);
+                            r.setStyle("-fx-fill: " + toHexString(color));
+                            i++;
+                        }
+                    }
+
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
+
+                    Gene[] genes = element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new);
+
+                    for(DgeAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(DgeAlert.class)).toArray(DgeAlert[]::new)){
+
                         Rectangle r = new Rectangle();
 
                         Rectangle complexRectangle = (Rectangle) element.getNode();
 
-                        r.setX(complexRectangle.getX() + (((double) i / nbSites) * complexRectangle.getWidth()));
+                        r.setX(complexRectangle.getX() + (((double) i / genes.length) * complexRectangle.getWidth()));
                         r.setY(complexRectangle.getY());
                         r.setHeight(complexRectangle.getHeight());
-                        r.setWidth((complexRectangle.getWidth() / nbSites));
+                        r.setWidth((complexRectangle.getWidth() / genes.length));
                         element.getColorRectangles().getChildren().add(r);
                         element.getColorRectangles().toFront();
                         element.getNodeLabel().toFront();
 
-                        double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (phosphosite.getFc() - min) / (max - min);
+                        double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (alert.getFc() - min) / (max - min);
                         Color color = Color.hsb(hue, 1.0, 1.0);
                         r.setStyle("-fx-fill: " + toHexString(color));
+
                         i++;
                     }
-                }else {
+
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Differencial protein abundance")){
 
                     Gene[] genes = element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new);
 
+                    for(DgeAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(DgeAlert.class)).toArray(DgeAlert[]::new)){
 
-                    for (Gene gene : genes) {
-
-                        String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
-                        if (dge.containsKey(geneName)) {
-
+                        double meanFc = alert.getProteins().values().stream().mapToDouble(Pair::getKey).average().orElse(Double.NaN);
+                        if(!Double.isNaN(meanFc)) {
                             Rectangle r = new Rectangle();
 
                             Rectangle complexRectangle = (Rectangle) element.getNode();
@@ -1196,11 +1207,48 @@ public class PathwayController implements Initializable {
                             element.getColorRectangles().toFront();
                             element.getNodeLabel().toFront();
 
-                            double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (dge.get(geneName) - min) / (max - min);
+                            double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (alert.getFc() - min) / (max - min);
                             Color color = Color.hsb(hue, 1.0, 1.0);
                             r.setStyle("-fx-fill: " + toHexString(color));
+
+                            i++;
                         }
+                    }
+                }else if(PathwaySideController.getInstance().getSelectedColorVariable().equals("Splicing")){
+
+                    Gene[] genes = element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new);
+                    for(SplicingAlert alert: element.getAlerts().stream().filter(e -> e.getClass().equals(SplicingAlert.class)).toArray(SplicingAlert[]::new)){
+                        ArrayList<SplicingAlert.SplicingEvent> events = alert.getEvents();
+                        
+                        double maxAmplitude = 0;
+                        SplicingAlert.SplicingEvent maxAmplitudeEvent = null;
+                        for(SplicingAlert.SplicingEvent event: events){
+                            if (Math.abs(event.getDpsi())>maxAmplitude){
+                                maxAmplitude = Math.abs(event.getDpsi());
+                                maxAmplitudeEvent = event;
+                            }
+                               
+                        }
+
+                        Rectangle r = new Rectangle();
+
+                        Rectangle complexRectangle = (Rectangle) element.getNode();
+
+                        r.setX(complexRectangle.getX() + (((double) i / genes.length) * complexRectangle.getWidth()));
+                        r.setY(complexRectangle.getY());
+                        r.setHeight(complexRectangle.getHeight());
+                        r.setWidth((complexRectangle.getWidth() / genes.length));
+                        element.getColorRectangles().getChildren().add(r);
+                        element.getColorRectangles().toFront();
+                        element.getNodeLabel().toFront();
+
+                        double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (maxAmplitudeEvent.getDpsi() - min) / (max - min);
+                        Color color = Color.hsb(hue, 1.0, 1.0);
+                        r.setStyle("-fx-fill: " + toHexString(color));
+
                         i++;
+                        
+                        
                     }
                 }
             }
@@ -1237,51 +1285,26 @@ public class PathwayController implements Initializable {
 
     }
 
-    private String format(double val) {
+    private static String format(double val) {
         String in = Integer.toHexString((int) Math.round(val * 255));
         return in.length() == 1 ? "0" + in : in;
     }
 
-    public String toHexString(Color value) {
+    public static String toHexString(Color value) {
         return "#" + (format(value.getRed()) + format(value.getGreen()) + format(value.getBlue()) + format(value.getOpacity()))
                 .toUpperCase();
     }
 
-    public void setAlerts(Element element){
+    public Thread setAlerts(Element element){
 
-        Cursor dgeFindCursor = Database.getDb().getCollection("Nsivssi_dge").find();
-        HashMap<String, JSONObject> dge = new HashMap<>();
-
-        for(org.dizitart.no2.Document doc: dgeFindCursor){
-
-            double dgeFoldChange;
-            JSONObject json = new JSONObject(doc);
-
-            if(PathwaySideController.getInstance().getSelectedColorVariable().equals("RNA DGE")){
-                if(json.get("log2fc") instanceof Long)
-                    dgeFoldChange = ((Long) json.get("log2fc")).doubleValue();
-                else
-                    dgeFoldChange = (double) json.get("log2fc");
-                dge.put((String) json.get("symbol"), json);
-            }
-
-        }
-
-
-
-
-
-        if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))) {
-
-            for (Gene gene : element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new)) {
-
-                String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
-                if(dge.containsKey(geneName) && dge.get(geneName).has("padj") && dge.get(geneName).getDouble("padj")<0.05){
-                    element.setAlert(new DgeAlert(geneName, dge.get(geneName).getDouble("fc"), dge.get(geneName).getDouble("padj")), this);
-                }
-            }
-        }
-
+        Thread t  = new Thread(()-> {
+            DgeAlert.setAlerts(element, this);
+            SplicingAlert.setAlerts(element, this);
+            MutationAlert.setAlerts(element, this);
+            PTMAlert.setAlerts(element, this);
+        });
+        t.start();
+        return t;
 
     }
 

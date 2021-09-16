@@ -1,25 +1,26 @@
 package FileReading;
 
+import Cds.PTM;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Phosphosite {
+public class Phosphosite extends PTM {
 
-    String residue;
-    String gene;
-    String pos;
     double fc;
     double pval;
 
 
     public Phosphosite(String id, String fc, String pval) {
 
+        super();
+
         Pattern pattern = Pattern.compile("(.*)\\(([STY])(\\d+)");
         Matcher matcher = pattern.matcher(id);
         if(matcher.find()) {
             gene = matcher.group(1).replace("\"", "");
             residue = matcher.group(2);
-            pos = matcher.group(3);
+            pos = Integer.parseInt(matcher.group(3));
             this.fc = Double.parseDouble(fc);
             if(!pval.equals("NA"))
                 this.pval=Double.parseDouble(pval);
@@ -36,7 +37,7 @@ public class Phosphosite {
         return gene;
     }
 
-    public String getPos() {
+    public int getPos() {
         return pos;
     }
 
@@ -82,5 +83,10 @@ public class Phosphosite {
             
         }else
             return 0;
+    }
+
+    @Override
+    public String getType(){
+        return "Phosphorylation";
     }
 }

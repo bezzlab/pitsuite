@@ -71,14 +71,13 @@ public class PeptideMapController {
             count++;
         }
         genesString = genesString.concat("]");
-        System.out.println(genesString);
 
         WebView webView = new WebView();
 
         WebEngine webEngine = webView.getEngine();
 
         String myScript = "genNetwork(\"" + peptideResult + "\", " + genesString + ")";
-        System.out.println(myScript);
+
 
 
 
@@ -87,7 +86,7 @@ public class PeptideMapController {
                 try {
 
                     webEngine.executeScript(new String(Files.readAllBytes(Paths.get(getClass().getResource("/javascript/vis.js").toURI()))));
-                    webEngine.executeScript(new String(Files.readAllBytes(Paths.get(getClass().getResource("/javascript/mynetwork.js").toURI()))));
+                    webEngine.executeScript(new String(Files.readAllBytes(Paths.get(getClass().getResource("/javascript/myNetwork.js").toURI()))));
 
                     JSObject jsobj = (JSObject) webEngine.executeScript("window");
 

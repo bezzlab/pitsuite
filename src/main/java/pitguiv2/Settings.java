@@ -26,4 +26,8 @@ public class Settings {
     public String getPathToR(){
         return settings.getJSONObject("tools").getString("R");
     }
+
+    public JSONObject getSettings() {
+        return settings;
+    }
 }

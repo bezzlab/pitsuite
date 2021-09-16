@@ -15,6 +15,9 @@ public class Gene extends Entity{
     public Gene(String id, String name) {
         super(name, "Gene", id);
     }
+    public Gene(String name) {
+        super(name, "Gene");
+    }
 
 
     public String getUniprot() {
