@@ -7,6 +7,8 @@ import Cds.Peptide;
 import Singletons.Database;
 import TablesModels.PeptideSampleModel;
 import com.jfoenix.controls.JFXComboBox;
+import graphics.AnchorFitter;
+import graphics.ConfidentBarChart;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyDoubleWrapper;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
@@ -24,6 +26,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.stage.Stage;
 import javafx.util.Pair;
 import netscape.javascript.JSObject;
 import org.dizitart.no2.Cursor;
@@ -49,6 +52,8 @@ import static org.dizitart.no2.filters.Filters.*;
 
 public class PeptideTableController implements Initializable {
 
+    @FXML
+    private AnchorPane intensitiesChartContainer;
     @FXML
     private HBox chartsBox;
     @FXML
@@ -83,8 +88,7 @@ public class PeptideTableController implements Initializable {
     private WebView specWebview;
     @FXML
     private AnchorPane spectrumViewer;
-    @FXML
-    private BarChart intensitiesChart;
+
     @FXML
     private ComboBox<String> condACombobox;
     @FXML
@@ -165,14 +169,7 @@ public class PeptideTableController implements Initializable {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
                         Peptide peptide = peptideTable.getSelectionModel().getSelectedItem();
 
-                        XYChart.Series series =  new XYChart.Series();
-
-                        for(Map.Entry<String, Double> entry: selectedPeptide.getIntensities(row.getItem().getSample()).entrySet()){
-                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                        }
-
-                        intensitiesChart.getData().clear();
-                        intensitiesChart.getData().add(series);
+                        drawIntensitiesChart(selectedPeptide.getIntensities(row.getItem().getSample()));
 
                         selectPeptideRun(peptide, row.getItem().getSample());
 
@@ -198,17 +195,8 @@ public class PeptideTableController implements Initializable {
                         Peptide peptide = peptideTable.getSelectionModel().getSelectedItem();
 
                         if(!Config.isCombinedRun(runCombobox.getSelectionModel().getSelectedItem())){
-                            HashMap<String, Double> intensities = selectedRun.getIntensities(peptide.getSequence());
-                            XYChart.Series series =  new XYChart.Series();
-                            for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                                series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                            }
-
-
-                            intensitiesChart.getData().clear();
-                            intensitiesChart.getData().add(series);
+                            drawIntensitiesChart(selectedRun.getIntensities(peptide.getSequence()));
                         }
-
 
                         selectPeptide(peptide);
 
@@ -232,16 +220,8 @@ public class PeptideTableController implements Initializable {
                             psmTable.getItems().add(psm);
                         }
 
-                        HashMap<String, Double> intensities = selectedRun.getIntensities(peptideTable.getSelectionModel()
-                                        .getSelectedItem().getSequence(), rowData.getPtms());
-                        XYChart.Series series =  new XYChart.Series();
-                        for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                        }
-
-
-                        intensitiesChart.getData().clear();
-                        intensitiesChart.getData().add(series);
+                        drawIntensitiesChart(selectedRun.getIntensities(peptideTable.getSelectionModel()
+                                .getSelectedItem().getSequence(), rowData.getPtms()));
 
                     }
 
@@ -257,19 +237,7 @@ public class PeptideTableController implements Initializable {
                 if (!(row.isEmpty())) {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
 
-
-
-                        HashMap<String, Double> intensities = row.getItem().getIntensities();
-                        XYChart.Series series =  new XYChart.Series();
-                        for(Map.Entry<String, Double> entry: intensities.entrySet()){
-                            series.getData().add(new XYChart.Data(entry.getKey(), entry.getValue()));
-                        }
-
-
-                        intensitiesChart.getData().clear();
-                        intensitiesChart.getData().add(series);
-
-
+                        drawIntensitiesChart(row.getItem().getIntensities());
 
                         spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
                         spectrumViewerController.select(psmTable.getSelectionModel().getSelectedItem()
@@ -439,13 +407,13 @@ public class PeptideTableController implements Initializable {
                         new ReadOnlyIntegerWrapper(cellData.getValue().getSpectralCount()).asObject());
                 //peptideSampleTable.getColumns().add(spectralCountColumn);
                 GridPane.setRowSpan(spectrumViewer, 3);
-                GridPane.setRowSpan(intensitiesChart, 0);
+                GridPane.setRowSpan(intensitiesChartContainer, 0);
 
             }else{
 
 
                 GridPane.setRowSpan(spectrumViewer, 2);
-                GridPane.setRowSpan(intensitiesChart, 1);
+                GridPane.setRowSpan(intensitiesChartContainer, 1);
 
             }
         }
@@ -723,7 +691,7 @@ public class PeptideTableController implements Initializable {
 
 
 
-        if(parentController.getConfig().hasQuantification(runCombobox.getSelectionModel().getSelectedItem())){
+        if(Config.hasQuantification(runCombobox.getSelectionModel().getSelectedItem())){
             NitriteCollection collection = Database.getDb().getCollection("peptideQuant");
             Document doc = collection.find(Filters.eq("peptide", peptide)).firstOrDefault();
 
@@ -733,29 +701,60 @@ public class PeptideTableController implements Initializable {
             BarChart<String, Number> barChart =
                     new BarChart<>(xAxisbarChart, yAxisbarChart);
             barChart.setTitle("Differential protein abundance");
-            ArrayList<XYChart.Series> allSeriesAbundance = new ArrayList<>();
+
+
+            ArrayList<XYChart.Series> allSeries = new ArrayList<>();
 
             org.json.JSONObject res = (org.json.JSONObject) doc.get("abundance");
 
+
+
+            ConfidentBarChart confidentBarChart = new ConfidentBarChart();
+
             for (String conditionKey : res.keySet()) {
+
+                ArrayList<Double> intensities = new ArrayList<>();
+
+
                 org.json.JSONObject condition = res.getJSONObject(conditionKey);
                 int i = 0;
                 for (String sampleKey : condition.keySet()) {
-                    if (i + 1 > allSeriesAbundance.size()) {
-                        allSeriesAbundance.add(new XYChart.Series());
+                    if (i + 1 > intensities.size()) {
+                        allSeries.add(new XYChart.Series());
                     }
-                    allSeriesAbundance.get(i).getData().add(new XYChart.Data(conditionKey, condition.getDouble(sampleKey)));
+
+                    intensities.add(condition.getDouble(sampleKey));
+                    allSeries.get(i).getData().add(new XYChart.Data(conditionKey, condition.getInt(sampleKey)));
                     i++;
                 }
+                confidentBarChart.addSeries(conditionKey, intensities);
             }
 
-            for (XYChart.Series series : allSeriesAbundance) {
-                barChart.getData().add(series);
-            }
+            final MenuItem saveImageItem = new MenuItem("Save plot");
+            PlotSaver plotSaver = new PlotSaver("barchart");
+            saveImageItem.setOnAction(event -> {
+                plotSaver.setBarchartData(allSeries, (Stage) confidentBarChart.getScene().getWindow());
+            });
+            final MenuItem saveDataItem = new MenuItem("Save data");
+            saveDataItem.setOnAction(event -> {
+                plotSaver.saveBarchartData(allSeries, "Condition", "Intensity",
+                        (Stage) confidentBarChart.getScene().getWindow());
+            });
+
+            final ContextMenu menu = new ContextMenu(
+                    saveImageItem,
+                    saveDataItem
+            );
+
+            confidentBarChart.setOnMouseClicked(event -> {
+                if (MouseButton.SECONDARY.equals(event.getButton())) {
+                    menu.show(confidentBarChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+                }
+            });
+
+            confidentBarChart.draw();
             HBox.setHgrow(barChart, Priority.ALWAYS);
-            chartsBox.getChildren().add(barChart);
-        }else{
-
+            chartsBox.getChildren().add(confidentBarChart);
         }
 
 
@@ -961,6 +960,65 @@ public class PeptideTableController implements Initializable {
             }
         }
 
+    }
+
+    public void drawIntensitiesChart(HashMap<String, Double> intensities){
+
+        intensitiesChartContainer.getChildren().clear();
+
+        HashMap<String, ArrayList<Double>> conditionIntensities = new HashMap<>();
+        for(Map.Entry<String, Double> entry: intensities.entrySet()){
+            String condition = entry.getKey().split("/")[0];
+            if(!conditionIntensities.containsKey(condition))
+                conditionIntensities.put(condition, new ArrayList<>());
+            conditionIntensities.get(condition).add(entry.getValue());
+        }
+        ArrayList<XYChart.Series> allSeries = new ArrayList<>();
+
+        ConfidentBarChart confidentBarChart = new ConfidentBarChart();
+
+        for (Map.Entry<String, ArrayList<Double>> entry : conditionIntensities.entrySet()) {
+
+
+
+            int i = 0;
+            for (Double intensity : entry.getValue()) {
+                if (i + 1 > allSeries.size()) {
+                    allSeries.add(new XYChart.Series());
+                }
+
+                allSeries.get(i).getData().add(new XYChart.Data(entry.getKey(), intensity));
+                i++;
+            }
+            confidentBarChart.addSeries(entry.getKey(), entry.getValue());
+        }
+
+        final MenuItem saveImageItem = new MenuItem("Save plot");
+        PlotSaver plotSaver = new PlotSaver("barchart");
+        saveImageItem.setOnAction(event -> {
+            plotSaver.setBarchartData(allSeries, (Stage) confidentBarChart.getScene().getWindow());
+        });
+        final MenuItem saveDataItem = new MenuItem("Save data");
+        saveDataItem.setOnAction(event -> {
+            plotSaver.saveBarchartData(allSeries, "Condition", "Intensity",
+                    (Stage) confidentBarChart.getScene().getWindow());
+        });
+
+        final ContextMenu menu = new ContextMenu(
+                saveImageItem,
+                saveDataItem
+        );
+
+        confidentBarChart.setOnMouseClicked(event -> {
+            if (MouseButton.SECONDARY.equals(event.getButton())) {
+                menu.show(confidentBarChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+            }
+        });
+
+        confidentBarChart.draw();
+        confidentBarChart.setYLegend("Intensity");
+        AnchorFitter.fitAnchor(confidentBarChart);
+        intensitiesChartContainer.getChildren().add(confidentBarChart);
     }
 
 

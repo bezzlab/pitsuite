@@ -93,7 +93,8 @@
                         <Font size="96.0" />
                      </font>
                   </Label>
-               </children></HBox>
+               </children>
+             </HBox>
 
 
             <TabPane tabClosingPolicy="UNAVAILABLE" GridPane.columnIndex="1" GridPane.hgrow="NEVER" GridPane.rowSpan="4" GridPane.vgrow="NEVER">

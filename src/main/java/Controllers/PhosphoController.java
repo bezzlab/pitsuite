@@ -97,6 +97,7 @@ public class PhosphoController implements Initializable {
     private TableColumn<PTM, Double> phosphoPvalColumn;
 
     private SmartGraphPanel<String, String> graphView;
+    private Graph<String, String> g;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -162,6 +163,19 @@ public class PhosphoController implements Initializable {
         });
         loadPhosphosites();
         loadKinases();
+
+        g = new GraphEdgeList<>();
+        SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
+        graphView = new SmartGraphPanel<>(g, strategy);
+
+        graphView.setAutomaticLayout(true);
+
+        graphPane.getChildren().clear();
+        graphPane.getChildren().add(graphView);
+        AnchorFitter.fitAnchor(graphView);
+
+        Platform.runLater(()->graphView.init());
+
 
 
 
@@ -231,9 +245,13 @@ public class PhosphoController implements Initializable {
     }
 
     public void showPhosphositesKinases(PTM ptm){
-        Graph<String, String> g = new GraphEdgeList<>();
+
         HashSet<String> nodes = new HashSet<>();
         HashSet<String> kinases = new HashSet<>();
+
+        for(Vertex v: g.vertices()){
+            g.removeVertex(v);
+        }
 
         g.insertVertex(ptm.getId());
         nodes.add(ptm.getId());
@@ -255,47 +273,20 @@ public class PhosphoController implements Initializable {
             }
         }
 
+        graphView.update();
+
         generateGraph(g, targetsOrdered, min, max,  nodes,  kinases);
-    }
-
-    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double[] min, double[] max, HashSet<String> nodes, HashSet<String> kinases){
-        SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
-        graphView = new SmartGraphPanel<>(g, strategy);
-
-
-        for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
-            double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
-            Color color = Color.hsb(hue, 1.0, 1.0);
-            graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
-        }
-
-
-        graphView.setAutomaticLayout(true);
-
-        graphPane.getChildren().clear();
-        graphPane.getChildren().add(graphView);
-        AnchorFitter.fitAnchor(graphView);
-
-
-        addNewNodesListeners(min, max, targetsOrdered, nodes, g, kinases);
-
-
-        new Thread(() -> {
-            try {
-                Thread.sleep(100);
-                Platform.runLater(graphView::init);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     public void showKinaseTargets(Kinase kinase) {
 
-        Graph<String, String> g = new GraphEdgeList<>();
+
         HashSet<String> nodes = new HashSet<>();
         HashSet<String> kinases = new HashSet<>();
 
+        for(Vertex v: g.vertices()){
+            g.removeVertex(v);
+        }
         g.insertVertex(kinase.getName());
         kinases.add(kinase.getName());
         nodes.add(kinase.getName());
@@ -318,9 +309,32 @@ public class PhosphoController implements Initializable {
 
         }
 
+        graphView.update();
+
         generateGraph(g, targetsOrdered, min, max,  nodes,  kinases);
 
 
+    }
+
+    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double[] min, double[] max, HashSet<String> nodes, HashSet<String> kinases){
+
+
+        addNewNodesListeners(min, max, targetsOrdered, nodes, g, kinases);
+
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(100);
+                for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
+                    double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
+                    Color color = Color.hsb(hue, 1.0, 1.0);
+                    System.out.println(target.getValue()+" "+graphView.getStylableVertex(target.getValue()));
+                    graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
 
@@ -395,18 +409,25 @@ public class PhosphoController implements Initializable {
     }
 
     public void showGeneData(String gene){
-        Element element = new Element("macromolecule");
-        element.getEntities().add(new Gene(gene));
 
-        DgeAlert.setAlerts(element, null);
-        SplicingAlert.setAlerts(element, null);
-        MutationAlert.setAlerts(element, null);
-        PTMAlert.setAlerts(element, null);
+        new Thread(()->{
+            Element element = new Element("macromolecule");
+            element.getEntities().add(new Gene(gene));
+            DgeAlert.setAlerts(element, null);
+            SplicingAlert.setAlerts(element, null);
+            MutationAlert.setAlerts(element, null);
+            PTMAlert.setAlerts(element, null);
+            Platform.runLater(()->{
+                pathway.alerts.Alert.populateGenes(dgePane, element, DgeAlert.class);
+            });
 
-        pathway.alerts.Alert.populateGenes(dgePane, element, DgeAlert.class);
 //        pathway.alerts.Alert.populateGenes(splicingPane, element, SplicingAlert.class);
 //        pathway.alerts.Alert.populateGenes(mutationPane, element, MutationAlert.class);
 //        pathway.alerts.Alert.populateGenes(PTMPane, element, PTMAlert.class);
+        }).start();
+
+
+
     }
 
 

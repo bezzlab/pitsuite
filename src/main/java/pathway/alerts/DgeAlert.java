@@ -3,6 +3,7 @@ package pathway.alerts;
 
 import Controllers.DgeTableController;
 import Controllers.PathwayController;
+import Controllers.PathwaySideController;
 import Singletons.Database;
 import graphics.ConfidentBarChart;
 import javafx.scene.control.TableColumn;
@@ -184,18 +185,43 @@ public class DgeAlert extends Alert {
                 for (Gene gene : element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new)) {
 
                     String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
-                    if (dge.containsKey(geneName) && dge.get(geneName).has("padj") && dge.get(geneName).getDouble("padj") < 0.05) {
+                    if (dge.containsKey(geneName) && dge.get(geneName).has("padj")) {
                         DgeAlert alert = new DgeAlert(geneName, dge.get(geneName).getDouble("log2fc"), dge.get(geneName).getDouble("padj"));
+                        boolean addAlert = dge.get(geneName).getDouble("padj") < PathwaySideController.PathwaysFilters.getGenePval() &&
+                                ((PathwaySideController.PathwaysFilters.isGeneAbsFc() &&
+                                        ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.MORE && Math.abs(alert.getFc()) > PathwaySideController.PathwaysFilters.getGeneLog2Fc()))
+                                        || ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.LESS && Math.abs(alert.getFc()) < PathwaySideController.PathwaysFilters.getGeneLog2Fc())))
+                                        ||
+                                        (!PathwaySideController.PathwaysFilters.isGeneAbsFc() &&
+                                                ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.MORE && alert.getFc() > PathwaySideController.PathwaysFilters.getGeneLog2Fc()))
+                                                || ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.LESS && alert.getFc() < PathwaySideController.PathwaysFilters.getGeneLog2Fc()))));
+
                         if (dge.get(geneName).has("ms")) {
                             for (String msRun : dge.get(geneName).getJSONObject("ms").keySet()) {
-                                if (dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).has("padj")) {
+                                JSONObject runObj = dge.get(geneName).getJSONObject("ms").getJSONObject(msRun);
+                                if (runObj.has("padj")) {
                                     alert.addMsRun(msRun, dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).getDouble("log2fc"), dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).getDouble("padj"));
+
+                                    if(runObj.getDouble("padj") < PathwaySideController.PathwaysFilters.getProteinPval() &&
+                                            ((PathwaySideController.PathwaysFilters.isProteinAbsFc() &&
+                                                    ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.MORE && Math.abs(runObj.getDouble("log2fc")) > PathwaySideController.PathwaysFilters.getProteinLog2fc()))
+                                                    || ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.LESS && Math.abs(runObj.getDouble("log2fc")) < PathwaySideController.PathwaysFilters.getProteinLog2fc())))
+                                                    ||
+                                                    (!PathwaySideController.PathwaysFilters.isProteinAbsFc() &&
+                                                            ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.MORE && runObj.getDouble("log2fc") > PathwaySideController.PathwaysFilters.getProteinLog2fc()))
+                                                            || ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.LESS && runObj.getDouble("log2fc") < PathwaySideController.PathwaysFilters.getProteinLog2fc()))))){
+                                        addAlert=true;
+                                    }
+
+
+
                                 } else {
-                                    alert.addMsRun(msRun, dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).getDouble("log2fc"));
+                                    alert.addMsRun(msRun, runObj.getDouble("log2fc"));
                                 }
                             }
                         }
-                        element.setAlert(alert, pathwayController);
+                        if(addAlert)
+                            element.setAlert(alert, pathwayController);
                     }
                 }
             }

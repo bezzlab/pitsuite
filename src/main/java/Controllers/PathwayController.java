@@ -67,7 +67,7 @@ public class PathwayController implements Initializable {
     private double maxX=0, maxY=0;
 
     private double xOffset, yOffset;
-    private DoubleProperty fontSize = new SimpleDoubleProperty(10);
+    private final DoubleProperty fontSize = new SimpleDoubleProperty(10);
 
     private HashMap<String, Reaction> reactions = new HashMap<>();
 
@@ -94,25 +94,16 @@ public class PathwayController implements Initializable {
 
             double zoomFactor = 1.05;
             double deltaY = event.getDeltaY();
-            if (deltaY < 0){
+            if (deltaY < 0)
                 zoomFactor = 1.9 - zoomFactor;
-                fontSize.set(fontSize.getValue()*0.98);
-            }else{
-
-                fontSize.set(fontSize.getValue()*1.01);
-            }
-
 
             Scale newScale = new Scale();
             newScale.setPivotX(event.getX());
             newScale.setPivotY(event.getY());
             newScale.setX( container.getScaleX() * zoomFactor );
             newScale.setY( container.getScaleY() * zoomFactor );
-
             container.getTransforms().add(newScale);
-
             event.consume();
-
         });
 
 
@@ -137,14 +128,7 @@ public class PathwayController implements Initializable {
 
     public void parseSbgn(String sgbn, String reaction){
 
-        container.getChildren().clear();
-        elements = new HashMap<>();
-        arcs = new ArrayList<>();
-        ignoreArcsFrom = new ArrayList<>();
-        ignoreArcsFrom = new ArrayList<>();
-        reactions = new HashMap<>();
-        reactionLabelId = new HashMap<>();
-        reactionNodes = new HashMap<>();
+        clear();
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(true);
@@ -290,6 +274,7 @@ public class PathwayController implements Initializable {
                 case "association":
                 case "process":
                 case "dissociation":
+                case "uncertain process":
                 case "omitted process":{
 
                     Reaction reaction = null;
@@ -562,7 +547,7 @@ public class PathwayController implements Initializable {
                     points.add(new Pair<>(reaction.getPorts().get(0).getX(), reaction.getPorts().get(0).getY()));
                     points.add(new Pair<>(reaction.getX(), reaction.getY()+reaction.getHeight()/2));
 
-                }else if(reaction.getType().equals("process") || reaction.getType().equals("omitted process")  || reaction.getType().equals("dissociation")){
+                }else if(reaction.getType().contains("process") || reaction.getType().equals("dissociation")){
 
                     points.add(new Pair<>(reaction.getX()+reaction.getWidth(), reaction.getY()+reaction.getHeight()/2));
                     points.add(new Pair<>(reaction.getPorts().get(1).getX(), reaction.getPorts().get(1).getY()));
@@ -813,13 +798,17 @@ public class PathwayController implements Initializable {
 
         double x, y;
 
-        if(firstIsCloser(source, arc.getPoints().get(0).getKey(), arc.getPoints().get(0).getValue(), arc.getPoints().get(1).getKey(),
-                arc.getPoints().get(1).getValue())){
-            x=arc.getPoints().get(1).getKey();
-            y=arc.getPoints().get(1).getValue();
+        Pair<Double, Double> start = arc.getPoints().get(0);
+        Pair<Double, Double> end = arc.getPoints().get(arc.getPoints().size()-1);
+
+
+        if(firstIsCloser(source, start.getKey(), start.getValue(), start.getKey(),
+                end.getValue())){
+            x=end.getKey();
+            y=end.getValue();
         }else{
-            x=arc.getPoints().get(0).getKey();
-            y=arc.getPoints().get(0).getValue();
+            x=start.getKey();
+            y=start.getValue();
         }
 
         Circle symbol = new Circle();
@@ -1298,10 +1287,18 @@ public class PathwayController implements Initializable {
     public Thread setAlerts(Element element){
 
         Thread t  = new Thread(()-> {
+            //long startTime = System.currentTimeMillis();
             DgeAlert.setAlerts(element, this);
+            //.out.println("DGE "+(System.currentTimeMillis() - startTime));
+            //startTime = System.currentTimeMillis();
             SplicingAlert.setAlerts(element, this);
+            //System.out.println("splicing "+(System.currentTimeMillis() - startTime));
+            //startTime = System.currentTimeMillis();
             MutationAlert.setAlerts(element, this);
+            //System.out.println("mutation "+(System.currentTimeMillis() - startTime));
+            //startTime = System.currentTimeMillis();
             PTMAlert.setAlerts(element, this);
+            //System.out.println("ptm "+(System.currentTimeMillis() - startTime));
         });
         t.start();
         return t;
@@ -1309,4 +1306,38 @@ public class PathwayController implements Initializable {
     }
 
 
+    public void refreshAlerts() {
+
+        new Thread(()-> {
+            ArrayList<Thread> threads = new ArrayList<>();
+        for(Element element:elements.values()){
+                element.clearAlerts();
+                threads.add(setAlerts(element));
+            }
+        for(Thread thread:threads){
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+
+    }
+
+    public void clear() {
+        container.getChildren().clear();
+        container.getTransforms().clear();
+        container.setTranslateX(0);
+        container.setTranslateY(0);
+        maxX = 0; maxY = 0;
+        xOffset = 0; yOffset = 0;
+        elements = new HashMap<>();
+        arcs = new ArrayList<>();
+        ignoreArcsFrom = new ArrayList<>();
+        reactions = new HashMap<>();
+        reactionLabelId = new HashMap<>();
+        reactionNodes = new HashMap<>();
+    }
 }

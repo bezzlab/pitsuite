@@ -25,6 +25,7 @@ public class Element {
 
     private Group nodeGroups = new Group();
     private Group colorRectangles = new Group();
+    private Group alertsGroup = new Group();
     private Label nodeLabel;
     private Shape node;
     private ArrayList<Entity> entities = new ArrayList<>();
@@ -38,6 +39,7 @@ public class Element {
         this.height = height;
 
         nodeGroups.getChildren().add(colorRectangles);
+        nodeGroups.getChildren().add(alertsGroup);
     }
 
     public Element(double x, double y, double width, double height, String id) {
@@ -47,6 +49,7 @@ public class Element {
         this.height = height;
         this.id = id;
         nodeGroups.getChildren().add(colorRectangles);
+        nodeGroups.getChildren().add(alertsGroup);
 
     }
 
@@ -63,6 +66,7 @@ public class Element {
         this.type=type;
         this.label=label;
         nodeGroups.getChildren().add(colorRectangles);
+        nodeGroups.getChildren().add(alertsGroup);
     }
 
     public double getX() {
@@ -144,7 +148,7 @@ public class Element {
                         t.setFont(Font.font(8));
                         t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
                         t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
-                        nodeGroups.getChildren().add(t);
+                        alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
                 } else if (alert.getClass().equals(SplicingAlert.class)) {
@@ -153,7 +157,7 @@ public class Element {
                         t.setFont(Font.font(8));
                         t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
                         t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
-                        nodeGroups.getChildren().add(t);
+                        alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
                 } else if (alert.getClass().equals(MutationAlert.class)) {
@@ -162,7 +166,7 @@ public class Element {
                         t.setFont(Font.font(8));
                         t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
                         t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
-                        nodeGroups.getChildren().add(t);
+                        alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
                 } else if (alert.getClass().equals(PTMAlert.class)) {
@@ -171,7 +175,7 @@ public class Element {
                         t.setFont(Font.font(8));
                         t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
                         t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
-                        nodeGroups.getChildren().add(t);
+                        alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
                 }
@@ -183,5 +187,13 @@ public class Element {
 
     public ArrayList<Alert> getAlerts() {
         return alerts;
+    }
+
+    public void clearAlerts(){
+        alertXOffset = 0;
+        Platform.runLater(()->{
+            alertsGroup.getChildren().clear();
+            alerts.clear();
+        });
     }
 }

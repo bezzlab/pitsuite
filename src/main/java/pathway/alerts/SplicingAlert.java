@@ -27,6 +27,7 @@ import org.dizitart.no2.NitriteCollection;
 import org.json.JSONObject;
 import pathway.Compartment;
 import pathway.Element;
+import pathway.Entity;
 import pathway.Gene;
 import pitguiv2.Settings;
 
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.dizitart.no2.filters.Filters.eq;
+import static org.dizitart.no2.filters.Filters.in;
 
 public class SplicingAlert extends Alert {
     ArrayList<SplicingEvent> events = new ArrayList<>();
@@ -213,38 +215,48 @@ public class SplicingAlert extends Alert {
     }
 
     public static void setAlerts(Element element, PathwayController pathwayController){
-        Cursor eventsCursor = Database.getDb().getCollection("SplicingDPSI_Nsivssi").find();
-        HashMap<String, ArrayList<JSONObject>> splicing = new HashMap<>();
+        String[] genes = element.getEntities().stream().map(Entity::getName).toArray(String[]::new);
+        if(genes.length>0) {
+            Cursor eventsCursor = Database.getDb().getCollection("SplicingDPSI_Nsivssi").find(in("geneName", genes));
+            HashMap<String, ArrayList<JSONObject>> splicing = new HashMap<>();
 
-        for(org.dizitart.no2.Document doc: eventsCursor){
-
-
-            JSONObject json = new JSONObject(doc);
-
-
-            if(!splicing.containsKey(json.getString("geneName")))
-                splicing.put(json.getString("geneName"), new ArrayList<>());
-            splicing.get(json.getString("geneName")).add(json);
+            for (org.dizitart.no2.Document doc : eventsCursor) {
 
 
-        }
+                JSONObject json = new JSONObject(doc);
 
 
+                if (!splicing.containsKey(json.getString("geneName")))
+                    splicing.put(json.getString("geneName"), new ArrayList<>());
+                splicing.get(json.getString("geneName")).add(json);
 
-        if(!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))) {
 
-            for (Gene gene : element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new)) {
+            }
 
-                String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
 
-                if(splicing.containsKey(geneName)){
-                    SplicingAlert alert = new SplicingAlert(geneName);
-                    for(JSONObject doc: splicing.get(geneName)){
-                        if(doc.getDouble("pval")<0.05)
-                            alert.addEvent(doc);
+            if (!element.getClass().equals(Compartment.class) && (element.getType().equals("macromolecule") || element.getType().equals("complex"))) {
+
+                for (Gene gene : element.getEntities().stream().filter(e -> e.getClass().equals(Gene.class)).toArray(Gene[]::new)) {
+
+                    String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
+
+                    if (splicing.containsKey(geneName)) {
+                        SplicingAlert alert = new SplicingAlert(geneName);
+                        for (JSONObject doc : splicing.get(geneName)) {
+
+                            if (doc.getDouble("pval") < PathwaySideController.PathwaysFilters.getSplicingPVal() &&
+                                    ((PathwaySideController.PathwaysFilters.isSplicingAbsFc() &&
+                                            ((PathwaySideController.PathwaysFilters.getSplicingComparisonSide() == PathwaySideController.ComparisonSide.MORE && Math.abs(doc.getDouble("deltaPsi")) > PathwaySideController.PathwaysFilters.getSplicingDpsi()))
+                                            || ((PathwaySideController.PathwaysFilters.getSplicingComparisonSide() == PathwaySideController.ComparisonSide.LESS && Math.abs(doc.getDouble("deltaPsi")) < PathwaySideController.PathwaysFilters.getSplicingDpsi())))
+                                            ||
+                                            (!PathwaySideController.PathwaysFilters.isSplicingAbsFc() &&
+                                                    ((PathwaySideController.PathwaysFilters.getSplicingComparisonSide() == PathwaySideController.ComparisonSide.MORE && doc.getDouble("deltaPsi") > PathwaySideController.PathwaysFilters.getSplicingDpsi()))
+                                                    || ((PathwaySideController.PathwaysFilters.getSplicingComparisonSide() == PathwaySideController.ComparisonSide.LESS && doc.getDouble("deltaPsi") < PathwaySideController.PathwaysFilters.getSplicingDpsi())))))
+                                alert.addEvent(doc);
+                        }
+                        if (alert.getEvents().size() > 0)
+                            element.setAlert(alert, pathwayController);
                     }
-                    if(alert.getEvents().size()>0)
-                        element.setAlert(alert, pathwayController);
                 }
             }
         }

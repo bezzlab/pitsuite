@@ -187,33 +187,33 @@ public class ResultsController implements Initializable {
 //            });
 //
 //
-            Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
-                try {
-                    Parent root = fxmlLoader2.load();
-
-                    browserController = fxmlLoader2.getController();
-                    browserController.setParentControler(this, settings, hostServices, projectName, allGenesReader);
-                    resultsTabPane.getTabs().get(1).setContent(root);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
+//            Platform.runLater(() -> {
+//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
+//                try {
+//                    Parent root = fxmlLoader2.load();
+//
+//                    browserController = fxmlLoader2.getController();
+//                    browserController.setParentControler(this, settings, hostServices, projectName, allGenesReader);
+//                    resultsTabPane.getTabs().get(1).setContent(root);
+//                } catch(Exception e){
+//                    e.printStackTrace();
+//                }
+//            });
 //
 //
-            Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
-                try {
-                    Parent root = fxmlLoader2.load();
-
-                    peptideTableController = fxmlLoader2.getController();
-                    peptideTableController.setParentController(this);
-                    resultsTabPane.getTabs().get(5).setContent(root);
-                    ControllersBasket.setPeptideTableController(peptideTableController);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
+//            Platform.runLater(() -> {
+//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
+//                try {
+//                    Parent root = fxmlLoader2.load();
+//
+//                    peptideTableController = fxmlLoader2.getController();
+//                    peptideTableController.setParentController(this);
+//                    resultsTabPane.getTabs().get(5).setContent(root);
+//                    ControllersBasket.setPeptideTableController(peptideTableController);
+//                } catch(Exception e){
+//                    e.printStackTrace();
+//                }
+//            });
 //
 //            Platform.runLater(() -> {
 //                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/transcriptUsage.fxml"));
@@ -251,21 +251,21 @@ public class ResultsController implements Initializable {
                     e.printStackTrace();
                 }
             });
-
-        Platform.runLater(() -> {
-            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
-            try {
-                Parent root = fxmlLoader2.load();
-                resultsTabPane.getTabs().get(7).setContent(root);
-
-                phosphoController = fxmlLoader2.getController();
-
-
-
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-        });
+//
+//        Platform.runLater(() -> {
+//            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
+//            try {
+//                Parent root = fxmlLoader2.load();
+//                resultsTabPane.getTabs().get(7).setContent(root);
+//
+//                phosphoController = fxmlLoader2.getController();
+//
+//
+//
+//            } catch(Exception e){
+//                e.printStackTrace();
+//            }
+//        });
 
 
     }

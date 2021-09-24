@@ -56,7 +56,7 @@
             </TabPane>
              <Accordion fx:id="kinaseAccordion" GridPane.columnIndex="1">
                  <panes>
-                     <TitledPane animated="false" text="Targets">
+                     <TitledPane animated="false" text="Graph" expanded="true">
                          <content>
                              <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                  <!--                                            <WebView fx:id="kinaseWebview" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>-->
@@ -65,7 +65,7 @@
                              </AnchorPane>
                          </content>
                      </TitledPane>
-                     <TitledPane animated="false" text="untitled 2">
+                     <TitledPane animated="false" text="Gene expression and protein abundance">
                          <content>
                              <AnchorPane fx:id="dgePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                          </content>

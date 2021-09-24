@@ -214,22 +214,22 @@ public class KeggController implements Initializable {
 
     public void setKeggGeneTable(String geneSymbol){
 
-        if (!geneSymbol.equals(selectedGeneLabel.getText())){ // not the same gene
-            geneKeggTable.getItems().clear();
-
-            selectedGeneLabel.setText(geneSymbol);
-            new Thread(() -> {
-
-                ArrayList<KeggPathway> keggPathways = allGenesReader.getKegg(geneSymbol);
-                if (keggPathways != null) {
-                    for (KeggPathway kegg: keggPathways){
-                        geneKeggTable.getItems().add(kegg);
-                        System.out.println(kegg);
-                    }
-                }
-            }).start();
-
-        }
+//        if (!geneSymbol.equals(selectedGeneLabel.getText())){ // not the same gene
+//            geneKeggTable.getItems().clear();
+//
+//            selectedGeneLabel.setText(geneSymbol);
+//            new Thread(() -> {
+//
+//                ArrayList<KeggPathway> keggPathways = allGenesReader.getKegg(geneSymbol);
+//                if (keggPathways != null) {
+//                    for (KeggPathway kegg: keggPathways){
+//                        geneKeggTable.getItems().add(kegg);
+//                        System.out.println(kegg);
+//                    }
+//                }
+//            }).start();
+//
+//        }
 
     }
 

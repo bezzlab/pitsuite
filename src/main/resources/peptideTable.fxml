@@ -83,14 +83,7 @@
                                       <columns>
                                       </columns>
                                     </TableView>
-                                    <BarChart fx:id="intensitiesChart" animated="false" legendVisible="false" GridPane.columnIndex="1">
-                                      <xAxis>
-                                        <CategoryAxis side="BOTTOM" />
-                                      </xAxis>
-                                      <yAxis>
-                                        <NumberAxis side="LEFT" />
-                                      </yAxis>
-                                    </BarChart>
+                                    <AnchorPane fx:id="intensitiesChartContainer"  GridPane.columnIndex="1" />
                                      <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2" />
 <!--                                     <WebView fx:id="specWebview" GridPane.columnIndex="1"-->
 <!--                                                 GridPane.rowIndex="0" GridPane.rowSpan="1"/>-->
