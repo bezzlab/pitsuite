@@ -26,7 +26,7 @@ public abstract class Alert {
 
     public abstract String getType();
 
-    public abstract void drawCell(AnchorPane container, TitledPane titledPane);
+    public abstract void drawCell(Pane container, TitledPane titledPane);
 
     public static void populateGenes(Pane container, Element element, Class alertClass){
         container.getChildren().clear();
@@ -34,10 +34,11 @@ public abstract class Alert {
         AnchorFitter.fitAnchor(accordion);
         container.getChildren().add(accordion);
         for(pathway.alerts.Alert alert: element.getAlerts().stream().filter(e->e.getClass().equals(alertClass)).toArray(pathway.alerts.Alert[]::new)){
+            System.out.println(alert);
             AnchorPane alertPane = new AnchorPane();
             TitledPane titledPane = new TitledPane(alert.getGene(), alertPane);
+            titledPane.setMaxWidth(container.getWidth());
 
-            AnchorFitter.fitAnchor(titledPane);
             accordion.getPanes().add(titledPane);
             alert.drawCell(alertPane, titledPane);
         }

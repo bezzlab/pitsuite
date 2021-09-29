@@ -186,9 +186,9 @@ public class ConfidentBarChart extends Pane {
             max = (double) autoRange[1];
             double yAxisWidth = makeYAxis(autoRange, this.getHeight() - maxLabelHeight - titleHeight);
             double groupLabelsWidth = 0;
-            if (groups.size() > 1) {
-                groupLabelsWidth = makeGroupLegend();
-            }
+//            if (groups.size() > 1) {
+//                groupLabelsWidth = makeGroupLegend();
+//            }
 
             drawDashedLines(this.getWidth() - yAxisWidth, this.getHeight() - maxLabelHeight - titleHeight);
 

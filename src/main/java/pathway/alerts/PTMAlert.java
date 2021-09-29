@@ -36,7 +36,7 @@ public class PTMAlert extends Alert {
     }
 
     @Override
-    public void drawCell(AnchorPane pane, TitledPane titledPane) {
+    public void drawCell(Pane pane, TitledPane titledPane) {
         Accordion eventsAccordion = new Accordion();
         pane.getChildren().add(eventsAccordion);
         AnchorFitter.fitAnchor(eventsAccordion);

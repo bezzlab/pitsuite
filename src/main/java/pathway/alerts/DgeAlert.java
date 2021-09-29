@@ -5,6 +5,7 @@ import Controllers.DgeTableController;
 import Controllers.PathwayController;
 import Controllers.PathwaySideController;
 import Singletons.Database;
+import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -64,22 +65,22 @@ public class DgeAlert extends Alert {
     }
 
     @Override
-    public void drawCell(AnchorPane pane, TitledPane titledPane){
+    public void drawCell(Pane pane, TitledPane titledPane){
 
         AnchorPane.setBottomAnchor(pane, 0.);
         AnchorPane.setTopAnchor(pane, 0.);
-        AnchorPane.setLeftAnchor(pane, 0.);
-        AnchorPane.setRightAnchor(pane, 0.);
+
 
         GridPane grid = new GridPane();
         ColumnConstraints c = new ColumnConstraints();
-        c.setHgrow(Priority.ALWAYS);
+        c.setHgrow(Priority.NEVER);
+        c.setPercentWidth(97);
         RowConstraints r1 = new RowConstraints();
         r1.setVgrow(Priority.NEVER);
         r1.setPercentHeight(10);
         RowConstraints r2 = new RowConstraints();
         r2.setVgrow(Priority.ALWAYS);
-        r2.setPercentHeight(40);
+        r2.setPercentHeight(30);
         grid.getColumnConstraints().add(c);
         grid.getRowConstraints().add(r1);
         grid.getRowConstraints().add(r2);
@@ -112,22 +113,23 @@ public class DgeAlert extends Alert {
 
         AnchorPane.setBottomAnchor(grid, 0.);
         AnchorPane.setTopAnchor(grid, 0.);
-        AnchorPane.setLeftAnchor(grid, 0.);
-        AnchorPane.setRightAnchor(grid, 0.);
+        grid.setMaxWidth(titledPane.getMaxWidth()-10);
+        grid.setPrefWidth(titledPane.getMaxWidth()-10);
+
+
+
 
         grid.getChildren().add(changeTable);
 
         AnchorPane.setBottomAnchor(changeTable, 0.);
         AnchorPane.setTopAnchor(changeTable, 0.);
-        AnchorPane.setLeftAnchor(changeTable, 0.);
-        AnchorPane.setRightAnchor(changeTable, 0.);
+
 
         grid.getChildren().add(readCountsPane);
 
         AnchorPane.setBottomAnchor(readCountsPane, 0.);
         AnchorPane.setTopAnchor(readCountsPane, 0.);
-        AnchorPane.setLeftAnchor(readCountsPane, 0.);
-        AnchorPane.setRightAnchor(readCountsPane, 0.);
+
 
         GridPane.setRowIndex(readCountsPane, 1);
 
@@ -146,8 +148,9 @@ public class DgeAlert extends Alert {
             grid.add(container, 0, 2+i++);
             RowConstraints r = new RowConstraints();
             r.setVgrow(Priority.ALWAYS);
-            r.setPercentHeight(50);
+            r.setPercentHeight(60);
             grid.getRowConstraints().add(r);
+
 
             changeTable.getItems().add(new CellTableRow("Protein "+entry.getKey(), entry.getValue().getKey(), entry.getValue().getValue()));
 
@@ -160,7 +163,7 @@ public class DgeAlert extends Alert {
 
     }
 
-    public static void setAlerts(Element element, PathwayController pathwayController){
+    public static void setAlerts(Element element, PathwayController pathwayController, boolean useFilters){
 
 
         String[] genes = element.getEntities().stream().map(Entity::getName).toArray(String[]::new);
@@ -187,14 +190,14 @@ public class DgeAlert extends Alert {
                     String geneName = gene.getName().split(" ")[0].split("\\(")[0].split("-")[0];
                     if (dge.containsKey(geneName) && dge.get(geneName).has("padj")) {
                         DgeAlert alert = new DgeAlert(geneName, dge.get(geneName).getDouble("log2fc"), dge.get(geneName).getDouble("padj"));
-                        boolean addAlert = dge.get(geneName).getDouble("padj") < PathwaySideController.PathwaysFilters.getGenePval() &&
+                        boolean addAlert = !useFilters || (dge.get(geneName).getDouble("padj") < PathwaySideController.PathwaysFilters.getGenePval() &&
                                 ((PathwaySideController.PathwaysFilters.isGeneAbsFc() &&
                                         ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.MORE && Math.abs(alert.getFc()) > PathwaySideController.PathwaysFilters.getGeneLog2Fc()))
                                         || ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.LESS && Math.abs(alert.getFc()) < PathwaySideController.PathwaysFilters.getGeneLog2Fc())))
                                         ||
                                         (!PathwaySideController.PathwaysFilters.isGeneAbsFc() &&
                                                 ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.MORE && alert.getFc() > PathwaySideController.PathwaysFilters.getGeneLog2Fc()))
-                                                || ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.LESS && alert.getFc() < PathwaySideController.PathwaysFilters.getGeneLog2Fc()))));
+                                                || ((PathwaySideController.PathwaysFilters.getGeneComparisonSide() == PathwaySideController.ComparisonSide.LESS && alert.getFc() < PathwaySideController.PathwaysFilters.getGeneLog2Fc())))));
 
                         if (dge.get(geneName).has("ms")) {
                             for (String msRun : dge.get(geneName).getJSONObject("ms").keySet()) {
@@ -202,14 +205,14 @@ public class DgeAlert extends Alert {
                                 if (runObj.has("padj")) {
                                     alert.addMsRun(msRun, dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).getDouble("log2fc"), dge.get(geneName).getJSONObject("ms").getJSONObject(msRun).getDouble("padj"));
 
-                                    if(runObj.getDouble("padj") < PathwaySideController.PathwaysFilters.getProteinPval() &&
+                                    if(!useFilters || (runObj.getDouble("padj") < PathwaySideController.PathwaysFilters.getProteinPval() &&
                                             ((PathwaySideController.PathwaysFilters.isProteinAbsFc() &&
                                                     ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.MORE && Math.abs(runObj.getDouble("log2fc")) > PathwaySideController.PathwaysFilters.getProteinLog2fc()))
                                                     || ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.LESS && Math.abs(runObj.getDouble("log2fc")) < PathwaySideController.PathwaysFilters.getProteinLog2fc())))
                                                     ||
                                                     (!PathwaySideController.PathwaysFilters.isProteinAbsFc() &&
                                                             ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.MORE && runObj.getDouble("log2fc") > PathwaySideController.PathwaysFilters.getProteinLog2fc()))
-                                                            || ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.LESS && runObj.getDouble("log2fc") < PathwaySideController.PathwaysFilters.getProteinLog2fc()))))){
+                                                            || ((PathwaySideController.PathwaysFilters.getProteinComparisonSide() == PathwaySideController.ComparisonSide.LESS && runObj.getDouble("log2fc") < PathwaySideController.PathwaysFilters.getProteinLog2fc())))))){
                                         addAlert=true;
                                     }
 

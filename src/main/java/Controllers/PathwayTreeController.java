@@ -5,8 +5,10 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,6 +17,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.ResourceBundle;
 
 public class PathwayTreeController implements Initializable {
@@ -22,23 +26,37 @@ public class PathwayTreeController implements Initializable {
     @FXML
     private TreeView<Pathway> treeView;
 
+    private final HashMap<String, TreeItem<Pathway>> items = new HashMap<>();
+    private static PathwayTreeController instance;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         new Thread(this::retrieveTree).start();
+        instance = this;
 
-        treeView.setOnMouseClicked(new EventHandler<MouseEvent>()
-        {
-            @Override
-            public void handle(MouseEvent mouseEvent)
-            {
-                if(mouseEvent.getClickCount() == 2)
-                {
+        treeView.setCellFactory(param -> {
+            TreeCell<Pathway> treeCell = new TreeCell<>() {
+                @Override
+                protected void updateItem(Pathway item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText("");
+                        setGraphic(null);
+                        return;
+                    }
+
+                    setText(item.toString());
+                }
+            };
+
+            treeCell.addEventFilter(MouseEvent.MOUSE_PRESSED, (MouseEvent e) -> {
+                if (e.getClickCount() % 2 == 0 && e.getButton().equals(MouseButton.PRIMARY)) {
                     TreeItem<Pathway> item = treeView.getSelectionModel().getSelectedItem();
                     PathwayController.getInstance().loadPathway(item.getValue().getId(), null);
-
-
+                    e.consume();
                 }
-            }
+            });
+            return treeCell;
         });
     }
 
@@ -74,6 +92,7 @@ public class PathwayTreeController implements Initializable {
             for (int i = 0; i < tree.length(); i++) {
                 JSONObject node = tree.getJSONObject(i);
                 TreeItem<Pathway> item = new TreeItem<>(new Pathway(node.getString("name"), node.getString("stId")));
+                items.put(item.getValue().getId(), item);
                 root.getChildren().add(item);
                 parseNode(node, item);
 
@@ -88,6 +107,7 @@ public class PathwayTreeController implements Initializable {
                 JSONObject chilNode = node.getJSONArray("children").getJSONObject(i);
                 if(chilNode.getString("type").contains("Pathway")) {
                     TreeItem<Pathway> item = new TreeItem<>(new Pathway(chilNode.getString("name"), chilNode.getString("stId")));
+                    items.put(item.getValue().getId(), item);
                     parent.getChildren().add(item);
                     parseNode(chilNode, item);
                 }
@@ -95,6 +115,27 @@ public class PathwayTreeController implements Initializable {
             }
         }
 
+    }
+
+    public void expendItem(String id){
+
+        for(TreeItem<Pathway> item: items.values()){
+            item.setExpanded(false);
+        }
+        treeView.getRoot().setExpanded(true);
+
+        TreeItem<Pathway> item = items.get(id);
+        treeView.getSelectionModel().select(item);
+        expendItem(item);
+    }
+    public void expendItem(TreeItem<Pathway> item){
+        item.setExpanded(true);
+        if(item.getParent()!=null)
+            expendItem(item.getParent());
+    }
+
+    public static PathwayTreeController getInstance(){
+        return instance;
     }
 
     private class Pathway{

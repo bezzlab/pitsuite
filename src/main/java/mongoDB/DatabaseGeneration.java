@@ -387,6 +387,8 @@ public class DatabaseGeneration {
             currDocument.put("silent", jsonObject.get("silent"));
             currDocument.put("condition", jsonObject.get("condition"));
             currDocument.put("transcripts", jsonObject.get("transcripts"));
+            if(jsonObject.containsKey("pfam"))
+                currDocument.put("pfam", jsonObject.get("pfam"));
             genesDocsToDBList.add(currDocument);
         }
 

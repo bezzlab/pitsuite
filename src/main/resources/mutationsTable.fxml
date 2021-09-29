@@ -67,6 +67,7 @@
                         <TableColumn fx:id="silentColumn"  text="Synonymous" />
                         <TableColumn fx:id="inCDSColumn"  text="In CDS" />
                         <TableColumn fx:id="peptideEvidenceColumn" text="Peptide evidence" />
+                        <TableColumn fx:id="pfamColumn" text="Pfam domains" />
                     </columns>
                     <columnResizePolicy>
                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

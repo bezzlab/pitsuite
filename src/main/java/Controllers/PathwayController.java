@@ -2,6 +2,7 @@ package Controllers;
 
 import Cds.PTM;
 import FileReading.Phosphosite;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -126,7 +127,7 @@ public class PathwayController implements Initializable {
     public static PathwayController getInstance(){ return instance; }
 
 
-    public void parseSbgn(String sgbn, String reaction){
+    public void parseSbgn(String sgbn, String pathway, String reaction){
 
         clear();
 
@@ -139,10 +140,10 @@ public class PathwayController implements Initializable {
             Document doc = builder.parse(new InputSource(new StringReader(sgbn)));
 
             parseNode(doc.getDocumentElement());
-
+            addReactionDbId(pathway);
             draw(reaction);
-
             colorElements();
+
 
         } catch (ParserConfigurationException | IOException | SAXException e) {
             e.printStackTrace();
@@ -483,6 +484,8 @@ public class PathwayController implements Initializable {
                         element.getNodeGroups().setOnMouseClicked(event -> {
                             if(event.getClickCount()==2){
                                 PathwaySideController.getInstance().populateSelectionTable(element);
+                            }else if(event.getClickCount()==1){
+                                PathwaySideController.getInstance().showDescription(String.valueOf(entitiesInfo.get(element.getLabel()).getInt("peDbId")));
                             }
                         });
 
@@ -563,7 +566,6 @@ public class PathwayController implements Initializable {
 
                     arc2.setPoints(points2);
                     arcs.add(arc2);
-
 
                 }
                 arc.setPoints(points);
@@ -699,7 +701,6 @@ public class PathwayController implements Initializable {
 
 
 
-
         if(arc.getSource().contains("reactionVertex")){
 
             Matcher matcher = pattern.matcher(arc.getSource());
@@ -717,7 +718,17 @@ public class PathwayController implements Initializable {
             Tooltip t = new Tooltip(reactions.get(reactionId).getLabel());
             t.setShowDelay(new Duration(0.1));
             Tooltip.install(path, t);
+
+            String finalReactionId = reactionId;
+            path.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId()));
+            backgroundPath.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId()));
+
+            if(reactions.get(finalReactionId).getDbId()!=null){
+                path.setStroke(Color.BLUE);
+            }
         }
+
+
 
         if(!reactionNodes.containsKey(reactionId))
             reactionNodes.put(reactionId, new ArrayList<>());
@@ -812,30 +823,47 @@ public class PathwayController implements Initializable {
         }
 
         Circle symbol = new Circle();
+        symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+//
+//        symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2, "x"));
+//        symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2, "Y"));
 
-        if(x<reaction.getX()+ reaction.getWidth() && x>reaction.getX()){
+        if(x<reaction.getX()){
+            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2, "x"));
+        }else {
+            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX() + reaction.getWidth() / 2)) + Math.abs(x - (reaction.getX() + reaction.getWidth() / 2)) / 2, "x"));
 
-            if(Math.abs(y-reaction.getY())<Math.abs(y-(reaction.getY()+reaction.getHeight()))){ //top
-                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
-                symbol.setCenterY(scaleCoordinates(y+(reaction.getY()-y)/2, "y"));
-            }else{ //bottom
-                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
-                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(symbol.getRadius()/2), "y"));
-            }
-
-        }else if(y<reaction.getY()+ reaction.getHeight() && y>reaction.getY()){
-            if(Math.abs(x-reaction.getX())<Math.abs(x-(reaction.getX()+reaction.getWidth()))){ //left
-                symbol.setRadius(scaleCoordinates(reaction.getHeight()*0.5, "y"));
-                symbol.setCenterX(scaleCoordinates(x+(reaction.getX()-x), "x"));
-                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
-            }else{ //right
-                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()+(symbol.getRadius()/2), "x"));
-                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
-            }
         }
+        if(y<reaction.getY()){
+            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2, "Y"));
+        }else{
+            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()+reaction.getHeight()))+Math.abs(y-(reaction.getY()+reaction.getHeight()))/2, "Y"));
+        }
+//
+
+//        if(x<reaction.getX()+ reaction.getWidth() && x>reaction.getX()){
+//
+//            if(Math.abs(y-reaction.getY())<Math.abs(y-(reaction.getY()+reaction.getHeight()))){ //top
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
+//                symbol.setCenterY(scaleCoordinates(y+(reaction.getY()-y)/2, "y"));
+//            }else{ //bottom
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(symbol.getRadius()/2), "y"));
+//            }
+//
+//        }else if(y<reaction.getY()+ reaction.getHeight() && y>reaction.getY()){
+//            if(Math.abs(x-reaction.getX())<Math.abs(x-(reaction.getX()+reaction.getWidth()))){ //left
+//                symbol.setRadius(scaleCoordinates(reaction.getHeight()*0.5, "y"));
+//
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
+//            }else{ //right
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+//
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
+//            }
+//        }
         symbol.setFill(Color.WHITE);
         symbol.setStroke(Color.BLACK);
         container.getChildren().add(symbol);
@@ -863,7 +891,9 @@ public class PathwayController implements Initializable {
 
             getEntitiesInfo(pathwayId);
 
-            parseSbgn(sbgn.toString(), reaction);
+            Platform.runLater(()->parseSbgn(sbgn.toString(), pathwayId, reaction));
+
+            ;
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -906,7 +936,6 @@ public class PathwayController implements Initializable {
                 ChoiceDialog<String> choiceDialog = new ChoiceDialog<>(pathways.keySet().iterator().next(), pathways.keySet());
                 choiceDialog.showAndWait();
                 selectedPathway = pathways.get(choiceDialog.getSelectedItem());
-
             }
 
             loadPathway(selectedPathway, reaction);
@@ -1043,7 +1072,7 @@ public class PathwayController implements Initializable {
             }
 
         }catch (Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 
@@ -1288,7 +1317,7 @@ public class PathwayController implements Initializable {
 
         Thread t  = new Thread(()-> {
             //long startTime = System.currentTimeMillis();
-            DgeAlert.setAlerts(element, this);
+            DgeAlert.setAlerts(element, this, true);
             //.out.println("DGE "+(System.currentTimeMillis() - startTime));
             //startTime = System.currentTimeMillis();
             SplicingAlert.setAlerts(element, this);
@@ -1339,5 +1368,30 @@ public class PathwayController implements Initializable {
         reactions = new HashMap<>();
         reactionLabelId = new HashMap<>();
         reactionNodes = new HashMap<>();
+    }
+
+    public void addReactionDbId(String pathwayId){
+        try{
+            URL yahoo = new URL("https://reactome.org/ContentService/data/pathway/"+pathwayId+"/containedEvents");
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+
+            JSONArray  object = new JSONArray(in.readLine());
+
+            for(Object o : object){
+                JSONObject result = (JSONObject) o;
+                for(Reaction reaction: reactions.values()){
+                    if(reaction.getLabel().equals(result.getString("displayName"))){
+                        reaction.setDbId(result.getString("stId"));
+                        break;
+                    }
+                }
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

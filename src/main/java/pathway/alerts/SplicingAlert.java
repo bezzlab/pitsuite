@@ -59,11 +59,12 @@ public class SplicingAlert extends Alert {
     }
 
 
-    public void drawCell(AnchorPane pane, TitledPane titledPane){
+    public void drawCell(Pane pane, TitledPane titledPane){
 
         Accordion eventsAccordion = new Accordion();
         pane.getChildren().add(eventsAccordion);
-        AnchorFitter.fitAnchor(eventsAccordion);
+        AnchorPane.setBottomAnchor(eventsAccordion, 0.);
+        AnchorPane.setTopAnchor(eventsAccordion, 0.);
 
         for(SplicingEvent event:  events){
             TitledPane eventTitledPane = new TitledPane();
@@ -79,7 +80,8 @@ public class SplicingAlert extends Alert {
 
             GridPane grid = new GridPane();
             ColumnConstraints c = new ColumnConstraints();
-            c.setHgrow(Priority.ALWAYS);
+            c.setHgrow(Priority.NEVER);
+            c.setPercentWidth(95);
             RowConstraints r1 = new RowConstraints();
             r1.setVgrow(Priority.NEVER);
             RowConstraints r2 = new RowConstraints();
@@ -88,9 +90,14 @@ public class SplicingAlert extends Alert {
             grid.getRowConstraints().add(r1);
             grid.getRowConstraints().add(r2);
 
-            eventPane.getChildren().add(grid);
+            grid.setMaxWidth(titledPane.getMaxWidth()-100);
+            grid.setPrefWidth(titledPane.getMaxWidth()-100);
 
-            AnchorFitter.fitAnchor(grid);
+            eventPane.getChildren().add(grid);
+            AnchorPane.setBottomAnchor(grid, 0.);
+            AnchorPane.setTopAnchor(grid, 0.);
+
+
 
             Label psiLabel = new Label("DPSI: "+event.getDpsi());
             Label pvalLabel = new Label("P-value: "+event.getPval());
@@ -120,87 +127,88 @@ public class SplicingAlert extends Alert {
             //exonsPane.setStyle("-fx-background-color: red");
 
             exonsPane.widthProperty().addListener((observable, oldValue, newValue) -> {
-                exonsPane.getChildren().clear();
-                double representationWidth = newValue.doubleValue()-5;
-                System.out.println(representationWidth);
-                Text t = new Text("ENST");
-                t.setFont(Font.font(15));
+                if(newValue.doubleValue()<titledPane.getMaxWidth()-20) {
+                    exonsPane.getChildren().clear();
+                    double representationWidth = newValue.doubleValue() - 50;
+                    Text t = new Text("ENST");
+                    t.setFont(Font.font(15));
 
-                double margin = 10;
+                    double margin = 10;
 
-                double offsetY = 0;
+                    double offsetY = 0;
 
-                NitriteCollection allTranscriptsCollection = Database.getDb().getCollection("allTranscripts");
-                Cursor cursor = allTranscriptsCollection.find(eq("gene", gene));
+                    NitriteCollection allTranscriptsCollection = Database.getDb().getCollection("allTranscripts");
+                    Cursor cursor = allTranscriptsCollection.find(eq("gene", gene));
 
-                HashMap<String, Transcript> transcripts = new HashMap<>();
+                    HashMap<String, Transcript> transcripts = new HashMap<>();
 
-                for (Document doc : cursor) {
-                    if (doc.get("transcriptID", String.class).contains("ENST")) {
-                        transcripts.put(doc.get("transcriptID", String.class), new Transcript(doc));
-                    }
-                }
-
-                int geneStart = 2147483647;
-                int geneEnd = 0;
-
-
-                for (Map.Entry<String, Transcript> entry : transcripts.entrySet()) {
-                    Transcript transcript = entry.getValue();
-                    if (transcript.getStartGenomCoord() < geneStart) {
-                        geneStart = Math.toIntExact(transcript.getStartGenomCoord());
-                    }
-                    if (transcript.getEndGenomCoord() > geneEnd) {
-                        geneEnd = Math.toIntExact(transcript.getEndGenomCoord());
-                    }
-                }
-                int geneLength = geneEnd - geneStart + 1;
-
-                for (Map.Entry<String, Transcript> entry : transcripts.entrySet()) {
-                    Transcript transcript = entry.getValue();
-
-                    int currentPos = transcript.getExons().get(0).getStart();
-
-                    Text transcriptIdText = new Text(entry.getKey());
-                    exonsPane.getChildren().add(transcriptIdText);
-                    transcriptIdText.setY(offsetY);
-                    offsetY+=transcriptIdText.getLayoutBounds().getHeight();
-
-                    for (Exon exon : transcript.getExons()) {
-                        if (exon.getStart() - currentPos > 0) {
-                            Line l = new Line(representationWidth * ((double) (currentPos - geneStart + 1) / geneLength), offsetY,
-                                    representationWidth * ((double) (exon.getEnd() - geneStart + 1) / geneLength), offsetY);
-                            exonsPane.getChildren().add(l);
+                    for (Document doc : cursor) {
+                        if (doc.get("transcriptID", String.class).contains("ENST")) {
+                            transcripts.put(doc.get("transcriptID", String.class), new Transcript(doc));
                         }
-                        Rectangle rect = new Rectangle(representationWidth * ((double) (exon.getStart() - geneStart + 1) / geneLength), offsetY - t.getBoundsInLocal().getHeight() / 2,
-                                representationWidth * ((double) (exon.getEnd() - exon.getStart() + 1) / geneLength), t.getBoundsInLocal().getHeight());
+                    }
+
+                    int geneStart = 2147483647;
+                    int geneEnd = 0;
 
 
-                        if(event.getId().contains("A3")){
-                            Pattern p = Pattern.compile("(\\d+)-(\\d+):(\\d+)-(\\d+)");
-                            Matcher m = p.matcher(event.getId());
-                            if(m.find()){
-                                if(exon.getEnd()==Integer.parseInt(m.group(1)) || exon.getStart()==Integer.parseInt(m.group(4)))
-                                    rect.setFill(Color.RED);
-                                else if(exon.getStart()==Integer.parseInt(m.group(2)))
-                                    rect.setFill(Color.GREEN);
+                    for (Map.Entry<String, Transcript> entry : transcripts.entrySet()) {
+                        Transcript transcript = entry.getValue();
+                        if (transcript.getStartGenomCoord() < geneStart) {
+                            geneStart = Math.toIntExact(transcript.getStartGenomCoord());
+                        }
+                        if (transcript.getEndGenomCoord() > geneEnd) {
+                            geneEnd = Math.toIntExact(transcript.getEndGenomCoord());
+                        }
+                    }
+                    int geneLength = geneEnd - geneStart + 1;
+
+                    for (Map.Entry<String, Transcript> entry : transcripts.entrySet()) {
+                        Transcript transcript = entry.getValue();
+
+                        int currentPos = transcript.getExons().get(0).getStart();
+
+                        Text transcriptIdText = new Text(entry.getKey());
+                        exonsPane.getChildren().add(transcriptIdText);
+                        transcriptIdText.setY(offsetY);
+                        offsetY += transcriptIdText.getLayoutBounds().getHeight();
+
+                        for (Exon exon : transcript.getExons()) {
+                            if (exon.getStart() - currentPos > 0) {
+                                Line l = new Line(representationWidth * ((double) (currentPos - geneStart + 1) / geneLength), offsetY,
+                                        representationWidth * ((double) (exon.getEnd() - geneStart + 1) / geneLength), offsetY);
+                                exonsPane.getChildren().add(l);
                             }
+                            Rectangle rect = new Rectangle(representationWidth * ((double) (exon.getStart() - geneStart + 1) / geneLength), offsetY - t.getBoundsInLocal().getHeight() / 2,
+                                    representationWidth * ((double) (exon.getEnd() - exon.getStart() + 1) / geneLength), t.getBoundsInLocal().getHeight());
+
+
+                            if (event.getId().contains("A3")) {
+                                Pattern p = Pattern.compile("(\\d+)-(\\d+):(\\d+)-(\\d+)");
+                                Matcher m = p.matcher(event.getId());
+                                if (m.find()) {
+                                    if (exon.getEnd() == Integer.parseInt(m.group(1)) || exon.getStart() == Integer.parseInt(m.group(4)))
+                                        rect.setFill(Color.RED);
+                                    else if (exon.getStart() == Integer.parseInt(m.group(2)))
+                                        rect.setFill(Color.GREEN);
+                                }
+                            }
+
+
+                            exonsPane.getChildren().add(rect);
+                            currentPos = exon.getEnd();
                         }
 
-
-                        exonsPane.getChildren().add(rect);
-                        currentPos = exon.getEnd();
+                        offsetY += t.getBoundsInLocal().getHeight() + margin;
                     }
-
-                    offsetY += t.getBoundsInLocal().getHeight() + margin;
                 }
             });
 
             AnchorPane representationPane = new AnchorPane();
             grid.add(representationPane, 0, 4);
             RowConstraints r5 = new RowConstraints();
-            GridPane.setMargin(representationPane, new Insets(20, 0, 10, 0));
-            r5.setVgrow(Priority.SOMETIMES);
+            GridPane.setMargin(representationPane, new Insets(20, 0, 0, 0));
+            r5.setVgrow(Priority.ALWAYS);
             //r5.setPercentHeight(30);
             grid.getRowConstraints().add(r5);
             representationPane.widthProperty().addListener((observable, oldValue, newValue) -> {

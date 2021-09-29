@@ -53,10 +53,11 @@ public class MutationAlert extends Alert{
     }
 
     @Override
-    public void drawCell(AnchorPane pane, TitledPane titledPane) {
+    public void drawCell(Pane pane, TitledPane titledPane) {
         Accordion eventsAccordion = new Accordion();
         pane.getChildren().add(eventsAccordion);
-        AnchorFitter.fitAnchor(eventsAccordion);
+        AnchorPane.setBottomAnchor(eventsAccordion, 0.);
+        AnchorPane.setTopAnchor(eventsAccordion, 0.);
 
         for(Mutation mutation:  mutations){
             TitledPane eventTitledPane = new TitledPane();
@@ -84,9 +85,13 @@ public class MutationAlert extends Alert{
             grid.getRowConstraints().add(r2);
             grid.getRowConstraints().add(r3);
 
+            grid.setMaxWidth(titledPane.getMaxWidth()-10);
+            grid.setPrefWidth(titledPane.getMaxWidth()-10);
+
             eventPane.getChildren().add(grid);
 
-            AnchorFitter.fitAnchor(grid);
+            AnchorPane.setBottomAnchor(grid, 0.);
+            AnchorPane.setTopAnchor(grid, 0.);
 
             Label descriptionLabel = new Label(mutation.toString());
             grid.add(descriptionLabel, 0, 0);

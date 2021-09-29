@@ -169,6 +169,9 @@
                      </children></AnchorPane>
                     </content>
                 </Tab>
+                <Tab text="Description">
+                    <VBox fx:id="descriptionContainer"/>
+                </Tab>
             </tabs>
         </TabPane>
     </children>

@@ -13,6 +13,7 @@ public class Mutation {
     boolean silent;
     JSONObject conditions;
     JSONObject transcripts;
+    JSONObject pfam;
 
     public Mutation(String gene, double pos, String ref, String alt) {
         this.gene = gene;
@@ -31,6 +32,18 @@ public class Mutation {
         this.silent = silent;
         this.conditions = conditions;
         this.transcripts = transcripts;
+    }
+    public Mutation(String gene, String chr, double pos, String ref, String alt, JSONObject conditions, JSONObject transcripts, boolean inCDS, boolean silent,  JSONObject pfam) {
+        this.gene = gene;
+        this.pos = pos;
+        this.ref = ref;
+        this.alt = alt;
+        this.chr = chr;
+        this.inCDS = inCDS;
+        this.silent = silent;
+        this.conditions = conditions;
+        this.transcripts = transcripts;
+        this.pfam = pfam;
     }
 
     public Mutation(String gene, String chr, double pos, String ref, String alt, JSONObject conditions, JSONObject transcripts) {
@@ -107,5 +120,9 @@ public class Mutation {
 
     public JSONObject getTranscripts() {
         return transcripts;
+    }
+
+    public JSONObject getPfam() {
+        return pfam;
     }
 }

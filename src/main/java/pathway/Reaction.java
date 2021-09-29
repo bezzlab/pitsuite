@@ -5,6 +5,7 @@ import java.util.ArrayList;
 public class Reaction extends Element{
 
     private ArrayList<Port> ports = new ArrayList<>(2);
+    private String dbId;
 
 
     public Reaction(double x, double y, double width, double height, String id, String type) {
@@ -25,4 +26,11 @@ public class Reaction extends Element{
     }
 
 
+    public void setDbId(String stId) {
+        dbId = stId;
+    }
+
+    public String getDbId() {
+        return dbId;
+    }
 }

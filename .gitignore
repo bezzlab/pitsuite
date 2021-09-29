@@ -8,3 +8,11 @@ existing.json
 plots/
 
 *.log
+
+tmp/
+
+JavaFXSmartGraph-0.9/
+
+*.jar
+
+*.zip

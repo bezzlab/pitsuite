@@ -50,8 +50,6 @@ public class MutationsTableController implements Initializable {
     public JFXCheckBox cdsCheckbox;
     @FXML
     public JFXCheckBox nonSilentCheckbox;
-
-
     @FXML
     private TableView <Variation> variantsTable;
     @FXML
@@ -74,6 +72,8 @@ public class MutationsTableController implements Initializable {
     private TableColumn<Variation, String> proteinRefTableColumn;
     @FXML
     private TableColumn<Variation, String> proteinAltTableColumn;
+    @FXML
+    private TableColumn<Variation, String> pfamColumn;
 
 
     @FXML
@@ -133,7 +133,7 @@ public class MutationsTableController implements Initializable {
         silentColumn.setCellValueFactory(new PropertyValueFactory<>("silent"));
         proteinRefTableColumn.setCellValueFactory(new PropertyValueFactory<>("refAA"));
         proteinAltTableColumn.setCellValueFactory(new PropertyValueFactory<>("altAA"));
-
+        proteinAltTableColumn.setCellValueFactory(new PropertyValueFactory<>("pfamStr"));
         int nCols = variantsTable.getColumns().size();
         transcIdVarTableColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         positionVarTableColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
@@ -142,6 +142,7 @@ public class MutationsTableController implements Initializable {
         altVarTableColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         peptideEvidenceColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         inCDSColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
+        silentColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         silentColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
 
         insertionTableFilterCheckbox.setSelected(true);
@@ -412,8 +413,13 @@ public class MutationsTableController implements Initializable {
                             otherCount ++;
                         }
 
-                        Variation tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
-                                (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type);
+                        Variation tmpVarBasicInfo;
+                        if(mutationDoc.containsKey("pfam"))
+                            tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
+                                (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type, mutationDoc.get("pfam", JSONObject.class));
+                        else
+                            tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
+                                    (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type);
 
                         mutations.add(tmpVarBasicInfo);
                     }

@@ -12,6 +12,7 @@ public class Arc {
     private String id;
     private Element glyph;
 
+
     ArrayList<Pair<Double, Double>> points = new ArrayList<>(3);
 
     public Arc(String source, String target, String type, String id) {
@@ -54,4 +55,5 @@ public class Arc {
     public void setGlyph(Element glyph) {
         this.glyph = glyph;
     }
+
 }

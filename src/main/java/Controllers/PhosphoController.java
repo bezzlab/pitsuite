@@ -328,7 +328,6 @@ public class PhosphoController implements Initializable {
                 for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
                     double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
                     Color color = Color.hsb(hue, 1.0, 1.0);
-                    System.out.println(target.getValue()+" "+graphView.getStylableVertex(target.getValue()));
                     graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
                 }
             } catch (InterruptedException e) {
@@ -413,7 +412,7 @@ public class PhosphoController implements Initializable {
         new Thread(()->{
             Element element = new Element("macromolecule");
             element.getEntities().add(new Gene(gene));
-            DgeAlert.setAlerts(element, null);
+            DgeAlert.setAlerts(element, null, false);
             SplicingAlert.setAlerts(element, null);
             MutationAlert.setAlerts(element, null);
             PTMAlert.setAlerts(element, null);

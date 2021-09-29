@@ -71,11 +71,7 @@ public class ResultsController implements Initializable {
     private Tab PhosphoTab;
     @FXML
     private MenuBar menuBar;
-
-    private HostServices hostServices;
     private static ResultsController instance;
-
-
 
     private Stage stage;
     private Config config;
@@ -251,21 +247,21 @@ public class ResultsController implements Initializable {
                     e.printStackTrace();
                 }
             });
-//
-//        Platform.runLater(() -> {
-//            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
-//            try {
-//                Parent root = fxmlLoader2.load();
-//                resultsTabPane.getTabs().get(7).setContent(root);
-//
-//                phosphoController = fxmlLoader2.getController();
-//
-//
-//
-//            } catch(Exception e){
-//                e.printStackTrace();
-//            }
-//        });
+
+        Platform.runLater(() -> {
+            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
+            try {
+                Parent root = fxmlLoader2.load();
+                resultsTabPane.getTabs().get(7).setContent(root);
+
+                phosphoController = fxmlLoader2.getController();
+
+
+
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        });
 
 
     }
@@ -440,9 +436,6 @@ public class ResultsController implements Initializable {
         browserController.showGeneBrowser(gene, peptide);
     }
 
-    public HostServices getHostServices() {
-        return hostServices;
-    }
 
     public void resize(){
         //mutationsTableController.resize();
@@ -528,6 +521,7 @@ public class ResultsController implements Initializable {
     }
 
     public static ResultsController getInstance(){ return instance; }
+
 
 
 }

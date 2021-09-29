@@ -25,6 +25,7 @@ public class Variation {
     private boolean silent;
     private String type;
     private JSONArray peptides;
+    private JSONObject pfam;
 
 
 
@@ -70,6 +71,21 @@ public class Variation {
         this.silent = silent;
         this.type = type;
         this.transcripts = transcripts;
+    }
+    public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence, Map<String,
+            Map< String, Map<String, Object>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent, String type, JSONObject pfam) {
+        this.gene = gene;
+        this.refPos = pos;
+        this.ref = ref;
+        this.alt = alt;
+        this.chr = chr;
+        this.hasPeptideEvidence = hasPeptideEvidence;
+        this.conditions = conditions;
+        this.inCDS = inCDS;
+        this.silent = silent;
+        this.type = type;
+        this.transcripts = transcripts;
+        this.pfam = pfam;
     }
 
     // used in gene browser

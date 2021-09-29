@@ -5,12 +5,17 @@ import com.jfoenix.controls.JFXCheckBox;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.util.Pair;
 import org.controlsfx.control.CheckComboBox;
 import org.controlsfx.control.RangeSlider;
@@ -24,13 +29,17 @@ import pathway.alerts.PTMAlert;
 import pathway.alerts.SplicingAlert;
 import pitguiv2.App;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
 
 public class PathwaySideController implements Initializable {
 
+    @FXML
+    private VBox descriptionContainer;
     @FXML
     private ComboBox<String> ptmMoreLessCombobox;
     @FXML
@@ -104,6 +113,7 @@ public class PathwaySideController implements Initializable {
     ArrayList<JFXCheckBox> conditionFilterCheckboxes;
     ArrayList<RangeSlider> minSamplesConditionFilterSliders;
 
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         instance = this;
@@ -118,7 +128,8 @@ public class PathwaySideController implements Initializable {
         pathwayListview.setOnMouseClicked(click -> {
             if (click.getClickCount() == 2) {
                 //summationField.setText(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getSummation());
-                PathwayController.getInstance().loadPathway(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getId(), null);
+                new Thread(()-> PathwayController.getInstance().loadPathway(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getId(), null)).start();
+                PathwayTreeController.getInstance().expendItem(searchPathways.get(pathwayListview.getSelectionModel().getSelectedItem()).getId());
             }
         });
         reactionListview.setOnMouseClicked(click -> {
@@ -484,6 +495,69 @@ public class PathwaySideController implements Initializable {
         tabPane.getSelectionModel().select(index);
     }
 
+    public void showDescription(String id) {
+        descriptionContainer.getChildren().clear();
+        try {
+            URL yahoo = new URL("https://reactome.org/ContentService/data/query/" + id);
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            JSONObject res = new JSONObject(in.readLine());
+
+            if(res.getString("className").equals("Reaction")){
+                Label nameLabel = new Label(res.getString("displayName"));
+                nameLabel.setWrapText(true);
+                nameLabel.setFont(Font.font("Verdana", FontWeight.BOLD, 30));
+                Label descriptionLabel = new Label(res.getJSONArray("summation").getJSONObject(0).getString("text"));
+                descriptionLabel.setWrapText(true);
+
+                descriptionContainer.getChildren().add(nameLabel);
+                descriptionContainer.getChildren().add(descriptionLabel);
+
+            }else if(res.getString("className").equals("Complex")){
+
+                Label nameLabel = new Label(res.getString("displayName"));
+                nameLabel.setWrapText(true);
+                nameLabel.setFont(Font.font("Verdana", FontWeight.BOLD, 30));
+
+                TableView<DescriptionTableRow> table = new TableView<>();
+                TableColumn<DescriptionTableRow, String> nameColumn = new TableColumn<>("Name");
+                TableColumn<DescriptionTableRow, String> typeColumn = new TableColumn<>("Type");
+
+                nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+                typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+                nameColumn.prefWidthProperty().bind(table.widthProperty().divide(2));
+                typeColumn.prefWidthProperty().bind(table.widthProperty().divide(2));
+
+                table.getColumns().add(nameColumn);
+                table.getColumns().add(typeColumn);
+
+                for(Object o: res.getJSONArray("hasComponent")){
+                    JSONObject component = (JSONObject) o;
+                    table.getItems().add(new DescriptionTableRow(component.getJSONArray("name").getString(0), component.getString("className")));
+                }
+
+                descriptionContainer.getChildren().add(table);
+            }
+
+            if(res.has("literatureReference")){
+                for(Object o: res.getJSONArray("literatureReference")){
+                    JSONObject ref = (JSONObject) o;
+                    Hyperlink link = new Hyperlink(ref.getString("displayName")+ " ("+ref.getString("journal")+" "+ ref.getInt("year") +")");
+                    link.setWrapText(true);
+                    link.setOnAction(t -> App.getApp().getHostServices().showDocument(ref.getString("url")));
+                    descriptionContainer.getChildren().add(link);
+                }
+            }
+
+            tabPane.getSelectionModel().select(3);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public enum ComparisonSide {
         LESS, MORE
     }
@@ -698,6 +772,24 @@ public class PathwaySideController implements Initializable {
 
         public static void setPtmComparisonSide(ComparisonSide ptmComparisonSide) {
             PathwaysFilters.ptmComparisonSide = ptmComparisonSide;
+        }
+    }
+
+    public class DescriptionTableRow {
+        private String name;
+        private String type;
+
+        public DescriptionTableRow(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getType() {
+            return type;
         }
     }
 }
