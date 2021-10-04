@@ -485,7 +485,7 @@ public class PathwayController implements Initializable {
                             if(event.getClickCount()==2){
                                 PathwaySideController.getInstance().populateSelectionTable(element);
                             }else if(event.getClickCount()==1){
-                                PathwaySideController.getInstance().showDescription(String.valueOf(entitiesInfo.get(element.getLabel()).getInt("peDbId")));
+                                PathwaySideController.getInstance().showDescription(String.valueOf(entitiesInfo.get(element.getLabel()).getInt("peDbId")), element);
                             }
                         });
 
@@ -720,8 +720,8 @@ public class PathwayController implements Initializable {
             Tooltip.install(path, t);
 
             String finalReactionId = reactionId;
-            path.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId()));
-            backgroundPath.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId()));
+            path.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId(), null));
+            backgroundPath.setOnMouseClicked(event -> PathwaySideController.getInstance().showDescription(reactions.get(finalReactionId).getDbId(), null));
 
             if(reactions.get(finalReactionId).getDbId()!=null){
                 path.setStroke(Color.BLUE);

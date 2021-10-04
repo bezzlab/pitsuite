@@ -25,7 +25,7 @@ public class Variation {
     private boolean silent;
     private String type;
     private JSONArray peptides;
-    private JSONObject pfam;
+    private JSONArray pfam;
 
 
 
@@ -73,7 +73,7 @@ public class Variation {
         this.transcripts = transcripts;
     }
     public Variation(String gene, String chr, int pos, String ref, String alt, boolean hasPeptideEvidence, Map<String,
-            Map< String, Map<String, Object>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent, String type, JSONObject pfam) {
+            Map< String, Map<String, Object>>> conditions, JSONObject transcripts, boolean inCDS, boolean silent, String type, JSONArray pfam) {
         this.gene = gene;
         this.refPos = pos;
         this.ref = ref;
@@ -170,7 +170,8 @@ public class Variation {
             }
 
         }
-        sb.deleteCharAt(sb.length()-1);
+        if(sb.length()>0)
+            sb.deleteCharAt(sb.length()-1);
         return sb.toString();
     }
 
@@ -223,7 +224,10 @@ public class Variation {
             }
 
         }
-        sb.deleteCharAt(sb.length()-1);
+
+        if(sb.length()>0)
+            sb.deleteCharAt(sb.length()-1);
+
         return sb.toString();
     }
 
@@ -240,4 +244,16 @@ public class Variation {
     }
 
     public JSONArray getPeptides(){ return peptides;}
+
+    public String getPfamStr(){
+        if(pfam!=null) {
+            StringBuilder sb = new StringBuilder();
+            for(Object o: pfam){
+                JSONObject domain = (JSONObject) o;
+                sb.append(domain.get("desc"));
+            }
+            return sb.toString();
+        }else
+            return "";
+    }
 }

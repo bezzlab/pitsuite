@@ -22,6 +22,7 @@ import org.controlsfx.control.RangeSlider;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import pathway.Element;
+import pathway.Entity;
 import pathway.SearchResult;
 import pathway.alerts.DgeAlert;
 import pathway.alerts.MutationAlert;
@@ -495,7 +496,7 @@ public class PathwaySideController implements Initializable {
         tabPane.getSelectionModel().select(index);
     }
 
-    public void showDescription(String id) {
+    public void showDescription(String id, Element element) {
         descriptionContainer.getChildren().clear();
         try {
             URL yahoo = new URL("https://reactome.org/ContentService/data/query/" + id);
@@ -538,7 +539,26 @@ public class PathwaySideController implements Initializable {
                     table.getItems().add(new DescriptionTableRow(component.getJSONArray("name").getString(0), component.getString("className")));
                 }
 
+
+
+                for(Object o: res.getJSONArray("hasComponent")){
+                    JSONObject component = (JSONObject) o;
+                    table.getItems().add(new DescriptionTableRow(component.getJSONArray("name").getString(0), component.getString("className")));
+                }
+
                 descriptionContainer.getChildren().add(table);
+
+                ListView<String> entitiesList = new ListView<>();
+                VBox geneInfoContainer = new VBox();
+                HashMap<String, String> entitiesIdMap = new HashMap<>();
+                for(Entity entity: element.getEntities()){
+                    entitiesList.getItems().add(entity.getName());
+                    entitiesIdMap.put(entity.getName(), entity.getId());
+                }
+                descriptionContainer.getChildren().add(entitiesList);
+                descriptionContainer.getChildren().add(geneInfoContainer);
+
+                entitiesList.setOnMouseClicked(event -> fillGeneInfo(entitiesIdMap.get(entitiesList.getSelectionModel().getSelectedItem()), geneInfoContainer));
             }
 
             if(res.has("literatureReference")){
@@ -554,6 +574,30 @@ public class PathwaySideController implements Initializable {
             tabPane.getSelectionModel().select(3);
 
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fillGeneInfo(String id, VBox container){
+        container.getChildren().clear();
+        try {
+            URL yahoo = new URL("https://reactome.org/ContentService/data/query/" + id);
+            URLConnection yc = yahoo.openConnection();
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(
+                            yc.getInputStream()));
+            JSONObject res = new JSONObject(in.readLine());
+            if(res.getString("className").equals("ReferenceGeneProduct")){
+                Hyperlink link = new Hyperlink(res.getString("identifier"));
+                link.setWrapText(true);
+                link.setOnAction(t -> App.getApp().getHostServices().showDocument("https://www.uniprot.org/uniprot/"+res.getString("identifier")));
+                container.getChildren().add(link);
+
+                Label descriptionLabel = new Label(res.getJSONArray("comment").getString(0));
+                descriptionLabel.setWrapText(true);
+                container.getChildren().add(descriptionLabel);
+            }
+        }catch (Exception e){
             e.printStackTrace();
         }
     }

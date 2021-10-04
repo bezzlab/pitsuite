@@ -170,17 +170,17 @@ public class ResultsController implements Initializable {
 
         PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.2));
         pauseTransition.setOnFinished(event -> {
-//            Platform.runLater(() -> {
-//                FXMLLoader fxmlLoader = new FXMLLoader(SettingsController.class.getResource("/mutationsTable" + ".fxml"));
-//                try {
-//                    Parent root = fxmlLoader.load();
-//                    mutationsTableController = fxmlLoader.getController();
-//                    mutationsTableController.setParentControler(this, projectName, allGenesReader);
-//                    resultsTabPane.getTabs().get(0).setContent(root);
-//                } catch(Exception e){
-//                    e.printStackTrace();
-//                }
-//            });
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader = new FXMLLoader(SettingsController.class.getResource("/mutationsTable" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader.load();
+                    mutationsTableController = fxmlLoader.getController();
+                    mutationsTableController.setParentControler(this, projectName, allGenesReader);
+                    resultsTabPane.getTabs().get(0).setContent(root);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
 //
 //
 //            Platform.runLater(() -> {

@@ -33,6 +33,7 @@ import org.controlsfx.control.RangeSlider;
 import org.controlsfx.control.textfield.TextFields;
 import org.dizitart.no2.*;
 import org.dizitart.no2.filters.Filters;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import pitguiv2.Settings;
 
@@ -133,7 +134,7 @@ public class MutationsTableController implements Initializable {
         silentColumn.setCellValueFactory(new PropertyValueFactory<>("silent"));
         proteinRefTableColumn.setCellValueFactory(new PropertyValueFactory<>("refAA"));
         proteinAltTableColumn.setCellValueFactory(new PropertyValueFactory<>("altAA"));
-        proteinAltTableColumn.setCellValueFactory(new PropertyValueFactory<>("pfamStr"));
+        pfamColumn.setCellValueFactory(new PropertyValueFactory<>("pfamStr"));
         int nCols = variantsTable.getColumns().size();
         transcIdVarTableColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         positionVarTableColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
@@ -143,7 +144,7 @@ public class MutationsTableController implements Initializable {
         peptideEvidenceColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         inCDSColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
         silentColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
-        silentColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
+        pfamColumn.prefWidthProperty().bind(variantsTable.widthProperty().divide(nCols));
 
         insertionTableFilterCheckbox.setSelected(true);
         deletionTableFilterCheckbox.setSelected(true);
@@ -416,7 +417,7 @@ public class MutationsTableController implements Initializable {
                         Variation tmpVarBasicInfo;
                         if(mutationDoc.containsKey("pfam"))
                             tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
-                                (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type, mutationDoc.get("pfam", JSONObject.class));
+                                (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type, mutationDoc.get("pfam", JSONArray.class));
                         else
                             tmpVarBasicInfo = new Variation(gene, chr, varPos.intValue(), varRef, varAlt, hasPeptideEvidence, conditions,
                                     (JSONObject) mutationDoc.get("transcripts"), (boolean) mutationDoc.get("inCDS"), (boolean) mutationDoc.get("silent"), type);
