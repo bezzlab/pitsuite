@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.PITRunnerController">
+   <children>
+      <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <columnConstraints>
+          <ColumnConstraints hgrow="NEVER" percentWidth="20" />
+          <ColumnConstraints hgrow="NEVER" percentWidth="20" />
+            <ColumnConstraints hgrow="NEVER" percentWidth="20" />
+            <ColumnConstraints hgrow="NEVER" percentWidth="20" />
+            <ColumnConstraints hgrow="NEVER" percentWidth="20" />
+        </columnConstraints>
+        <rowConstraints>
+          <RowConstraints percentHeight="30" vgrow="SOMETIMES" />
+          <RowConstraints percentHeight="70" vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <ListView fx:id="projectsListview" GridPane.rowSpan="2" />
+             <Button onAction="#prepareDirectory" GridPane.columnIndex="4" GridPane.hgrow="NEVER">Run</Button>
+            <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.hgrow="NEVER" />
+            <TextField fx:id="configPathField" GridPane.columnIndex="2" GridPane.hgrow="NEVER" />
+            <Button mnemonicParsing="false" onMouseClicked="#onSelectConfig" text="Select configuration file" GridPane.columnIndex="3" GridPane.hgrow="NEVER" />
+            <TabPane fx:id="tabPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0" tabClosingPolicy="UNAVAILABLE" GridPane.columnIndex="1" GridPane.columnSpan="4" GridPane.rowIndex="1">
+              <tabs>
+                <Tab text="Logs">
+                  <content>
+                    <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <TextArea fx:id="logsArea" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                           </children>
+                        </AnchorPane>
+                  </content>
+                </Tab>
+                <Tab text="Download">
+                  <content>
+                    <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <GridPane fx:id="filesDownloadGrid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                  <columnConstraints>
+                                      <ColumnConstraints percentWidth="50"/>
+                                      <ColumnConstraints percentWidth="50"/>
+                                  </columnConstraints>
+                              </GridPane>
+                           </children>
+                        </AnchorPane>
+                  </content>
+                </Tab>
+              </tabs>
+            </TabPane>
+         </children>
+      </GridPane>
+   </children>
+</AnchorPane>

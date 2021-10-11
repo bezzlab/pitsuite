@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane minHeight="-Infinity" minWidth="-Infinity" stylesheets="@cssStyleSheets/styleSheet.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.FXMLDocumentController">
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" stylesheets="@cssStyleSheets/styleSheet.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.FXMLDocumentController">
     <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
@@ -70,6 +70,7 @@
                                         <Button fx:id="existingProject" layoutX="314.0" layoutY="247.0" text="Open existing project" />
                                         <Label fx:id="directoryLabel" layoutX="343.0" layoutY="338.0" text="Directory:" />
                                         <Button fx:id="newProject" layoutX="315.0" layoutY="213.0" minWidth="130.0" onAction="#newProject" text="New project" />
+                                        <Button fx:id="runPitButton" layoutX="315.0" layoutY="400" minWidth="130.0" onAction="#onRunPIT" text="RunPIT" />
 
                                         <TextField fx:id="newProjNameTextField" layoutX="343.0" layoutY="234.0" prefHeight="25.0" prefWidth="320.0" />
                                         <Button fx:id="createButton" layoutX="671.0" layoutY="390.0" text="Import data" />
@@ -84,99 +85,20 @@
                             </items>
                         </SplitPane>
 
-<!--                  <HBox fx:id="projectsHBox" maxWidth="1.7976931348623157E308" prefHeight="451.0" prefWidth="1400.0">-->
-<!--                     <children>-->
-<!--                        <VBox prefHeight="451.0" prefWidth="178.0">-->
-<!--                           <children>-->
-<!--                              <Label text="Existing Projects:" />-->
-<!--                              <VBox fx:id="leftVBox" spacing="5.0">-->
-<!--                                 <padding>-->
-<!--                                    <Insets left="5.0" />-->
-<!--                                 </padding></VBox>-->
-<!--                           </children>-->
-<!--                        </VBox>-->
-<!--                        <VBox fx:id="rightPane" alignment="TOP_CENTER" prefHeight="451.0" prefWidth="1083.0">-->
-<!--                           <children>-->
-<!--                              <VBox spacing="5.0">-->
-<!--                                 <children>-->
-<!--                                    <HBox alignment="TOP_CENTER">-->
-<!--                                       <children>-->
-<!--                                          <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" x="300.0" y="20.0">-->
-<!--                                             <image>-->
-<!--                                                <Image url="file:logo.png" />-->
-<!--                                             </image>-->
-<!--                                          </ImageView>-->
-<!--                                       </children>-->
-<!--                                       <VBox.margin>-->
-<!--                                          <Insets />-->
-<!--                                       </VBox.margin>-->
-<!--                                    </HBox>-->
-<!--                                    <VBox fx:id="newProjectButtonsVBox" spacing="5.0">-->
-<!--                                       <children>-->
-<!--                                          -->
-<!--                                       </children>-->
-<!--                                    </VBox>-->
-<!--                                    <VBox fx:id="projectImportDetailsVBox" spacing="5.0">-->
-<!--                                       <children>-->
-<!--                                          <HBox alignment="CENTER_LEFT" spacing="5.0">-->
-<!--                                             <children>-->
-<!--                                                <Label text="Project name:" />-->
-<!--                                                -->
-<!--                                             </children>-->
-<!--                                          </HBox>-->
-<!--                                          <HBox alignment="CENTER_LEFT" spacing="5.0">-->
-<!--                                             <children>-->
-<!--                                                <Label text="Data:" />-->
-<!--                                                -->
-<!--                                             </children>-->
-<!--                                          </HBox>-->
-<!--                                          <HBox alignment="CENTER_LEFT" spacing="5.0">-->
-<!--                                             <children>-->
-<!--                                                <Label text="Path to save database:" />-->
-<!--                                                -->
-<!--                                             </children>-->
-<!--                                          </HBox>-->
-<!--                                          -->
-<!--                                          <VBox fx:id="importingLoadingVBox" spacing="5.0">-->
-<!--                                             <children>-->
-<!--                                                -->
-<!--                                             </children>-->
-<!--                                          </VBox>-->
-<!--                                       </children>-->
-<!--                                    </VBox>-->
-<!--                                 </children>-->
-<!--                                 <padding>-->
-<!--                                    <Insets left="5.0" />-->
-<!--                                 </padding>-->
-<!--                              </VBox>-->
-<!--                           </children>-->
-<!--                        </VBox>-->
-<!--                     </children>-->
-<!--                  </HBox>-->
-<!--                        <GridPane fx:id="loadingPane" alignment="center" hgap="10" vgap="10" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">-->
-<!--                            <columnConstraints>-->
-<!--                                <ColumnConstraints />-->
-<!--                                <ColumnConstraints />-->
-<!--                                <ColumnConstraints />-->
-<!--                                <ColumnConstraints />-->
-<!--                            </columnConstraints>-->
-<!--                            <rowConstraints>-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                                <RowConstraints />-->
-<!--                        <RowConstraints />-->
-<!--                            </rowConstraints>-->
-<!--                        </GridPane>-->
+
                         <VBox fx:id="configPane" prefHeight="451.0" prefWidth="840.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="560.0" AnchorPane.topAnchor="0.0">
                             <children>
 
                                             <fx:include fx:id="configGeneration" source="configGeneration.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
 
                                         </children>
+                        </VBox>
+                        <VBox fx:id="runPitPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <children>
+
+                                <fx:include fx:id="PITRunner" VBox.vgrow="ALWAYS" source="pitrunner.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+
+                            </children>
                         </VBox>
 
 

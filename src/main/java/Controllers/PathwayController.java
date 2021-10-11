@@ -83,9 +83,7 @@ public class PathwayController implements Initializable {
     private Group elementGroup;
     private Group heatmapScaleGroup;
 
-
-
-
+    
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
@@ -423,9 +421,9 @@ public class PathwayController implements Initializable {
         for(Element element: elements.values()){
             if(element.getClass().equals(Compartment.class)){
                 Compartment compartment = (Compartment) element;
-                Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX(), "x"),
-                        scaleCoordinates(element.getY(), "y"),
-                        scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX()),
+                        scaleCoordinates(element.getY()),
+                        scaleCoordinates(element.getWidth()), scaleCoordinates(element.getHeight()));
 
                 double opacity = 20+40*((double) ++compartmentIndex/nbCompartments);
 
@@ -444,10 +442,10 @@ public class PathwayController implements Initializable {
                         ,""));
 
                 text.setTextFill(Color.web("#3C4ED7"));
-                text.setLayoutX(scaleCoordinates(label.getX(), "x"));
-                text.setPrefWidth(scaleCoordinates(label.getWidth(), "x"));
-                text.setLayoutY(scaleCoordinates(label.getY(), "y"));
-                text.setPrefHeight(scaleCoordinates(label.getHeight(), "y"));
+                text.setLayoutX(scaleCoordinates(label.getX()));
+                text.setPrefWidth(scaleCoordinates(label.getWidth()));
+                text.setLayoutY(scaleCoordinates(label.getY()));
+                text.setPrefHeight(scaleCoordinates(label.getHeight()));
 
                 container.getChildren().add(rectangle);
                 container.getChildren().add(text);
@@ -464,10 +462,10 @@ public class PathwayController implements Initializable {
                 switch (element.getType()) {
                     case "simple chemical":
                         Ellipse ellipse = new Ellipse();
-                        ellipse.setCenterX(scaleCoordinates(element.getX(), "x") + scaleCoordinates(element.getWidth() / 2, "x"));
-                        ellipse.setCenterY(scaleCoordinates(element.getY(), "y") + scaleCoordinates(element.getHeight() / 2, "y"));
-                        ellipse.setRadiusX(scaleCoordinates(element.getWidth() / 2, "x"));
-                        ellipse.setRadiusY(scaleCoordinates(element.getHeight() / 2, "y"));
+                        ellipse.setCenterX(scaleCoordinates(element.getX()) + scaleCoordinates(element.getWidth() / 2));
+                        ellipse.setCenterY(scaleCoordinates(element.getY()) + scaleCoordinates(element.getHeight() / 2));
+                        ellipse.setRadiusX(scaleCoordinates(element.getWidth() / 2));
+                        ellipse.setRadiusY(scaleCoordinates(element.getHeight() / 2));
                         ellipse.setFill(Color.web("#A5D791"));
 
                         element.setNode(ellipse);
@@ -476,9 +474,9 @@ public class PathwayController implements Initializable {
 
                         break;
                     case "complex": {
-                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX(), "x"),
-                                scaleCoordinates(element.getY(), "y"),
-                                scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX()),
+                                scaleCoordinates(element.getY()),
+                                scaleCoordinates(element.getWidth()), scaleCoordinates(element.getHeight()));
 
 
                         element.getNodeGroups().setOnMouseClicked(event -> {
@@ -495,9 +493,9 @@ public class PathwayController implements Initializable {
                         break;
                     }
                     case "macromolecule": {
-                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX(), "x"),
-                                scaleCoordinates(element.getY(), "y"),
-                                scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX()),
+                                scaleCoordinates(element.getY()),
+                                scaleCoordinates(element.getWidth()), scaleCoordinates(element.getHeight()));
                         rectangle.setFill(Color.web("#8DC7BB"));
                         elementGroup.getChildren().add(element.getNodeGroups());
 
@@ -510,9 +508,9 @@ public class PathwayController implements Initializable {
                         break;
                     }
                     case "unspecified entity": {
-                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX(), "x"),
-                                scaleCoordinates(element.getY(), "y"),
-                                scaleCoordinates(element.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                        Rectangle rectangle = new Rectangle(scaleCoordinates(element.getX()),
+                                scaleCoordinates(element.getY()),
+                                scaleCoordinates(element.getWidth()), scaleCoordinates(element.getHeight()));
                         rectangle.setFill(Color.web("#A0BBCD"));
                         elementGroup.getChildren().add(element.getNodeGroups());
                         element.setNode(rectangle);
@@ -529,10 +527,10 @@ public class PathwayController implements Initializable {
                         ,""));
 
 
-                text.setLayoutX(scaleCoordinates(element.getX(), "x"));
-                text.setPrefWidth(scaleCoordinates(element.getWidth(), "x"));
-                text.setLayoutY(scaleCoordinates(element.getY(), "y"));
-                text.setPrefHeight(scaleCoordinates(element.getHeight(), "y"));
+                text.setLayoutX(scaleCoordinates(element.getX()));
+                text.setPrefWidth(scaleCoordinates(element.getWidth()));
+                text.setLayoutY(scaleCoordinates(element.getY()));
+                text.setPrefHeight(scaleCoordinates(element.getHeight()));
                 text.setTextFill(Color.web("#3C4ED7"));
 
                 element.setNodeLabel(text);
@@ -575,9 +573,9 @@ public class PathwayController implements Initializable {
 
                 switch (reaction.getType()) {
                     case "process":
-                        Rectangle rectangle = new Rectangle(scaleCoordinates(reaction.getX(), "x"),
-                                scaleCoordinates(reaction.getY(), "y"),
-                                scaleCoordinates(reaction.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                        Rectangle rectangle = new Rectangle(scaleCoordinates(reaction.getX()),
+                                scaleCoordinates(reaction.getY()),
+                                scaleCoordinates(reaction.getWidth()), scaleCoordinates(element.getHeight()));
                         rectangle.setFill(Color.web("#FEFEFE"));
                         elementGroup.getChildren().add(rectangle);
                         break;
@@ -585,22 +583,22 @@ public class PathwayController implements Initializable {
 
                         Group g = new Group();
 
-                        Rectangle rect = new Rectangle(scaleCoordinates(reaction.getX(), "x"),
-                                scaleCoordinates(reaction.getY(), "y"),
-                                scaleCoordinates(reaction.getWidth(), "x"), scaleCoordinates(element.getHeight(), "y"));
+                        Rectangle rect = new Rectangle(scaleCoordinates(reaction.getX()),
+                                scaleCoordinates(reaction.getY()),
+                                scaleCoordinates(reaction.getWidth()), scaleCoordinates(element.getHeight()));
                         rect.setFill(Color.web("#FEFEFE"));
 
                         Line l1 = new Line();
-                        l1.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.2, "x"));
-                        l1.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2, "y"));
-                        l1.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.4, "x"));
-                        l1.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8, "y"));
+                        l1.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.2));
+                        l1.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2));
+                        l1.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.4));
+                        l1.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8));
 
                         Line l2 = new Line();
-                        l2.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.6, "x"));
-                        l2.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2, "y"));
-                        l2.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.8, "x"));
-                        l2.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8, "y"));
+                        l2.setStartX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.6));
+                        l2.setStartY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.2));
+                        l2.setEndX(scaleCoordinates(reaction.getX()+reaction.getWidth()*0.8));
+                        l2.setEndY(scaleCoordinates(reaction.getY()+reaction.getHeight()*0.8));
 
                         g.getChildren().add(rect);
                         g.getChildren().add(l1);
@@ -610,28 +608,28 @@ public class PathwayController implements Initializable {
                         break;
                     case "association":
                         Ellipse ellipse = new Ellipse();
-                        ellipse.setCenterX(scaleCoordinates(reaction.getX(), "x") + scaleCoordinates(reaction.getWidth() / 2, "x"));
-                        ellipse.setCenterY(scaleCoordinates(reaction.getY(), "y") + scaleCoordinates(reaction.getHeight() / 2, "y"));
-                        ellipse.setRadiusX(scaleCoordinates(reaction.getWidth() / 2, "x"));
-                        ellipse.setRadiusY(scaleCoordinates(reaction.getHeight() / 2, "y"));
+                        ellipse.setCenterX(scaleCoordinates(reaction.getX()) + scaleCoordinates(reaction.getWidth() / 2));
+                        ellipse.setCenterY(scaleCoordinates(reaction.getY()) + scaleCoordinates(reaction.getHeight() / 2));
+                        ellipse.setRadiusX(scaleCoordinates(reaction.getWidth() / 2));
+                        ellipse.setRadiusY(scaleCoordinates(reaction.getHeight() / 2));
                         ellipse.setFill(Color.BLACK);
                         elementGroup.getChildren().add(ellipse);
 
                         break;
                     case "dissociation":
                         Ellipse ellipse1 = new Ellipse();
-                        ellipse1.setCenterX(scaleCoordinates(reaction.getX(), "x") + scaleCoordinates(reaction.getWidth() / 2, "x"));
-                        ellipse1.setCenterY(scaleCoordinates(reaction.getY(), "y") + scaleCoordinates(reaction.getHeight() / 2, "y"));
-                        ellipse1.setRadiusX(scaleCoordinates(reaction.getWidth() / 2, "x"));
-                        ellipse1.setRadiusY(scaleCoordinates(reaction.getHeight() / 2, "y"));
+                        ellipse1.setCenterX(scaleCoordinates(reaction.getX()) + scaleCoordinates(reaction.getWidth() / 2));
+                        ellipse1.setCenterY(scaleCoordinates(reaction.getY()) + scaleCoordinates(reaction.getHeight() / 2));
+                        ellipse1.setRadiusX(scaleCoordinates(reaction.getWidth() / 2));
+                        ellipse1.setRadiusY(scaleCoordinates(reaction.getHeight() / 2));
                         ellipse1.setFill(Color.WHITE);
                         elementGroup.getChildren().add(ellipse1);
 
                         Ellipse ellipse2 = new Ellipse();
-                        ellipse2.setCenterX(scaleCoordinates(reaction.getX(), "x") + scaleCoordinates(reaction.getWidth() / 2, "x"));
-                        ellipse2.setCenterY(scaleCoordinates(reaction.getY(), "y") + scaleCoordinates(reaction.getHeight() / 2, "y"));
-                        ellipse2.setRadiusX(scaleCoordinates(reaction.getWidth() * 0.5 / 2, "x"));
-                        ellipse2.setRadiusY(scaleCoordinates(reaction.getHeight() * 0.5 / 2, "y"));
+                        ellipse2.setCenterX(scaleCoordinates(reaction.getX()) + scaleCoordinates(reaction.getWidth() / 2));
+                        ellipse2.setCenterY(scaleCoordinates(reaction.getY()) + scaleCoordinates(reaction.getHeight() / 2));
+                        ellipse2.setRadiusX(scaleCoordinates(reaction.getWidth() * 0.5 / 2));
+                        ellipse2.setRadiusY(scaleCoordinates(reaction.getHeight() * 0.5 / 2));
                         ellipse2.setStroke(Color.BLACK);
                         ellipse2.setFill(Color.WHITE);
                         elementGroup.getChildren().add(ellipse2);
@@ -668,17 +666,17 @@ public class PathwayController implements Initializable {
         for (int i = 0; i < arc.getPoints().size(); i++) {
             if(i==0){
 
-                path = new Path(new MoveTo(scaleCoordinates(arc.getPoints().get(0).getKey(), "x"),
-                        scaleCoordinates(arc.getPoints().get(0).getValue(), "y")));
-                backgroundPath = new Path(new MoveTo(scaleCoordinates(arc.getPoints().get(0).getKey(), "x"),
-                        scaleCoordinates(arc.getPoints().get(0).getValue(), "y")));
+                path = new Path(new MoveTo(scaleCoordinates(arc.getPoints().get(0).getKey()),
+                        scaleCoordinates(arc.getPoints().get(0).getValue())));
+                backgroundPath = new Path(new MoveTo(scaleCoordinates(arc.getPoints().get(0).getKey()),
+                        scaleCoordinates(arc.getPoints().get(0).getValue())));
 
             }
             else{
-                path.getElements().add(new LineTo(scaleCoordinates(arc.getPoints().get(i).getKey(), "x"),
-                        scaleCoordinates(arc.getPoints().get(i).getValue(), "y")));
-                backgroundPath.getElements().add(new LineTo(scaleCoordinates(arc.getPoints().get(i).getKey(), "x"),
-                        scaleCoordinates(arc.getPoints().get(i).getValue(), "y")));
+                path.getElements().add(new LineTo(scaleCoordinates(arc.getPoints().get(i).getKey()),
+                        scaleCoordinates(arc.getPoints().get(i).getValue())));
+                backgroundPath.getElements().add(new LineTo(scaleCoordinates(arc.getPoints().get(i).getKey()),
+                        scaleCoordinates(arc.getPoints().get(i).getValue())));
             }
         }
 
@@ -752,35 +750,35 @@ public class PathwayController implements Initializable {
             if(!firstIsCloser(elements.get(arc.getTarget()), arc.getPoints().get(0).getKey(), arc.getPoints().get(0).getValue(),
                     arc.getPoints().get(1).getKey(),
                     arc.getPoints().get(1).getValue())){
-                dx = -(scaleCoordinates(arc.getPoints().get(0).getKey(), "x") - scaleCoordinates(arc.getPoints().get(1).getKey(), "x"));
-                dy = -(scaleCoordinates(arc.getPoints().get(0).getValue(), "y") - scaleCoordinates(arc.getPoints().get(1).getValue(), "y"));
+                dx = -(scaleCoordinates(arc.getPoints().get(0).getKey()) - scaleCoordinates(arc.getPoints().get(1).getKey()));
+                dy = -(scaleCoordinates(arc.getPoints().get(0).getValue()) - scaleCoordinates(arc.getPoints().get(1).getValue()));
 
                 theta = Math.atan(-dy / dx);
                 if(dx<0)
                     theta+=Math.PI;
 
-                arrow.setStartX(scaleCoordinates(arc.getPoints().get(1).getKey(), "x"));
-                arrow.setStartY(scaleCoordinates(arc.getPoints().get(1).getValue(), "y"));
+                arrow.setStartX(scaleCoordinates(arc.getPoints().get(1).getKey()));
+                arrow.setStartY(scaleCoordinates(arc.getPoints().get(1).getValue()));
 
 
 
-                arrow.setEndX(scaleCoordinates(arc.getPoints().get(1).getKey(), "x") + 20 * Math.cos(theta));
-                arrow.setEndY(scaleCoordinates(arc.getPoints().get(1).getValue(), "y") - 20 * Math.sin(theta));
+                arrow.setEndX(scaleCoordinates(arc.getPoints().get(1).getKey()) + 20 * Math.cos(theta));
+                arrow.setEndY(scaleCoordinates(arc.getPoints().get(1).getValue()) - 20 * Math.sin(theta));
             }else{
-                dx = (scaleCoordinates(arc.getPoints().get(0).getKey(), "x") - scaleCoordinates(arc.getPoints().get(1).getKey(), "x"));
-                dy = (scaleCoordinates(arc.getPoints().get(0).getValue(), "y") - scaleCoordinates(arc.getPoints().get(1).getValue(), "y"));
+                dx = (scaleCoordinates(arc.getPoints().get(0).getKey()) - scaleCoordinates(arc.getPoints().get(1).getKey()));
+                dy = (scaleCoordinates(arc.getPoints().get(0).getValue()) - scaleCoordinates(arc.getPoints().get(1).getValue()));
 
                 theta = Math.atan(-dy / dx);
                 if(dx<0)
                     theta+=Math.PI;
-                arrow.setStartX(scaleCoordinates(arc.getPoints().get(0).getKey(), "x"));
-                arrow.setStartY(scaleCoordinates(arc.getPoints().get(0).getValue(), "y"));
+                arrow.setStartX(scaleCoordinates(arc.getPoints().get(0).getKey()));
+                arrow.setStartY(scaleCoordinates(arc.getPoints().get(0).getValue()));
 
 
 
 
-                arrow.setEndX(scaleCoordinates(arc.getPoints().get(0).getKey(), "x") + 20 * Math.cos(theta));
-                arrow.setEndY(scaleCoordinates(arc.getPoints().get(0).getValue(), "y") - 20 * Math.sin(theta));
+                arrow.setEndX(scaleCoordinates(arc.getPoints().get(0).getKey()) + 20 * Math.cos(theta));
+                arrow.setEndY(scaleCoordinates(arc.getPoints().get(0).getValue()) - 20 * Math.sin(theta));
 
 
             }
@@ -795,9 +793,9 @@ public class PathwayController implements Initializable {
 
     }
 
-    public double scaleCoordinates(double pos, String axis){
-        double xScale = container.getWidth()/maxX, yScale = container.getHeight()/maxY;
-        return axis.equals("x")?pos*xScale:pos*yScale;
+    public double scaleCoordinates(double pos){
+        double scale = Math.min(container.getWidth()/maxX, container.getHeight()/maxY);
+        return pos*scale;
     }
 
     public boolean firstIsCloser(Element element, double x1, double y1, double x2, double y2){
@@ -823,45 +821,45 @@ public class PathwayController implements Initializable {
         }
 
         Circle symbol = new Circle();
-        symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+        symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5));
 //
-//        symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2, "x"));
-//        symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2, "Y"));
+//        symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2));
+//        symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2));
 
         if(x<reaction.getX()){
-            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2, "x"));
+            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX()+reaction.getWidth()/2))+Math.abs(x-(reaction.getX()+reaction.getWidth()/2))/2));
         }else {
-            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX() + reaction.getWidth() / 2)) + Math.abs(x - (reaction.getX() + reaction.getWidth() / 2)) / 2, "x"));
+            symbol.setCenterX(scaleCoordinates(Math.min(x, (reaction.getX() + reaction.getWidth() / 2)) + Math.abs(x - (reaction.getX() + reaction.getWidth() / 2)) / 2));
 
         }
         if(y<reaction.getY()){
-            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2, "Y"));
+            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()))+Math.abs(y-(reaction.getY()))/2));
         }else{
-            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()+reaction.getHeight()))+Math.abs(y-(reaction.getY()+reaction.getHeight()))/2, "Y"));
+            symbol.setCenterY(scaleCoordinates(Math.min(y, (reaction.getY()+reaction.getHeight()))+Math.abs(y-(reaction.getY()+reaction.getHeight()))/2));
         }
 //
 
 //        if(x<reaction.getX()+ reaction.getWidth() && x>reaction.getX()){
 //
 //            if(Math.abs(y-reaction.getY())<Math.abs(y-(reaction.getY()+reaction.getHeight()))){ //top
-//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
-//                symbol.setCenterY(scaleCoordinates(y+(reaction.getY()-y)/2, "y"));
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5));
+//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2));
+//                symbol.setCenterY(scaleCoordinates(y+(reaction.getY()-y)/2));
 //            }else{ //bottom
-//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
-//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2, "x"));
-//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(symbol.getRadius()/2), "y"));
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5));
+//                symbol.setCenterX(scaleCoordinates(reaction.getX()+reaction.getWidth()/2));
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()+(symbol.getRadius()/2)));
 //            }
 //
 //        }else if(y<reaction.getY()+ reaction.getHeight() && y>reaction.getY()){
 //            if(Math.abs(x-reaction.getX())<Math.abs(x-(reaction.getX()+reaction.getWidth()))){ //left
-//                symbol.setRadius(scaleCoordinates(reaction.getHeight()*0.5, "y"));
+//                symbol.setRadius(scaleCoordinates(reaction.getHeight()*0.5));
 //
-//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2));
 //            }else{ //right
-//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5, "x"));
+//                symbol.setRadius(scaleCoordinates(reaction.getWidth()*0.5));
 //
-//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2, "y"));
+//                symbol.setCenterY(scaleCoordinates(reaction.getY()+reaction.getHeight()/2));
 //            }
 //        }
         symbol.setFill(Color.WHITE);

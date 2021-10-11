@@ -3,6 +3,7 @@ package pathway;
 import javafx.util.Pair;
 
 import java.util.ArrayList;
+import java.util.ListIterator;
 
 public class Arc {
 
@@ -29,6 +30,11 @@ public class Arc {
     }
 
     public void setPoints(ArrayList<Pair<Double, Double>> points) {
+
+        Pair<Double, Double> lastPoints = points.get(points.size()-1);
+        points.removeIf(point -> (point.getKey().equals(lastPoints.getKey()) && point.getValue().equals(lastPoints.getValue())) && point!=lastPoints);
+
+
         this.points = points;
     }
 

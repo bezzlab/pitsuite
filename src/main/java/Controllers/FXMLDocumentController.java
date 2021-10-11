@@ -2,6 +2,7 @@ package Controllers;
 
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
@@ -36,6 +37,10 @@ import java.util.concurrent.Future;
 
 public class FXMLDocumentController implements Initializable {
 
+    @FXML
+    private VBox runPitPane;
+    @FXML
+    private PITRunnerController PITRunnerController;
     @FXML
     private configGeneration configGenerationController;
     @FXML
@@ -104,8 +109,10 @@ public class FXMLDocumentController implements Initializable {
         configGenerationController.setParent(this);
     }
 
+
     public void hide(){
         configPane.setVisible(false);
+        runPitPane.setVisible(false);
         splitPane.setVisible(true);
     }
 
@@ -449,10 +456,9 @@ public class FXMLDocumentController implements Initializable {
         }
     }
 
-
-
-
-
-
-
+    @FXML
+    public void onRunPIT() {
+        splitPane.setVisible(false);
+        runPitPane.setVisible(true);
+    }
 }

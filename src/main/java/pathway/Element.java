@@ -146,8 +146,8 @@ public class Element {
                     if (alertsCopy.stream().filter(e -> e.getClass().equals(DgeAlert.class)).findFirst().isEmpty()) {
                         Label t = new Label("G");
                         t.setFont(Font.font(8));
-                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
-                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        t.setLayoutX(pathwayController.scaleCoordinates(x) + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y) - 10);
                         alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
@@ -155,8 +155,8 @@ public class Element {
                     if (alertsCopy.stream().filter(e -> e.getClass().equals(SplicingAlert.class)).findFirst().isEmpty()) {
                         Label t = new Label("S");
                         t.setFont(Font.font(8));
-                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
-                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        t.setLayoutX(pathwayController.scaleCoordinates(x) + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y) - 10);
                         alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
@@ -164,8 +164,8 @@ public class Element {
                     if (alertsCopy.stream().filter(e -> e.getClass().equals(MutationAlert.class)).findFirst().isEmpty()) {
                         Label t = new Label("M");
                         t.setFont(Font.font(8));
-                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
-                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        t.setLayoutX(pathwayController.scaleCoordinates(x) + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y) - 10);
                         alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }
@@ -173,8 +173,8 @@ public class Element {
                     if (alertsCopy.stream().filter(e -> e.getClass().equals(PTMAlert.class)).findFirst().isEmpty()) {
                         Label t = new Label("P");
                         t.setFont(Font.font(8));
-                        t.setLayoutX(pathwayController.scaleCoordinates(x, "x") + alertXOffset);
-                        t.setLayoutY(pathwayController.scaleCoordinates(y, "y") - 10);
+                        t.setLayoutX(pathwayController.scaleCoordinates(x) + alertXOffset);
+                        t.setLayoutY(pathwayController.scaleCoordinates(y) - 10);
                         alertsGroup.getChildren().add(t);
                         alertXOffset += t.getLayoutBounds().getWidth() + 5;
                     }

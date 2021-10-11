@@ -22,12 +22,14 @@ import java.util.zip.Inflater;
 public class App extends Application {
 
     public static App app;
+    public Stage stage;
 
     @Override
     public void start(Stage stage) throws IOException, DataFormatException {
 
 
         app = this;
+        this.stage = stage;
         FXMLLoader loader = loadFXML("/primary");
         Parent root = loader.load();
         FXMLDocumentController controller = loader.getController();
@@ -50,4 +52,7 @@ public class App extends Application {
 
     public static App getApp(){ return app; }
 
+    public Stage getStage() {
+        return stage;
+    }
 }
