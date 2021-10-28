@@ -56,6 +56,7 @@ public class ResultsController implements Initializable {
     private TranscriptUsageController transcriptUsageController;
     private SystemController systemController;
     private PhosphoController phosphoController;
+    private BlastTabController blastTabController;
     // tabs
     @FXML
     private TabPane resultsTabPane;
@@ -67,8 +68,6 @@ public class ResultsController implements Initializable {
     private Tab dgeTab;
     @FXML
     private Tab splicingTab;
-    @FXML
-    private Tab PhosphoTab;
     @FXML
     private MenuBar menuBar;
     private static ResultsController instance;
@@ -248,6 +247,20 @@ public class ResultsController implements Initializable {
                 }
             });
 
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/blastTab" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader2.load();
+
+                    blastTabController = fxmlLoader2.getController();
+
+                    resultsTabPane.getTabs().get(6).setContent(root);
+                    //ControllersBasket.setBlastTabController(blastTabController);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
+
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
             try {
@@ -262,6 +275,7 @@ public class ResultsController implements Initializable {
                 e.printStackTrace();
             }
         });
+        pauseTransition.play();
 
 
     }

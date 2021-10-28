@@ -13,6 +13,10 @@ public class MaxQuantPTM extends PTM{
         super(residue, massShift, assigned);
     }
 
+    public MaxQuantPTM(String residue, String mod) {
+        super(residue, mod);
+    }
+
     public MaxQuantPTM(String mod, String residue, int pos, double massShift, boolean assigned) {
         super(residue, pos, massShift, assigned);
         this.mod = mod;
@@ -23,14 +27,14 @@ public class MaxQuantPTM extends PTM{
         HashSet<PTM> ptms = new HashSet<>();
 
 
-        Pattern pattern = Pattern.compile("([A-Z])(\\(.*?\\)\\))[A-Z]*?");
+        Pattern pattern = Pattern.compile("\\((.*?\\((.*?)\\))\\)");
         Matcher matcher = pattern.matcher(modsStr);
 
         int charOffset = 1;
         while(matcher.find()){
-            String residue = matcher.group(1);
-            String mod = matcher.group(2);
-            int pos = matcher.start(1) + 1 - charOffset;
+            String residue = matcher.group(2);
+            String mod = matcher.group(1);
+            int pos = matcher.start(2) + 1 - charOffset;
             ptms.add(new MaxQuantPTM(mod, residue, pos, 2, true));
             charOffset+=mod.length();
         }

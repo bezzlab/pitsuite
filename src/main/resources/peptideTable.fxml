@@ -83,7 +83,14 @@
                                       <columns>
                                       </columns>
                                     </TableView>
-                                    <AnchorPane fx:id="intensitiesChartContainer"  GridPane.columnIndex="1" />
+                                    <BarChart fx:id="intensitiesChart" animated="false" legendVisible="false" GridPane.columnIndex="1">
+                                      <xAxis>
+                                        <CategoryAxis side="BOTTOM" />
+                                      </xAxis>
+                                      <yAxis>
+                                        <NumberAxis side="LEFT" />
+                                      </yAxis>
+                                    </BarChart>
                                      <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2" />
 <!--                                     <WebView fx:id="specWebview" GridPane.columnIndex="1"-->
 <!--                                                 GridPane.rowIndex="0" GridPane.rowSpan="1"/>-->
@@ -126,9 +133,7 @@
                                       <RowConstraints percentHeight="30" vgrow="SOMETIMES" />
                                   </rowConstraints>
                                  <children>
-                                    <Button mnemonicParsing="false" onMouseClicked="#filter" text="Filter" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                                    <Button mnemonicParsing="false" text="Button" GridPane.rowIndex="3" />
-                                    <TableView fx:id="suggestedPTMFilterTable">
+                                     <TableView fx:id="suggestedPTMFilterTable">
                                       <columns>
                                         <TableColumn fx:id="suggestedPTMNameColumn" text="Name" />
                                         <TableColumn fx:id="suggestedPTMMassShiftColumn" text="Mass shift" />
@@ -140,8 +145,25 @@
                                         <TableColumn fx:id="PTMMassShiftFilterColumn" text="Mass shift" />
                                       </columns>
                                     </TableView>
-                                    <TextField GridPane.rowIndex="1" />
-                                    <TextField GridPane.rowIndex="2" />
+                                     <VBox GridPane.rowIndex="1" GridPane.columnIndex="0" spacing="2">
+                                         <Button fx:id="filter" mnemonicParsing="false" onMouseClicked="#filter" text="Filter" prefWidth="100"/>
+                                         <Button fx:id="resetModFilter" mnemonicParsing="false" onMouseClicked="#resetModFilter" text="Reset mod filter"  prefWidth="100"/>
+                                     </VBox>
+                                     <VBox GridPane.rowIndex="2" spacing="2">
+                                         <TextField fx:id="sequenceSearchBox" styleClass="transparent" promptText="Amino acid sequence"/>
+                                         <TextField fx:id="geneSymbolSearchBox" styleClass="transparent" promptText="Gene symbol" />
+                                         <TextField fx:id="geneNumberSearchBox" styleClass="transparent" promptText="Number of genes"/>
+                                         <TextField fx:id="foldChangeSearchBox" styleClass="transparent" promptText="Fold change (>)" />
+                                         <Button onMouseClicked="#secondFilter" mnemonicParsing="false" text="Run Filter" prefWidth="100"/>
+                                         <Button fx:id="resetSecondFilter" onMouseClicked="#resetSecondFilter" mnemonicParsing="false" text="Reset Filter" prefWidth="100"/>
+
+                                     </VBox>
+                                     <HBox alignment="CENTER_LEFT" GridPane.rowIndex="3" GridPane.columnIndex="0">
+                                         <children>
+                                             <Label id="info_label" fx:id="numberOfGenesInPeptideTableLabel" text="#" />
+                                             <Label id="info_label" text="peptides."/>
+                                         </children>
+                                     </HBox>
                                  </children>
                               </GridPane>
                           </content>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.Spinner?>
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.BlastTabController">
+    <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" maxHeight="Infinity" maxWidth="Infinity">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="20" />
+            <ColumnConstraints percentWidth="80" />
+
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints />
+        </rowConstraints>
+        <children>
+            <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="0" GridPane.vgrow="always">
+                <HBox>
+                    <children>
+                        <Label id="info_label" text="No. of queries: " style="-fx-font-size: 12px;"/>
+                        <Label fx:id="noOfQueries" text="#" style="-fx-font-size: 12px;"/>
+                    </children>
+                </HBox>
+                <JFXTextField fx:id="querySearchField" promptText="Search for queries" VBox.vgrow="ALWAYS" />
+                <ListView fx:id="listView" onMouseClicked="#click_on_qlist" VBox.vgrow="ALWAYS" />
+                <Label id="info_label" text="Conservative substitution legend:" style="-fx-font-size: 12px; -fx-text-fill: black" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Small (small+ hydrophobic (incl.aromatic -Y))" style="-fx-font-size: 12px; -fx-text-fill: #DC143C;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Acidic" style="-fx-font-size: 12px; -fx-text-fill: #0000FF;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Basic - H" style="-fx-font-size: 12px; -fx-text-fill: #8A2BE2;" VBox.vgrow="ALWAYS"/>
+                <Label id="info_label" text="* - Hydroxyl + sulfhydryl + amine + G" style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
+            </VBox>
+            <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" GridPane.columnIndex="1" GridPane.rowIndex="0" GridPane.vgrow="always" spacing="2">
+                <JFXTextField fx:id="searchSpeciesField" promptText="Species" VBox.vgrow="ALWAYS"/>
+                <JFXTextField fx:id="searchField" promptText="Search" VBox.vgrow="ALWAYS" />
+                <CheckBox fx:id="predictedCheckbox" mnemonicParsing="false" selected="true" text="Include predicted" VBox.vgrow="ALWAYS" />
+                <HBox>
+                    <children>
+                        <Spinner fx:id="evalThresholdSpinner" prefWidth="80.0" />
+                        <Label id="info_label" text="eVal" style="-fx-font-size: 12px;" />
+                    </children>
+                </HBox>
+                <HBox>
+                    <children>
+                        <Label id="info_label" fx:id="numberOfHits" text="#" style="-fx-font-size: 12px;"/>
+                        <Label id="info_label" text="hits" style="-fx-font-size: 12px;"/>
+                    </children>
+                </HBox>
+                <TableView fx:id="hitTable" prefHeight="300.0"  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="definitionColumn" prefWidth="75.0" text="Definition" />
+                        <TableColumn fx:id="queryCoverageColumn" prefWidth="75.0" text="Query coverage" />
+                        <TableColumn fx:id="hitCoverageColumn" prefWidth="75.0" text="Hit coverage" />
+                        <TableColumn fx:id="evalueColumn" prefWidth="75.0" text="E-value" />
+                        <TableColumn fx:id="hspsColumn" prefWidth="75.0" text="Hsps" />
+                    </columns>
+                </TableView>
+                <HBox>
+                    <children>
+                        <Text text="Hit Lenght: "/>
+                        <Text fx:id="hitLengthTextField"/>
+                        <Text text="   E-Value: "/>
+                        <Text  fx:id="eValueTextField"/>
+                    </children>
+                </HBox>
+                <Pane fx:id="alignmentPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS"/>
+                <Label fx:id="peptideSeqs"  style="-fx-font-size: 12px; -fx-text-fill: #006400;" VBox.vgrow="ALWAYS"/>
+                <HBox>
+                    <Label id="info_label" text="Number of peptides: " style="-fx-font-size: 12px; -fx-text-fill: #483D8B;" VBox.vgrow="ALWAYS"/>
+                    <Label fx:id="numberOfPeptides"  style="-fx-font-size: 12px; -fx-text-fill: #483D8B;" VBox.vgrow="ALWAYS"/>
+                </HBox>
+            </VBox>
+        </children>
+    </GridPane>
+</AnchorPane>
