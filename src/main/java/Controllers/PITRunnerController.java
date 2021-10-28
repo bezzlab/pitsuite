@@ -1,8 +1,7 @@
 package Controllers;
 
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -10,6 +9,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Pair;
 import org.apache.http.HttpEntity;
@@ -21,19 +21,18 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import pitguiv2.App;
-
 import java.io.*;
-import java.net.*;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.security.spec.ECField;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -41,6 +40,12 @@ import java.util.concurrent.TimeUnit;
 
 public class PITRunnerController implements Initializable {
 
+    @FXML
+    private Button runButton;
+    @FXML
+    private Button downloadButton;
+    @FXML
+    private TextField outputPathField;
     @FXML
     private GridPane filesDownloadGrid;
     @FXML
@@ -63,11 +68,20 @@ public class PITRunnerController implements Initializable {
 
     private final HashMap<String, String> projects = new HashMap<>();
     private boolean processingCompleted;
+    private String outputFiles;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
 
         projectsListview.setOnMouseClicked(event -> selectProject(projectsListview.getSelectionModel().getSelectedItem()));
+        downloadButton.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> outputPathField.getText().isEmpty() ,outputPathField.textProperty()));
+
+        runButton.disableProperty().bind(Bindings.createBooleanBinding(
+                () -> nameField.getText().isEmpty() || configPathField.getText().isEmpty() || !new File(configPathField.getText()).exists()
+                        || new File(configPathField.getText()).isDirectory(), nameField.textProperty(), configPathField.textProperty()));
+
+
         loadProjects();
     }
 
@@ -364,9 +378,9 @@ public class PITRunnerController implements Initializable {
             if(responseString.startsWith("completed")){
                 logsArea.setText("COMPLETED!");
                 processingCompleted = true;
+                outputFiles = responseString;
                 if(updateScheduler!=null)
                     updateScheduler.cancel(true);
-                listDownloadFiles(responseString);
             }else{
                 logsArea.setText(logsArea.getText()+responseString);
             }
@@ -426,10 +440,10 @@ public class PITRunnerController implements Initializable {
         Pair<String, ProgressBar>[] downloadData = new Pair[files.length-1];
         for (int i = 1; i < files.length; i++) {
             Label fileNameLabel = new Label(files[i]);
-            filesDownloadGrid.add(fileNameLabel, 0, i - 1);
+            filesDownloadGrid.add(fileNameLabel, 0, i);
             ProgressBar progressBar = new ProgressBar();
             progressBar.setVisible(false);
-            filesDownloadGrid.add(progressBar, 1, i - 1);
+            filesDownloadGrid.add(progressBar, 1, i);
             GridPane.setHgrow(progressBar, Priority.ALWAYS);
             downloadData[i-1] = new Pair<>(files[i], progressBar);
 
@@ -447,8 +461,6 @@ public class PITRunnerController implements Initializable {
         try {
             HttpClient httpclient = HttpClients.createDefault();
             HttpPost httppost = new HttpPost("http://localhost:5000/downloadFile");
-            System.out.println("a");
-
 
             List<NameValuePair> params = new ArrayList<>(1);
             params.add(new BasicNameValuePair("path",uploadId+"/"+file));
@@ -464,9 +476,9 @@ public class PITRunnerController implements Initializable {
             StringBuilder path = new StringBuilder();
             for (int i = 0; i < pathSplit.length-1; i++) {
                 path.append(pathSplit[i]).append("/");
-                new File("/media/esteban/b0b05e8c-7bfc-4553-ae68-f70bfe910d3e/PITcloud/test/"+path).mkdirs();
+                new File(outputPathField.getText()+"/"+path).mkdirs();
             }
-            FileOutputStream fos = new FileOutputStream("/media/esteban/b0b05e8c-7bfc-4553-ae68-f70bfe910d3e/PITcloud/test/"+file);
+            FileOutputStream fos = new FileOutputStream(outputPathField.getText()+"/"+file);
 
             BufferedOutputStream bout = new BufferedOutputStream(
                     fos, 1024);
@@ -487,7 +499,6 @@ public class PITRunnerController implements Initializable {
             }
             bout.close();
             in.close();
-            System.out.println("b");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -503,5 +514,20 @@ public class PITRunnerController implements Initializable {
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Configuration file", "*.json"));
         File selectedFile = fileChooser.showOpenDialog(App.getApp().getStage());
         configPathField.setText(selectedFile.getAbsolutePath());
+    }
+
+    @FXML
+    public void onDownloadOutput() {
+        if(processingCompleted && !outputPathField.getText().isEmpty()){
+            listDownloadFiles(outputFiles);
+        }
+    }
+
+    @FXML
+    public void onChooseOutputDirectory() {
+        DirectoryChooser directoryChooser = new DirectoryChooser();
+        directoryChooser.setTitle("Open Resource File");
+        File selectedDirectory = directoryChooser.showDialog(App.getApp().getStage());
+        outputPathField.setText(selectedDirectory.getAbsolutePath());
     }
 }

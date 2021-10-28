@@ -41,6 +41,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 public class BamController implements Initializable {
@@ -49,8 +52,6 @@ public class BamController implements Initializable {
     @FXML
     public VBox mainBox;
 
-
-    private Pane sashimiPane;
     private String chr;
     private int geneStart;
     private int geneEnd;
@@ -61,6 +62,8 @@ public class BamController implements Initializable {
     private ArrayList<Transcript> displayedTranscripts;
     private int currentStart, currentEnd;
     private Nitrite db;
+
+    private final HashMap<String, List<HBox>> panes = new HashMap<>();
 
 
     @Override
@@ -114,6 +117,7 @@ public class BamController implements Initializable {
     public void show(int start, int end){
         currentStart = start;
         currentEnd = end;
+        panes.clear();
         drawDepth(start, end);
     }
 
@@ -193,92 +197,84 @@ public class BamController implements Initializable {
         sli.close();
         samReader.close();
 
-        long estimatedTime = System.currentTimeMillis() - startTime;
-        System.out.println("getDepth: "+estimatedTime);
-
-
         return depthList;
     }
 
 
     private void drawDepth(int start, int end) {
 
+        if(selectedFiles.size()>0) {
+
+            mainBox.getChildren().clear();
 
 
-        mainBox.getChildren().clear();
+            int indexStart = start - geneStart;
+            int indexEnd = end - geneStart;
+
+            ArrayList<String> conditions = new ArrayList<>(Config.getConditions());
+
+            ExecutorService es = Executors.newFixedThreadPool(selectedFiles.size());
 
 
-        int indexStart = start - geneStart;
-        int indexEnd = end - geneStart;
+            for (BamFile file : selectedFiles) {
+                if (file.isSelected()) {
 
-        ArrayList<String> conditions = new ArrayList<>(Config.getConditions());
+                    es.execute(() -> {
+                        // get values for the graph, if distance is high, the values are accumulated
+                        Thread junctionThread = new Thread(() -> getBamJunctions(file, chr, start, end));
+                        junctionThread.start();
 
-
-
-
-
-        for(BamFile file: selectedFiles) {
-            if (file.isSelected()) {
-
-                Thread junctionThread  = new Thread(() -> getBamJunctions(file, chr, start, end));
-                junctionThread.start();
-
-                new Thread(() -> {
-                    // get values for the graph, if distance is high, the values are accumulated
+                        int[] depthList = file.getDepth();
 
 
-                    int[] depthList = file.getDepth();
+                        int interval = 1;
+                        int cumsum = 0;
+                        boolean isAccumulated = false;
+                        ArrayList<Integer> indexes = new ArrayList<>();
 
-
-
-                    int interval = 1;
-                    int cumsum = 0;
-                    boolean isAccumulated = false;
-                    ArrayList<Integer> indexes = new ArrayList<>();
-
-                    if ((indexEnd - indexStart) > 10000) {
-                        isAccumulated = true;
-                        interval = 30;
-                    } else if ((indexEnd - indexStart) > 5000) {
-                        isAccumulated = true;
-                        interval = 10;
-                    } else if ((indexEnd - indexStart) > 1000) {
-                        isAccumulated = true;
-                        interval = 3;
-                    }
-
-                    int[] depthListFinal = new int[(int) Math.ceil((double)(indexEnd-indexStart)/interval)];
-
-                    int ymax;
-                    if (isAccumulated) {
-
-                        for (int i = indexStart; i < indexEnd; i++) {
-                            if ((i-indexStart) % interval == 0) {
-                                cumsum += depthList[i];
-                                indexes.add(i);
-                                depthListFinal[(int)Math.floor((double)(i-indexStart)/interval)]=cumsum;
-
-                                cumsum = 0;
-                            } else {
-
-                                cumsum += depthList[i];
-                            }
-
+                        if ((indexEnd - indexStart) > 10000) {
+                            isAccumulated = true;
+                            interval = 30;
+                        } else if ((indexEnd - indexStart) > 5000) {
+                            isAccumulated = true;
+                            interval = 10;
+                        } else if ((indexEnd - indexStart) > 1000) {
+                            isAccumulated = true;
+                            interval = 3;
                         }
-                        depthListFinal[depthListFinal.length-1]=cumsum;
 
-                        ymax = Arrays.stream(depthListFinal).summaryStatistics().getMax();
-                    } else {
-                        ymax = Arrays.stream(depthList).summaryStatistics().getMax();
-                        depthListFinal = Arrays.stream(depthList, indexStart, indexEnd).toArray();
-                    }
+                        int[] depthListFinal = new int[(int) Math.ceil((double) (indexEnd - indexStart) / interval)];
 
-                    int[] finalDepthListFinal = depthListFinal;
-                    Platform.runLater(() -> {
+                        int ymax;
+                        if (isAccumulated) {
 
-                        HBox areaPlotHBox = new HBox();
+                            for (int i = indexStart; i < indexEnd; i++) {
+                                if ((i - indexStart) % interval == 0) {
+                                    cumsum += depthList[i];
+                                    indexes.add(i);
+                                    depthListFinal[(int) Math.floor((double) (i - indexStart) / interval)] = cumsum;
 
-                        Text condSampleText = new Text(file.getCondition() + " " + (file.getSample()!=null?file.getSample():""));
+                                    cumsum = 0;
+                                } else {
+
+                                    cumsum += depthList[i];
+                                }
+
+                            }
+                            depthListFinal[depthListFinal.length - 1] = cumsum;
+
+                            ymax = Arrays.stream(depthListFinal).summaryStatistics().getMax();
+                        } else {
+                            ymax = Arrays.stream(depthList).summaryStatistics().getMax();
+                            depthListFinal = Arrays.stream(depthList, indexStart, indexEnd).toArray();
+                        }
+
+                        int[] finalDepthListFinal = depthListFinal;
+
+
+                        final HBox areaPlotHBox = new HBox();
+
+                        Text condSampleText = new Text(file.getCondition() + " " + (file.getSample() != null ? file.getSample() : ""));
                         condSampleText.setFont(Font.font("monospace", fontSize));
 
                         areaPlotHBox.setPrefWidth(representationWidthFinal);
@@ -288,21 +284,21 @@ public class BamController implements Initializable {
 
 
                         AnchorPane plotPane = new AnchorPane();
-                        plotPane.setPrefHeight(representationHeightFinal* 0.05);
+                        plotPane.setPrefHeight(representationHeightFinal * 0.05);
 
 
                         areaPlotHBox.getChildren().clear();
 
                         Path path = new Path();
-                        path.getElements().add(new MoveTo(0,representationHeightFinal * 0.05));
+                        path.getElements().add(new MoveTo(0, representationHeightFinal * 0.05));
 
                         for (int i = 0; i < finalDepthListFinal.length; i++) {
-                            if(i!=0)
-                                path.getElements().add(new LineTo(i*representationWidthFinal/ finalDepthListFinal.length,
-                                        representationHeightFinal * 0.05- finalDepthListFinal[i]* representationHeightFinal * 0.05/ymax));
+                            if (i != 0)
+                                path.getElements().add(new LineTo(i * representationWidthFinal / finalDepthListFinal.length,
+                                        representationHeightFinal * 0.05 - finalDepthListFinal[i] * representationHeightFinal * 0.05 / ymax));
 
-                            if(i== finalDepthListFinal.length-1)
-                                path.getElements().add(new LineTo(i*representationWidthFinal/ finalDepthListFinal.length,  representationHeightFinal * 0.05));
+                            if (i == finalDepthListFinal.length - 1)
+                                path.getElements().add(new LineTo(i * representationWidthFinal / finalDepthListFinal.length, representationHeightFinal * 0.05));
                         }
                         path.getElements().add(new ClosePath());
                         path.setFill(Color.web(ColorPalette.getColor(conditions.indexOf(file.getCondition()))));
@@ -314,7 +310,7 @@ public class BamController implements Initializable {
                         coveragePane.getChildren().add(path);
                         plotPane.getChildren().add(coveragePane);
 
-                        sashimiPane = new Pane();
+                        Pane sashimiPane = new Pane();
 
                         sashimiPane.toFront();
 
@@ -326,7 +322,7 @@ public class BamController implements Initializable {
                         Button hideButton = new Button();
                         ImageView imageView = new ImageView(eyeImage);
 
-                        imageView.setFitHeight(condSampleText.getBoundsInLocal().getHeight()*1.2);
+                        imageView.setFitHeight(condSampleText.getBoundsInLocal().getHeight() * 1.2);
                         imageView.setPreserveRatio(true);
 
                         hideButton.setGraphic(imageView);
@@ -340,41 +336,47 @@ public class BamController implements Initializable {
 //                        condSampleText.setLayoutY(representationHeightFinal* 0.05/2 -
 //                                condSampleText.getLayoutBounds().getHeight()/2);
 
-                        HBox.setMargin(condSampleText, new Insets(representationHeightFinal* 0.05/2,0,0,0));
-                        HBox.setMargin(hideButton, new Insets(representationHeightFinal* 0.05/2 ,0,0,0));
+                        HBox.setMargin(condSampleText, new Insets(representationHeightFinal * 0.05 / 2, 0, 0, 0));
+                        HBox.setMargin(hideButton, new Insets(representationHeightFinal * 0.05 / 2, 0, 0, 0));
 
                         areaPlotHBox.getChildren().add(hideButton);
                         areaPlotHBox.getChildren().add(condSampleText);
 
                         VBox.setVgrow(areaPlotHBox, Priority.ALWAYS);
 
-                        mainBox.getChildren().add(areaPlotHBox);
+                        if (!panes.containsKey(file.getCondition())) {
+                            panes.put(file.getCondition(), Collections.synchronizedList(new ArrayList<>()));
+                        }
+                        panes.get(file.getCondition()).add(areaPlotHBox);
 
 
-
-                        VBox.setMargin(areaPlotHBox, new Insets(0,0,0,0));
-
+                        VBox.setMargin(areaPlotHBox, new Insets(0, 0, 0, 0));
 
 
                         try {
                             junctionThread.join();
-                            drawSashami(file, start, end, geneStart, representationHeightFinal * 0.05, areaPlotHBox, coveragePane);
+                            drawSashami(sashimiPane, file, start, end, geneStart, representationHeightFinal * 0.05, areaPlotHBox, coveragePane);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
 
                     });
+                }
+            }
 
 
-
-
-                }).start();
-
-
+            es.shutdown();
+            try {
+                boolean finished = es.awaitTermination(1, TimeUnit.MINUTES);
+                for (List<HBox> boxes : panes.values()) {
+                    for (HBox box : boxes) {
+                        Platform.runLater(() -> mainBox.getChildren().add(box));
+                    }
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
-
     }
 
 
@@ -458,7 +460,7 @@ public class BamController implements Initializable {
         return exons;
     }
 
-    public void drawSashami(BamFile file, int start, int end, int geneViewerMinimumCoordinate, double boxHeight, HBox container, Pane coveragePane){
+    public void drawSashami(Pane sashimiPane, BamFile file, int start, int end, int geneViewerMinimumCoordinate, double boxHeight, HBox container, Pane coveragePane){
 
         long startTime = System.currentTimeMillis();
 
@@ -752,7 +754,8 @@ public class BamController implements Initializable {
                     group.getChildren().add(l2);
                     group.getChildren().add(l3);
                     group.getChildren().add(readCount);
-                    sashimiPane.getChildren().add(group);
+                    Platform.runLater(()-> sashimiPane.getChildren().add(group));
+
 
                 }
             }

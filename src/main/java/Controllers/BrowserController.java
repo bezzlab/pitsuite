@@ -47,11 +47,10 @@ public class BrowserController implements Initializable {
      * Used to set the parent, from the FXML Document Controller,
      * So that when data is loaded, it can handle the first view of the tab
      */
-    public void setParentControler(ResultsController parent, JSONObject settings, HostServices hostServices, String databaseName,
+    public void setParentControler(ResultsController parent, JSONObject settings, String databaseName,
                                     AllGenesReader allGenesReader) {
         parentController = parent;
         databaseProjectName = databaseName;
-        this.hostServices = hostServices;
         setTabsParents(parent, settings, databaseProjectName, allGenesReader);
     }
 

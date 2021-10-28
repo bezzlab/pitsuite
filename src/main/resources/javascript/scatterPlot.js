@@ -6,7 +6,7 @@ function displayPlot(x, y, names, width, height, title, fontsize){
         type: 'scatter',
         name: 'Team A',
         text: names,
-        marker: { size: 12 }
+        marker: { size: 12, color:"#e84a5f" }
     };
 
     var data = [ trace1 ];

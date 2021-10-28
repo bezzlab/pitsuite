@@ -13,7 +13,7 @@ function displayVolcano(belowThresholdJson, foldChangesNegativeFoldJson, foldCha
             family:  'Times New Roman'
         },
         textposition: 'bottom center',
-        marker: {size:9, color:"blue"}
+        marker: {size:9, color:"#1E73BE"}
     };
 
     var negFold = {
@@ -28,7 +28,7 @@ function displayVolcano(belowThresholdJson, foldChangesNegativeFoldJson, foldCha
             family:  'Times New Roman'
         },
         textposition: 'bottom center',
-        marker: {size:9, color:"red"}
+        marker: {size:9, color:"#C70039"}
     };
 
     var belowThreshold = {

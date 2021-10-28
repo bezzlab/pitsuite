@@ -289,6 +289,8 @@ public class GeneBrowserController implements Initializable {
 
     private static GeneBrowserController instance;
 
+    private boolean loadingGene = false;
+
 
 
 
@@ -380,12 +382,6 @@ public class GeneBrowserController implements Initializable {
 
             } else {
 
-//                browserGrid.getRowConstraints().remove(0);
-//                browserGrid.getRowConstraints().remove(0);
-//                geneBrowserScrollPane.setPrefHeight(browserGrid.getHeight()-40);
-//                extraInfoTitledPane.setPrefHeight(40);
-
-
                 browserGrid.getRowConstraints().remove(0);
                 browserGrid.getRowConstraints().remove(0);
                 RowConstraints rowConstraints1 = new RowConstraints();
@@ -465,7 +461,7 @@ public class GeneBrowserController implements Initializable {
 
         activateListenerConditionsGeneBrowserCombobox = false;
         conditionsGeneBrowserCombobox.valueProperty().addListener((observableValue, s, t1) -> {
-            if (activateListenerConditionsGeneBrowserCombobox) {
+            if (activateListenerConditionsGeneBrowserCombobox && !loadingGene) {
                 transcriptOrCdsCentricView();
             }
         });
@@ -555,6 +551,33 @@ public class GeneBrowserController implements Initializable {
         });
 
         transcriptsComboBox.setPrefWidth(new Text("Include STRG transcripts").getLayoutBounds().getWidth()*1.2);
+
+        ListChangeListener<String> changeListener = new ListChangeListener<String>() {
+            @Override
+            public void onChanged(Change<? extends String> c) {
+
+                c.next();
+                if((c.getAddedSubList().size()>0 &&  c.getAddedSubList().get(0).equals("Include USTRG transcripts")) ||
+                        (c.getRemoved().size()>0 &&  c.getRemoved().get(0).equals("Include USTRG transcripts"))) {
+
+                    transcriptsComboBox.getCheckModel().getCheckedItems().removeListener(this);
+                    for (int i = 0; i < transcriptsComboBox.getItems().size(); i++) {
+                        if (transcriptsComboBox.getItems().get(i).startsWith("USTRG")) {
+                            if (transcriptsComboBox.getCheckModel().isChecked("Include USTRG transcripts")) {
+                                transcriptsComboBox.getCheckModel().check(i);
+                            } else {
+                                transcriptsComboBox.getCheckModel().clearCheck(i);
+                            }
+                        }
+                    }
+                    transcriptsComboBox.getCheckModel().getCheckedItems().addListener(this);
+                }
+                if(!loadingGene)
+                    transcriptOrCdsCentricView();
+            }
+        };
+
+        transcriptsComboBox.getCheckModel().getCheckedItems().addListener(changeListener);
 
 
 
@@ -666,6 +689,8 @@ public class GeneBrowserController implements Initializable {
     }
 
     public void displayGeneFromId(String geneId, int start, int end, boolean display, String selectedCondition) {
+
+        loadingGene = true;
         isAGeneDisplayed = false;
         displayCdsGeneBrowserMenuItem.setDisable(false);
         showHideDepthGeneBrowserMenuItem.setDisable(false);
@@ -673,6 +698,7 @@ public class GeneBrowserController implements Initializable {
         transcriptCentricViewMenuItem.setDisable(false);
 
         mutatedCdsController.reset();
+        geneBrowserScrollPane.setVvalue(0);
 
 
         // this is where all the information of the transcripts for a particular gene Will be saved
@@ -730,35 +756,7 @@ public class GeneBrowserController implements Initializable {
         }
 
 
-
-        ListChangeListener<String> changeListener = new ListChangeListener<String>() {
-            @Override
-            public void onChanged(Change<? extends String> c) {
-
-                c.next();
-                if((c.getAddedSubList().size()>0 &&  c.getAddedSubList().get(0).equals("Include USTRG transcripts")) ||
-                        (c.getRemoved().size()>0 &&  c.getRemoved().get(0).equals("Include USTRG transcripts"))) {
-
-                    transcriptsComboBox.getCheckModel().getCheckedItems().removeListener(this);
-                    for (int i = 0; i < transcriptsComboBox.getItems().size(); i++) {
-                        if (transcriptsComboBox.getItems().get(i).startsWith("USTRG")) {
-                            if (transcriptsComboBox.getCheckModel().isChecked("Include USTRG transcripts")) {
-                                transcriptsComboBox.getCheckModel().check(i);
-                            } else {
-                                transcriptsComboBox.getCheckModel().clearCheck(i);
-                            }
-                        }
-                    }
-                    transcriptsComboBox.getCheckModel().getCheckedItems().addListener(this);
-                }
-                transcriptOrCdsCentricView();
-            }
-        };
-
-
         transcriptsComboBox.checkModelProperty().get().checkAll();
-
-        transcriptsComboBox.getCheckModel().getCheckedItems().addListener(changeListener);
 
 
 
@@ -1020,6 +1018,8 @@ public class GeneBrowserController implements Initializable {
         previousGene=geneId;
         previousStart=start;
         previousEnd=end;
+        transcriptOrCdsCentricView();
+        loadingGene = false;
     }
 
 
@@ -2438,7 +2438,9 @@ public class GeneBrowserController implements Initializable {
 
 
             for (int i = 0; i < transcript.getExons().size(); i++) {
+
                 Exon exon = transcript.getExons().get(i);
+                Pfam pfamJump = null;
 
                 int cdsRectangleStart=0, cdsRectangleEnd=0;
 
@@ -2503,6 +2505,7 @@ public class GeneBrowserController implements Initializable {
                         int tmpEndGeneCoord = Math.min(cdsRectangleEnd, endGenomCoord);
 
                         double width = rectanglesAreaWidth * Math.abs(getProportion(tmpEndGeneCoord, tmpStartGeneCoord, length));
+
                         double X = rectanglesAreaWidth * getProportion(tmpStartGeneCoord, startGenomCoord, length);
 
                         cdsRectangle.setX(X);
@@ -2510,15 +2513,47 @@ public class GeneBrowserController implements Initializable {
 
                         cdsGroup.getChildren().add(cdsRectangle);
 
+                        if(hasPfam){
+                            for (Pfam pfam : cds.getPfams()) {
+                                Pair<Integer, Integer> cdsTranscriptCoord = cds.getTranscriptWithCdsPos(transcript);
+                                int pfamStartCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaStart() - 1) * 3) - 1; // -1 since are 1 indexed
+                                int pfamEndCoord = cdsTranscriptCoord.getKey() + ((pfam.getAaEnd() - 1) * 3) + 2; // -1 since are 1 indexed
+                                pfamStartCoord = transcript.genomCoordFromSeqPos(pfamStartCoord);
+                                pfamEndCoord = transcript.genomCoordFromSeqPos(pfamEndCoord);
+
+                                if((pfamStartCoord>=tmpStartGeneCoord && pfamStartCoord<=tmpEndGeneCoord) || (pfamEndCoord>=tmpStartGeneCoord && pfamEndCoord<=tmpEndGeneCoord)
+                                || (pfamStartCoord<tmpStartGeneCoord && tmpStartGeneCoord<pfamEndCoord) || (pfamStartCoord<tmpEndGeneCoord && tmpEndGeneCoord<pfamEndCoord)){
+
+                                    Rectangle pfamRectangle = new Rectangle();
+                                    double pfamWidth = rectanglesAreaWidth * Math.abs(getProportion(Math.min(pfamEndCoord, tmpEndGeneCoord), Math.max(pfamStartCoord, tmpStartGeneCoord), length));
+                                    double pfamX = rectanglesAreaWidth * getProportion(Math.max(pfamStartCoord, tmpStartGeneCoord), startGenomCoord, length);
+                                    if(pfamEndCoord>tmpEndGeneCoord)
+                                        pfamJump = pfam;
+
+                                    pfamRectangle.setHeight(height);
+                                    pfamRectangle.setX(pfamX);
+                                     pfamRectangle.setWidth(pfamWidth);
+                                    pfamRectangle.setFill(Color.rgb(153, 255, 153));
+                                    pfamRectangle.setStroke(Color.WHITE);
+                                    pfamRectangle.setStroke(Color.BLACK);
+                                    pfamRectangle.setStrokeWidth(2);
+                                    pfamRectangle.toFront();
+                                    cdsGroup.getChildren().add(pfamRectangle);
+                                    Tooltip pfamToolTip = new Tooltip(pfam.getDesc());
+                                    pfamToolTip.setShowDelay(Duration.ZERO);
+                                    pfamToolTip.setFont(Font.font(fontSize));
+                                    Tooltip.install(pfamRectangle, pfamToolTip);
+                                    pfamToolTip.setShowDuration(Duration.seconds(4));
+                                }
+                            }
+                        }
 
 
-
-
-                        double offsetY = 0;
                         if (geneSlider.getHighValue() - geneSlider.getLowValue() <= 500) {
                             Pair<String, Integer[]> pair = cds.getSubStringWithOffset(transcript, tmpStartGeneCoord, tmpEndGeneCoord);
 
                             if (pair != null) {
+
 
                                 if (cds.getStrand().equals("-")) {
                                     Line arrowLine = new Line(X, 0.5 * height, X + width, 0.5 * height);
@@ -2606,11 +2641,20 @@ public class GeneBrowserController implements Initializable {
                     });
 
                     //  color depending on having peptides
-                    if (cds.getPeptides().size() > 0) {
-                        cdsRectangleBetweenExons.setFill(Color.rgb(0, 0, 0, 0.2));
-                    } else {
-                        cdsRectangleBetweenExons.setFill(Color.rgb(0, 0, 0, 0.1));
+                    Color lineColor;
+                    double opacity = cds.getPeptides().size() > 0?0.5:0.3;
+                    if(pfamJump!=null){
+                        lineColor = Color.rgb(153, 255, 153, opacity);
+                        Tooltip pfamToolTip = new Tooltip(pfamJump.getDesc());
+                        pfamToolTip.setShowDelay(Duration.ZERO);
+                        pfamToolTip.setFont(Font.font(fontSize));
+                        Tooltip.install(cdsRectangleBetweenExons, pfamToolTip);
+                        pfamToolTip.setShowDuration(Duration.seconds(4));
+                    }else{
+                        lineColor = new Color(0, 0, 0, opacity);
                     }
+
+                    cdsRectangleBetweenExons.setFill(lineColor);
 
 
                     cdsRectangleBetweenExons.setY(height / 8.);
@@ -2676,7 +2720,7 @@ public class GeneBrowserController implements Initializable {
 
                     pfamRectangle.setX(rectanglesAreaWidth * (getProportion(pfamStartCoordInView, startGenomCoord, totalSizeInView)));
                     pfamRectangle.setWidth(rectanglesAreaWidth * (getProportion(pfamEndCoordInView, pfamStartCoordInView, totalSizeInView)));
-                    cdsGroup.getChildren().add(pfamRectangle);
+                    //cdsGroup.getChildren().add(pfamRectangle);
 
                     // Tooltip for pfam domain
                     Tooltip pfamToolTip = new Tooltip(pfam.getDesc());

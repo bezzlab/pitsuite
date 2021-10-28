@@ -105,7 +105,7 @@ public class FXMLDocumentController implements Initializable {
     public void configGen() {
         configPane.setVisible(true);
         splitPane.setVisible(false);
-
+        runPitPane.setVisible(false);
         configGenerationController.setParent(this);
     }
 
