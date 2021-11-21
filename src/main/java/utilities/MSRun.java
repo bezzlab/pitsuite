@@ -47,8 +47,7 @@ public class MSRun {
         this.type = type;
     }
 
-    public void load(Nitrite db, String output, String runName, PeptideTableController controller,
-                     Peptide peptideToFind, String conditionA, String conditionB){
+    public void load(Nitrite db, String runName, Peptide peptideToFind, String conditionA, String conditionB){
         NitriteCollection collection = db.getCollection("peptideMap");
         Cursor cursor = collection.find(eq("run", runName));
 
@@ -86,13 +85,13 @@ public class MSRun {
                 String file = (String) psm.get("file");
                 if (!mzmlIndexes.containsKey(file)){
                     mzmlIndexes.put(file, new HashMap<>());
-                    //loadIndex(output, file);
+                    loadIndex(file);
                 }
             }
 
             if(peptideToFind!=null && peptideToFind.getSequence().equals(peptide.getSequence())){
                 Peptide finalPeptide = peptide;
-                Platform.runLater(() -> controller.selectPeptide(finalPeptide));
+                Platform.runLater(() -> PeptideTableController.getInstance().selectPeptide(finalPeptide));
             }
 
         }
@@ -101,7 +100,7 @@ public class MSRun {
 
     }
 
-    private void loadIndex(String output,  String file){
+    private void loadIndex(String file){
         String path = Config.getRunPath(name)+"/"+file+".mzML.index";
         try {
             Files.lines(Path.of(path)).forEach(line -> {
@@ -115,7 +114,7 @@ public class MSRun {
             });
 
         } catch (IOException e) {
-            e.printStackTrace();
+
         }
     }
 

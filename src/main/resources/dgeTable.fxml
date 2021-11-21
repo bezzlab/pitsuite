@@ -86,13 +86,16 @@
                   </HBox>
                </children>
             </HBox>
-             <HBox id="white-panel" fx:id="selectedGeneCharts" alignment="CENTER" style="-fx-background-color: #F4F4F4;" GridPane.hgrow="NEVER" GridPane.rowIndex="3">
+             <HBox id="white-panel" fx:id="bottomLeftBox" alignment="CENTER" style="-fx-background-color: #F4F4F4;" GridPane.hgrow="NEVER" GridPane.rowIndex="3">
                <children>
-                  <Label text="Loading data..." textFill="#00000066" HBox.hgrow="ALWAYS">
+                  <Label fx:id="loadingTableLabel" text="Loading table..." textFill="#00000066" HBox.hgrow="ALWAYS">
                      <font>
                         <Font size="96.0" />
                      </font>
                   </Label>
+                   <HBox fx:id="selectedGeneCharts"  HBox.hgrow="ALWAYS">
+
+                   </HBox>
                </children>
              </HBox>
 

@@ -148,22 +148,19 @@ public class ResultsController implements Initializable {
         } catch(Exception e){
             e.printStackTrace();
         }
-//
-//
-//
-//
-//        Platform.runLater(() -> {
-//            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/splicingTable" + ".fxml"));
-//            try {
-//                Parent root = fxmlLoader2.load();
-//
-//                splicingTableController = fxmlLoader2.getController();
-//                splicingTableController.setParentControler(this, allGenesReader);
-//                resultsTabPane.getTabs().get(3).setContent(root);
-//            } catch(Exception e){
-//                e.printStackTrace();
-//            }
-//        });
+
+        Platform.runLater(() -> {
+            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/splicingTable" + ".fxml"));
+            try {
+                Parent root = fxmlLoader2.load();
+
+                splicingTableController = fxmlLoader2.getController();
+                splicingTableController.setParentControler(this, allGenesReader);
+                resultsTabPane.getTabs().get(3).setContent(root);
+            } catch(Exception e){
+                e.printStackTrace();
+            }
+        });
 
 
 
@@ -247,19 +244,21 @@ public class ResultsController implements Initializable {
                 }
             });
 
-            Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/blastTab" + ".fxml"));
-                try {
-                    Parent root = fxmlLoader2.load();
+            if(!Config.isReferenceGuided()) {
+                Platform.runLater(() -> {
+                    FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/blastTab" + ".fxml"));
+                    try {
+                        Parent root = fxmlLoader2.load();
 
-                    blastTabController = fxmlLoader2.getController();
+                        blastTabController = fxmlLoader2.getController();
 
-                    resultsTabPane.getTabs().get(6).setContent(root);
-                    //ControllersBasket.setBlastTabController(blastTabController);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
+                        resultsTabPane.getTabs().get(8).setContent(root);
+                        //ControllersBasket.setBlastTabController(blastTabController);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
 
         Platform.runLater(() -> {
             FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));

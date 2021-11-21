@@ -109,12 +109,21 @@ public class DgeAlert extends Alert {
 
         AnchorPane readCountsPane = new AnchorPane();
 
-        pane.getChildren().add(grid);
+
 
         AnchorPane.setBottomAnchor(grid, 0.);
         AnchorPane.setTopAnchor(grid, 0.);
-        grid.setMaxWidth(titledPane.getMaxWidth()-10);
-        grid.setPrefWidth(titledPane.getMaxWidth()-10);
+
+        if(titledPane!=null){
+            grid.setMaxWidth(titledPane.getMaxWidth()-10);
+            grid.setPrefWidth(titledPane.getMaxWidth()-10);
+            titledPane.setContent(grid);
+        }else{
+            AnchorPane.setRightAnchor(grid, 0.);
+            AnchorPane.setLeftAnchor(grid, 0.);
+            pane.getChildren().add(grid);
+        }
+
 
 
 
@@ -136,8 +145,9 @@ public class DgeAlert extends Alert {
 
         ConfidentBarChart confidentBarChart = DgeTableController.drawSelectedGeneReadCount(gene, readCountsPane, fontSize);
 
-
-        titledPane.expandedProperty().addListener((observable, oldValue, newValue) -> confidentBarChart.draw());
+        if(titledPane!=null){
+            titledPane.expandedProperty().addListener((observable, oldValue, newValue) -> confidentBarChart.draw());
+        }
 
         int i=0;
 

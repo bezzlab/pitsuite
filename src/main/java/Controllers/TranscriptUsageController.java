@@ -144,14 +144,14 @@ public class TranscriptUsageController extends Controller {
 
         if(allGenesReader.getGenesLoadedProperty().get()){
             Platform.runLater(() -> {
-                keggController.setParentController(this, allGenesReader);
+                keggController.setParentController(this);
                 goTermsController.setParentController(this, allGenesReader, Database.getDb());
             });
         }else{
             allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
                 if (allGenesReader.getGenesLoadedProperty().get()) {
                     Platform.runLater(() -> {
-                        keggController.setParentController(this, allGenesReader);
+                        keggController.setParentController(this);
                         goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     });
                 }

@@ -66,8 +66,6 @@ public class PhosphoController implements Initializable {
     @FXML
     private Pane graphPane;
     @FXML
-    private Pane heatmapPane;
-    @FXML
     private TableColumn<Kinase, String> kinaseColumn;
     @FXML
     private TableColumn<Kinase, Double> kinaseLog2fcColumn;

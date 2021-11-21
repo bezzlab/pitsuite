@@ -13,6 +13,8 @@ public class Config {
 
     }
 
+
+
     public JSONObject getConfig() {
         return config;
     }
@@ -33,7 +35,7 @@ public class Config {
         return config.getJSONObject("conditions").keySet();
     }
     public static Set<String> getSamplesInCondition(String condition){
-        return config.getJSONObject("conditions").getJSONObject(condition).getJSONObject("samples").keySet();
+        return config.getJSONObject("conditions").getJSONObject(condition).keySet();
     }
 
 
@@ -259,6 +261,23 @@ public class Config {
 
     public static boolean hasPatients(){
         return config.has("patients");
+    }
+
+    public static Object getParentRun(String msRun) {
+        if(config.getJSONObject("mzml").has("combine")){
+            for(String combinedRun: config.getJSONObject("mzml").getJSONObject("combine").keySet()){
+                for(Object subrun :config.getJSONObject("mzml").getJSONObject("combine").getJSONObject(combinedRun).getJSONArray("runs")){
+                    if((msRun.equals(subrun)))
+                        return combinedRun;
+                }
+
+
+            }
+
+
+
+        }
+        return msRun;
     }
 }
 

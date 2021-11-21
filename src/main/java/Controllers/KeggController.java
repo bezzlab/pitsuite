@@ -59,7 +59,6 @@ public class KeggController implements Initializable {
     private JFXTextField searchField;
 
     private Controller parentController;
-    private AllGenesReader allGenesReader;
     private boolean keggLoaded;
 
 
@@ -84,18 +83,17 @@ public class KeggController implements Initializable {
     }
 
 
-    public void setParentController(Controller parentController, AllGenesReader allGenesReader){
+    public void setParentController(Controller parentController){
         this.parentController = parentController;
-        this.allGenesReader = allGenesReader;
 
-        TextFields.bindAutoCompletion(searchField, allGenesReader.getAllKeggNames());
-        TextFields.bindAutoCompletion(showKeggField, allGenesReader.getAllKeggNames());
+        TextFields.bindAutoCompletion(searchField, AllGenesReader.getInstance().getAllKeggNames());
+        TextFields.bindAutoCompletion(showKeggField, AllGenesReader.getInstance().getAllKeggNames());
         keggLoaded = true;
     }
 
     @FXML
     private void addFilter(){
-        filterTable.getItems().add(allGenesReader.getAllPathways().stream().filter(kegg -> searchField.getText()
+        filterTable.getItems().add(AllGenesReader.getInstance().getAllPathways().stream().filter(kegg -> searchField.getText()
                 .equals(kegg.getName())).findFirst().orElse(null));
     }
     @FXML
@@ -115,7 +113,7 @@ public class KeggController implements Initializable {
     @FXML
     private void showKegg(){
 
-        String keggId = allGenesReader.getAllPathways().stream().filter(kegg -> showKeggField.getText()
+        String keggId = AllGenesReader.getInstance().getAllPathways().stream().filter(kegg -> showKeggField.getText()
                 .equals(kegg.getName())).findFirst().orElse(null).getId();
 
         preparePathviewPlot(keggId);
@@ -179,7 +177,7 @@ public class KeggController implements Initializable {
     }
 
     public boolean isInKegg(FoldChangeTableModel row){
-        ArrayList<KeggPathway> geneKeggs = allGenesReader.getKegg(row.getGeneSymbol());
+        ArrayList<KeggPathway> geneKeggs = AllGenesReader.getInstance().getKegg(row.getGeneSymbol());
 
         if(filterTable.getItems().size()==0) return true;
 
@@ -196,7 +194,7 @@ public class KeggController implements Initializable {
     }
 
     public boolean isInKegg(String gene){
-        ArrayList<KeggPathway> geneKeggs = allGenesReader.getKegg(gene);
+        ArrayList<KeggPathway> geneKeggs = AllGenesReader.getInstance().getKegg(gene);
 
         if(filterTable.getItems().size()==0) return true;
 
@@ -214,22 +212,22 @@ public class KeggController implements Initializable {
 
     public void setKeggGeneTable(String geneSymbol){
 
-//        if (!geneSymbol.equals(selectedGeneLabel.getText())){ // not the same gene
-//            geneKeggTable.getItems().clear();
-//
-//            selectedGeneLabel.setText(geneSymbol);
-//            new Thread(() -> {
-//
-//                ArrayList<KeggPathway> keggPathways = allGenesReader.getKegg(geneSymbol);
-//                if (keggPathways != null) {
-//                    for (KeggPathway kegg: keggPathways){
-//                        geneKeggTable.getItems().add(kegg);
-//                        System.out.println(kegg);
-//                    }
-//                }
-//            }).start();
-//
-//        }
+        if (!geneSymbol.equals(selectedGeneLabel.getText())){ // not the same gene
+            geneKeggTable.getItems().clear();
+
+            selectedGeneLabel.setText(geneSymbol);
+            new Thread(() -> {
+
+                ArrayList<KeggPathway> keggPathways = AllGenesReader.getInstance().getKegg(geneSymbol);
+                if (keggPathways != null) {
+                    for (KeggPathway kegg: keggPathways){
+                        geneKeggTable.getItems().add(kegg);
+                        System.out.println(kegg);
+                    }
+                }
+            }).start();
+
+        }
 
     }
 

@@ -158,13 +158,13 @@ public class GSEAController  implements Initializable {
             Platform.runLater(() -> {
                 ImageView viewer = new ImageView();
                 if(rnaOrProtein.equals("rna")){
-                    viewer.setImage(new Image("file:plots/gseaRna.jpeg"));
+                    viewer.setImage(new Image("file:plots/gseaRna.png"));
                     rnaImageContainer.getChildren().clear();
                     rnaImageContainer.getChildren().add(viewer);
                 }
 
                 else{
-                    viewer.setImage(new Image("file:plots/gseaProteins.jpeg"));
+                    viewer.setImage(new Image("file:plots/gseaProteins.png"));
                     proteinImageContainer.getChildren().clear();
                     proteinImageContainer.getChildren().add(viewer);
                 }

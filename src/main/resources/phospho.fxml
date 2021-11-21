@@ -18,14 +18,14 @@
      <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <columnConstraints>
              <ColumnConstraints percentWidth="50" />
-             <ColumnConstraints percentWidth="50" />
+             <ColumnConstraints percentWidth="48" />
          </columnConstraints>
          <rowConstraints>
              <RowConstraints percentHeight="100" />
          </rowConstraints>
          <children>
 
-            <TabPane tabClosingPolicy="UNAVAILABLE">
+            <TabPane tabClosingPolicy="UNAVAILABLE" GridPane.hgrow="NEVER">
               <tabs>
                 <Tab text="Phosphosites">
                   <content>
@@ -54,20 +54,19 @@
                 </Tab>
               </tabs>
             </TabPane>
-             <Accordion fx:id="kinaseAccordion" GridPane.columnIndex="1">
+             <Accordion fx:id="kinaseAccordion" GridPane.columnIndex="1" GridPane.hgrow="NEVER">
                  <panes>
                      <TitledPane animated="false" text="Graph" expanded="true">
                          <content>
-                             <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                             <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="0.0">
                                  <!--                                            <WebView fx:id="kinaseWebview" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>-->
-                                 <AnchorPane fx:id="graphPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                 <Pane fx:id="heatmapPane" />
+                                 <AnchorPane fx:id="graphPane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="0.0" />
                              </AnchorPane>
                          </content>
                      </TitledPane>
                      <TitledPane animated="false" text="Gene expression and protein abundance">
                          <content>
-                             <AnchorPane fx:id="dgePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                             <AnchorPane fx:id="dgePane" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="0.0" />
                          </content>
                      </TitledPane>
                      <TitledPane animated="false" text="untitled 3">

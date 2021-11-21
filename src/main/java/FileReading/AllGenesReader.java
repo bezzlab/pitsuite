@@ -25,8 +25,10 @@ public class AllGenesReader {
     private Nitrite db;
     private SimpleBooleanProperty geneLoadedProperty;
     private LinkedList<String> goTermsStringForAutoCompletion;
+    private static AllGenesReader instance;
 
     public AllGenesReader(String keggPath, String goTermsPath,  Nitrite db){
+        instance = this;
         this.db = db;
         geneLoadedProperty = new SimpleBooleanProperty(false);
         read(keggPath, goTermsPath);
@@ -183,4 +185,8 @@ public class AllGenesReader {
         return goTermsIsAMap;
     }
 
+
+    public static AllGenesReader getInstance() {
+        return instance;
+    }
 }

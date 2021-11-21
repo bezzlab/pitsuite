@@ -230,9 +230,8 @@ public class SpectrumViewerController implements Initializable {
     }
 
 
-    public void setConfig(Config config, WebView specWebview){
+    public void setConfig(Config config){
         this.config = config;
-        this.specWebview = specWebview;
     }
 
     public void getMzmlIndex(String run){
@@ -285,7 +284,7 @@ public class SpectrumViewerController implements Initializable {
                 command += "$(\"#lorikeet\").specview({\"sequence\":\"" + peptide + "\",\n" +
                         "\t\t\t\t\t\t\t\t\"peaks\": ms2peaks});\t";
 
-                System.out.println(command);
+
 
                 webEngine.executeScript(command);
             }
@@ -305,7 +304,6 @@ public class SpectrumViewerController implements Initializable {
 
         String filepath = Config.getRunPath(run.getName())+"/"+psm.getFile()+".mzML";
 
-        System.out.println(filepath);
         HashMap<Integer, Long> index = run.getIndex(psm.getFile());
 
 
@@ -372,7 +370,7 @@ public class SpectrumViewerController implements Initializable {
 
 
         Text labelForSize = new Text("y4+++");
-        double textHeight = labelForSize.getLayoutBounds().getWidth();
+        double textHeight = labelForSize.getLayoutBounds            ().getWidth();
         double textWidth = labelForSize.getLayoutBounds().getHeight();
         labelForSize.setFont(Font.font("monospace", 16));
         labelForSize.getTransforms().add(new Rotate(90));

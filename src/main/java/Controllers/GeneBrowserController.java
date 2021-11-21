@@ -1452,7 +1452,9 @@ public class GeneBrowserController implements Initializable {
                         int peptideRectangleStart = 0, peptideRectangleEnd = 0;
 
                         if ((exon.getStart() >= startGenomCoord && exon.getStart() <= endGenomCoord) ||
-                                (exon.getEnd() >= startGenomCoord && exon.getEnd() <= endGenomCoord)) {
+                                (exon.getEnd() >= startGenomCoord && exon.getEnd() <= endGenomCoord) ||
+                                (startGenomCoord>=exon.getStart() && exon.getEnd()>=startGenomCoord) ||
+                                (endGenomCoord>=exon.getEnd() && exon.getEnd()>=endGenomCoord)) {
 
                             if(exon.getStart() <= peptideGenomicPos.getKey() && exon.getEnd() >= peptideGenomicPos.getValue()) {
                                 peptideRectangleStart = Math.max(peptideGenomicPos.getKey(), startGenomCoord) - 1;

@@ -1,6 +1,9 @@
 package Controllers;
 
-import Cds.*;
+import Cds.CDS;
+import Cds.PSM;
+import Cds.PTM;
+import Cds.Peptide;
 import Singletons.Database;
 import TablesModels.PeptideSampleModel;
 import com.jfoenix.controls.JFXComboBox;
@@ -44,8 +47,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.dizitart.no2.filters.Filters.*;
 
@@ -84,8 +85,6 @@ public class PeptideTableController implements Initializable {
     @FXML
     private TableColumn<Peptide, Double> foldChangeColumn;
     @FXML
-    private WebView specWebview;
-    @FXML
     private AnchorPane spectrumViewer;
 
     @FXML
@@ -115,15 +114,6 @@ public class PeptideTableController implements Initializable {
     private Peptide selectedPeptide;
     private Peptide peptideToFind;
     private MSRun selectedRun;
-
-    public TextField geneSymbolSearchBox;
-    public TextField geneNumberSearchBox;
-    public TextField sequenceSearchBox;
-    public TextField foldChangeSearchBox;
-    List<Peptide> resultMOD = new ArrayList<Peptide>();
-
-    @FXML
-    private Label numberOfGenesInPeptideTableLabel;
 
     private static PeptideTableController instance;
 
@@ -247,7 +237,7 @@ public class PeptideTableController implements Initializable {
 
                         drawIntensitiesChart(row.getItem().getIntensities());
 
-                        spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
+                        spectrumViewerController.setConfig(parentController.getConfig());
                         spectrumViewerController.select(psmTable.getSelectionModel().getSelectedItem()
                                 , selectedRun, selectedPeptide.getSequence());
                     }
@@ -290,7 +280,8 @@ public class PeptideTableController implements Initializable {
         PTMNameFilterColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         PTMMassShiftFilterColumn.setCellValueFactory(new PropertyValueFactory<>("massShift"));
         populateSuggestedPtms();
-        numberOfGenesInPeptideTableLabel.setText(peptideTable.getItems().size() + " ");
+
+
     }
 
     public static PeptideTableController getInstance(){return instance;}
@@ -298,7 +289,7 @@ public class PeptideTableController implements Initializable {
 
     public void setParentController(ResultsController parentController){
         this.parentController = parentController;
-        spectrumViewerController.setConfig(parentController.getConfig(), specWebview);
+        spectrumViewerController.setConfig(parentController.getConfig());
 
 
         for ( String run : Config.getRuns()){
@@ -319,7 +310,6 @@ public class PeptideTableController implements Initializable {
     @FXML
     public void loadRun(String peptideSeq){
 
-        System.out.println(runCombobox.getSelectionModel().getSelectedItem()+", "+peptideSeq);
 
         selectedRun = new MSRun(runCombobox.getSelectionModel().getSelectedItem(), Config.getOutputPath());
 
@@ -347,11 +337,11 @@ public class PeptideTableController implements Initializable {
                     condBCombobox.getSelectionModel().select(1);
                 });
 
-                selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                        this, peptideToFind, condIterator.next(), condIterator.next());
+                selectedRun.load(Database.getDb(),  runCombobox.getSelectionModel().getSelectedItem(),
+                         peptideToFind, condIterator.next(), condIterator.next());
             }else
-                selectedRun.load(Database.getDb(), Config.getOutputPath(), runCombobox.getSelectionModel().getSelectedItem(),
-                        this, peptideToFind, null, null);
+                selectedRun.load(Database.getDb(),  runCombobox.getSelectionModel().getSelectedItem(),
+                         peptideToFind, null, null);
 
 
             Platform.runLater(() -> {
@@ -371,29 +361,12 @@ public class PeptideTableController implements Initializable {
                             int finalI = i;
 
 
-                                peptideTable.requestFocus();
-                                peptideTable.getSelectionModel().select(finalI);
-                                peptideTable.getFocusModel().focus(finalI);
-                                peptideTable.scrollTo(finalI);
-                                selectPeptide(peptide);
+                            peptideTable.requestFocus();
+                            peptideTable.getSelectionModel().select(finalI);
+                            peptideTable.getFocusModel().focus(finalI);
+                            peptideTable.scrollTo(finalI);
+                            selectPeptide(peptide);
 
-        }).start();
-    }
-
-    public void findPeptideInTable(String peptideSeq, String run){
-
-        if(selectedRun.getName().equals(run)){
-            int i = 0;
-            for(Peptide peptide: peptideTable.getItems()){
-                if(peptide.getSequence().equals(peptideSeq)){
-                    int finalI = i;
-                    Platform.runLater(() -> {
-                        peptideTable.requestFocus();
-                        peptideTable.getSelectionModel().select(finalI);
-                        peptideTable.getFocusModel().focus(finalI);
-                        peptideTable.scrollTo(finalI);
-                        selectPeptide(peptide);
-                    });
 
                             break;
                         }
@@ -471,6 +444,9 @@ public class PeptideTableController implements Initializable {
                 ptmSamples.put(psm.getModifications(), modificationsSample);
             }
         }
+
+
+
 
         modificationsTable.getItems().clear();
 
@@ -628,7 +604,7 @@ public class PeptideTableController implements Initializable {
 
         }
 
-        System.out.println("genNetwork(" + nodesStr.toString() + ", " + linksStr.toString() + "," + webview.getHeight() + ")");
+
         return "genNetwork(" + nodesStr.toString() + ", " + linksStr.toString() + "," + webview.getHeight() + ")";
 
     }
@@ -712,7 +688,7 @@ public class PeptideTableController implements Initializable {
 
 
 
-        if(parentController.getConfig().hasQuantification(runCombobox.getSelectionModel().getSelectedItem())){
+        if(Config.hasQuantification(runCombobox.getSelectionModel().getSelectedItem())){
             NitriteCollection collection = Database.getDb().getCollection("peptideQuant");
             Document doc = collection.find(Filters.eq("peptide", peptide)).firstOrDefault();
 
@@ -811,6 +787,9 @@ public class PeptideTableController implements Initializable {
                     allSeries.get(i).getData().add(new XYChart.Data(conditionKey, condition.getInt(sampleKey)));
                     i++;
                 }
+
+
+
             }
         }
         for(XYChart.Series series: allSeries){
@@ -939,382 +918,37 @@ public class PeptideTableController implements Initializable {
     }
 
     private void populateSuggestedPtms(){
-        suggestedPTMFilterTable.getItems().add(new MaxQuantPTM( "M","Oxidation (M)"));
-        suggestedPTMFilterTable.getItems().add(new PTM("Protein N-term","Acetyl (Protein N-term)"));
-
-    }
-
-    public void filter() {
-        Iterator<Peptide> it = allPeptides.iterator();
-        peptideTable.getItems().clear();
-        //populate table with allPeptides if no mod filters chosen
-        if (ptmFilterTable.getItems().isEmpty()) {
-            Iterator<Peptide> it1 = allPeptides.iterator();
-            peptideTable.getItems().clear();
-            while (it1.hasNext()) {
-                Peptide peptide = it1.next();
-                peptideTable.getItems().add(peptide);
-            }
-        }
-        //filter the table if mods are chosen
-        while (it.hasNext()) {
-            Peptide peptide = it.next();
-            for (PTM ptm : ptmFilterTable.getItems()) {
-                if (peptide.contains(ptm)) {
-                    peptideTable.getItems().add(peptide);
-                    resultMOD.add(peptide);
-                    break;
-                }
-            }
-        }
-        numberOfGenesInPeptideTableLabel.setText(peptideTable.getItems().size() + " ");
+        suggestedPTMFilterTable.getItems().add(new PTM("S", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("T", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("Y", "(Phospho (STY))"));
+        suggestedPTMFilterTable.getItems().add(new PTM("M", "(Phospho (STY))"));
     }
 
     @FXML
-    public void resetModFilter() {
-        Iterator<Peptide> it1 = allPeptides.iterator();
+    public void filter(){
+        Iterator<Peptide> it = allPeptides.iterator();
         peptideTable.getItems().clear();
-        while (it1.hasNext()) {
-            Peptide peptide = it1.next();
-            peptideTable.getItems().add(peptide);
-        }
-        numberOfGenesInPeptideTableLabel.setText(peptideTable.getItems().size() + " ");
-        ptmFilterTable.getItems().clear();
-        suggestedPTMFilterTable.getItems().clear();
-        populateSuggestedPtms();
-    }
-
-    public void resetSecondFilter() {
-        geneSymbolSearchBox.clear();
-        geneNumberSearchBox.clear();
-        sequenceSearchBox.clear();
-        foldChangeSearchBox.clear();
-
-        Iterator<Peptide> it1 = allPeptides.iterator();
-        peptideTable.getItems().clear();
-        while (it1.hasNext()) {
-            Peptide peptide = it1.next();
-            peptideTable.getItems().add(peptide);
-        }
-        numberOfGenesInPeptideTableLabel.setText(peptideTable.getItems().size() + " ");
-    }
-
-    public void secondFilter() {
-
-        Iterator<Peptide> it2 = allPeptides.iterator();
-        peptideTable.getItems().clear();
-        while (it2.hasNext()) {
-            Peptide peptide = it2.next();
-            peptideTable.getItems().add(peptide);
-        }
-
-        String geneSymbolFilter="";
-        Integer numberOfGenesFilter = 0;
-        String sequenceFilter="";
-        double foldChangeFilter=0;
-
-        if(geneSymbolSearchBox.getText().length()>0) {
-            geneSymbolFilter = geneSymbolSearchBox.getText().strip().toUpperCase();
-        }
-        if (geneNumberSearchBox.getText().length() > 0) {
-            numberOfGenesFilter = Integer.parseInt(geneNumberSearchBox.getText());
-        }
-        if(sequenceSearchBox.getText().length()>0) {
-            sequenceFilter = sequenceSearchBox.getText().strip().toUpperCase();
-        }
-        if(foldChangeSearchBox.getText().length()>0) {
-            foldChangeFilter = Double.parseDouble(foldChangeSearchBox.getText());
-        }
-
-        String finalGSFilter = geneSymbolFilter;
-        Integer finalGNFilter = numberOfGenesFilter;
-        String finalSEQfilter = sequenceFilter;
-        Double finalFCfilter = foldChangeFilter;
-        Predicate<Peptide> isGeneSymbol = e -> e.getGenes().contains(finalGSFilter);
-        Predicate<Peptide> isGeneNumber = e -> e.getGenes().size() == finalGNFilter;
-        Predicate<Peptide> isSequenceEqual = e -> e.getSequence().contains(finalSEQfilter);
-        Predicate<Peptide> isFCbiggerThan = e -> e.getFoldChange() > (finalFCfilter);
-
-        List<Peptide> resultGS = new ArrayList<Peptide>();
-        List<Peptide> resultGN = new ArrayList<Peptide>();
-        List<Peptide> resultSEQ = new ArrayList<Peptide>();
-
-        //IF TABLE WAS FILTERED FOR MODS
-        //GENE SYMBOL FILTER
-        if(ptmFilterTable.getItems().size()>0) {
-            //GENE SYMBOL
-            if (geneSymbolFilter.length() > 0) {
-                peptideTable.getItems().clear();
-                List<Peptide> result = resultMOD.stream()
-                        .filter(isGeneSymbol)
-                        .collect(Collectors.toList());
-                Iterator<Peptide> it = result.iterator();
-                while (it.hasNext()) {
-                    Peptide peptide = it.next();
+        while (it.hasNext()){
+            Peptide peptide = it.next();
+            for(PTM ptm: ptmFilterTable.getItems()){
+                if(peptide.contains(ptm)){
                     peptideTable.getItems().add(peptide);
-                    resultGS.add(peptide);
+                    break;
                 }
             }
 
-            //GENE NUMBER
-            if (geneNumberSearchBox.getText().length() > 0) {
-                peptideTable.getItems().clear();
-                List<Peptide> result2;
-                if (geneSymbolSearchBox.getText().length()>0) {
-                    result2 = resultGS.stream()
-                            .filter(isGeneNumber)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultGN.add(peptide);
-                    }
-                } else {
-                    result2 = resultMOD.stream()
-                            .filter(isGeneNumber)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultGN.add(peptide);
-                    }
-                }
-
-            }
-
-            //PEPTIDE SEQUENCE
-            if (sequenceSearchBox.getText().length()>0) {
-                if (geneNumberSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = resultGN.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                } else if (geneSymbolSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = resultGS.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                } else {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = resultMOD.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                }
-            }
-            //FOLD CHANGE FILTER
-            if (foldChangeSearchBox.getText().length()>0) {
-                if (sequenceSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultSEQ.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else if (geneNumberSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultGN.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else if (geneSymbolSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultGS.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultMOD.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-
-                }
-            }
         }
-
-        //IF TABLE NOT FILTERED FOR MODS
-        else {
-            //GENE SYMBOL FILTER
-            if (geneSymbolSearchBox.getText().length()>0) {
-                peptideTable.getItems().clear();
-                List<Peptide> result = allPeptides.stream()
-                        .filter(isGeneSymbol)
-                        .collect(Collectors.toList());
-                Iterator<Peptide> it = result.iterator();
-                while (it.hasNext()) {
-                    Peptide peptide = it.next();
-                    resultGS.add(peptide);
-                    peptideTable.getItems().add(peptide);
-                }
-
-            }
-            //GENE NUMBER FILTER
-            if (geneNumberSearchBox.getText().length() > 0) {
-                peptideTable.getItems().clear();
-                List<Peptide> result2;
-                if (geneSymbolSearchBox.getText().length()>0) {
-                    result2 = resultGS.stream()
-                            .filter(isGeneNumber)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultGN.add(peptide);
-                    }
-                } else {
-                    result2 = allPeptides.stream()
-                            .filter(isGeneNumber)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultGN.add(peptide);
-                    }
-                }
-
-            }
-            //PEPTIDE SEQUENCE FILTER
-            if (sequenceSearchBox.getText().length()>0) {
-                if (geneNumberSearchBox.getText().length() > 0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = resultGN.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                } else if (geneSymbolSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = resultGS.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                } else {
-                    peptideTable.getItems().clear();
-                    List<Peptide> result2 = allPeptides.stream()
-                            .filter(isSequenceEqual)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = result2.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                        resultSEQ.add(peptide);
-                    }
-
-                }
-            }
-            //FOLD CHANGE FILTER
-            if (foldChangeSearchBox.getText().length()>0) {
-                if (sequenceSearchBox.getText().length()>0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultSEQ.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else if (geneNumberSearchBox.getText().length() > 0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultGN.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else if (geneSymbolSearchBox.getText().length() > 0) {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = resultGS.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-                } else {
-                    peptideTable.getItems().clear();
-                    List<Peptide> resultFold = allPeptides.stream()
-                            .filter(isFCbiggerThan)
-                            .collect(Collectors.toList());
-                    Iterator<Peptide> it = resultFold.iterator();
-                    while (it.hasNext()) {
-                        Peptide peptide = it.next();
-                        peptideTable.getItems().add(peptide);
-                    }
-
-                }
-            }
-        }
-        numberOfGenesInPeptideTableLabel.setText(peptideTable.getItems().size() + " ");
     }
-
-
-
 
     public void showPeptide(Peptide peptide){
         String run = peptide.getRunName();
+
 
         if(runCombobox.getSelectionModel().getSelectedItem()==null || !runCombobox.getSelectionModel().getSelectedItem().equals("run")){
             runCombobox.getSelectionModel().select(run);
             peptideToFind = peptide;
             loadRun();
-        }
-        else{
+        }else{
             for(Peptide tablePeptide: peptideTable.getItems()){
                 if(tablePeptide.getSequence().equals(peptide.getSequence())){
                     selectPeptide(tablePeptide);
@@ -1322,6 +956,7 @@ public class PeptideTableController implements Initializable {
                 }
             }
         }
+
     }
 
     public void drawIntensitiesChart(HashMap<String, Double> intensities){

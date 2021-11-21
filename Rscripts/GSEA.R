@@ -42,9 +42,9 @@ if(args[1]=="go"){
 
 
 if(rnaOrProtein=="rna"){
-  jpeg(filename="plots/gseaRna.jpeg", width = as.numeric(args[3]), height = as.numeric(args[4]))
+  png(filename="plots/gseaRna.png", width = as.numeric(args[3]), height = as.numeric(args[4]))
 }else{
-  jpeg(filename="plots/gseaProteins.jpeg", width = as.numeric(args[3]), height = as.numeric(args[4]))
+  png(filename="plots/gseaProteins.png", width = as.numeric(args[3]), height = as.numeric(args[4]))
 }
 
 plt = dotplot(res, showCategory=15, font.size=14) + theme(plot.background = element_rect(fill = "#F4F4F4"), panel.background = element_rect(fill = "#F4F4F4", ),

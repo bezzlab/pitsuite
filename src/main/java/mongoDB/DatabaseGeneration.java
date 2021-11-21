@@ -166,12 +166,14 @@ public class DatabaseGeneration {
                     case "transcriptCount":
                         transcriptCountsParser(filePath);
                         break;
+                    case "blast":
+                        blastParser(filePathString);
+                        break;
                 }
 
 
             }
         }
-//        loadingBar.setProgress(1.0);
         Platform.runLater(() -> progressDialog.setText("Creating indexes..."));
         createIndexes();
         Platform.runLater(() -> progressDialog.setText("Import complete. Project can be opened"));
@@ -201,6 +203,7 @@ public class DatabaseGeneration {
         pathsMap.put("transcriptUsage", new ArrayList<>());
         pathsMap.put("transcriptCount", new ArrayList<>());
         pathsMap.put("ptm", new ArrayList<>());
+        pathsMap.put("blast", new ArrayList<>());
 
 
         Stream<Path> filePathStream = null;
@@ -253,6 +256,8 @@ public class DatabaseGeneration {
                     pathsMap.get("transcriptCount").add(filePath);
                 }else if (filePath.toAbsolutePath().toString().contains("phosphorylation") && filePath.getFileName().toString().equals("ptm.json")){
                     pathsMap.get("ptm").add(filePath);
+                }else if (filePath.getFileName().toString().equals("hits.json")){
+                    pathsMap.get("blast").add(filePath);
                 }
 
             }
@@ -701,6 +706,7 @@ public class DatabaseGeneration {
 
     }
 
+
     private void dgeParser(Path filePath) throws IOException {
 
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
@@ -722,7 +728,12 @@ public class DatabaseGeneration {
                 if (dgeDocsToDBList.size() >= 10000) {
                     Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
                     splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
-                    dgeCollection.insert(splicDocsArray);
+                    try{
+                        dgeCollection.insert(splicDocsArray);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
+
                     dgeDocsToDBList = new ArrayList<>();
                 }
 
@@ -749,7 +760,7 @@ public class DatabaseGeneration {
 
             dgeCollection.createIndex("symbol", IndexOptions.indexOptions(IndexType.Unique, false));
             if(hasBlastName){
-                dgeCollection.createIndex("names", IndexOptions.indexOptions(IndexType.Fulltext, false));
+                //dgeCollection.createIndex("names", IndexOptions.indexOptions(IndexType.Fulltext, false));
             }
 
 
@@ -1019,8 +1030,7 @@ public class DatabaseGeneration {
      */
     public void spliceDPSIParser(Path filePath) {
 
-        System.out.println("a");
-        System.out.println(filePath);
+
         Nitrite db = Nitrite.builder().filePath(databasePathAndName ).openOrCreate();
         NitriteCollection dPsiCollection = db.getCollection("SplicingDPSI_"+ filePath.getParent().getFileName().toString());
 
@@ -1060,7 +1070,8 @@ public class DatabaseGeneration {
                         dpsiDocument.put("geneName", eventObj.get("gene_id"));
                         dpsiDocument.put("event", event);
                         dpsiDocument.put("deltaPsi", dpsiDocument.get(comp+"_delta_psi"));
-                        dpsiDocument.put("pval", dpsiDocument.get(comp+"_pvalue"));
+                        if(dpsiDocument.containsKey(comp+"_pvalue"))
+                            dpsiDocument.put("pval", dpsiDocument.get(comp+"_pvalue"));
                         dpsiDocument.put("pepEvidence", dpsiDocument.get("peptide_evidence"));
                         dpsiDocument.put("eventType", dpsiDocument.get("event_type"));
 
@@ -1333,6 +1344,59 @@ public class DatabaseGeneration {
             e.printStackTrace();
         }
     }
+    private void blastParser(String filePath){
+        Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
+        NitriteCollection blastCollection = db.getCollection("blast");
+
+
+        ArrayList<Document> dgeDocsToDBList = new ArrayList<>();
+
+        JSONParser parser = new JSONParser();
+
+        try {
+
+            Object obj = parser.parse(new FileReader(filePath));
+
+            JSONArray proteins = (JSONArray) obj;
+            for (Object o: proteins) {
+
+                JSONObject protein = (JSONObject) o;
+
+                if (dgeDocsToDBList.size() >= 10000) {
+                    Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                    splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                    blastCollection.insert(splicDocsArray);
+                    dgeDocsToDBList = new ArrayList<>();
+                }
+
+
+                Document doc = new Document(protein);
+
+
+                dgeDocsToDBList.add(doc);
+
+
+            }
+
+            if(dgeDocsToDBList.size() > 0){
+                Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                blastCollection.insert(splicDocsArray);
+            }
+
+            blastCollection.createIndex("lowestEvalue", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            blastCollection.createIndex("protein", IndexOptions.indexOptions(IndexType.Unique, false));
+            blastCollection.createIndex("hasPeptideEvidence", IndexOptions.indexOptions(IndexType.NonUnique, false));
+
+            db.close();
+
+
+
+        } catch (ParseException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
 
@@ -1340,7 +1404,6 @@ public class DatabaseGeneration {
     public void createIndexes(){
 
         try{
-            System.out.println("indexing start");
             Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
             NitriteCollection varsCondSampleCollection = db.getCollection("varsCondSample");
 

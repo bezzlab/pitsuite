@@ -43,8 +43,11 @@ import static org.dizitart.no2.filters.Filters.*;
 public class DgeTableController extends Controller {
 
     @FXML
+    private HBox bottomLeftBox;
+    @FXML
+    private Label loadingTableLabel;
+    @FXML
     private JFXTextField geneFilterFoldChangeTextField;
-
     @FXML
     private JFXComboBox<String> dgeComparisonCombobox;
     @FXML
@@ -231,7 +234,6 @@ public class DgeTableController extends Controller {
                         if ( event.getClickCount() == 1 ) {
                             FoldChangeTableModel rowData = foldChangeTableView.getSelectionModel().getSelectedItem();
 
-
                             selectedGeneCharts.getChildren().clear();
                             drawSelectedGeneReadCount(rowData.getGeneSymbol(), selectedGeneCharts, fontSize);
                             drawSelectedGeneProteinQuant(rowData.getGeneSymbol(), selectedGeneCharts, fontSize, protComparisonCombobox.getValue());
@@ -288,7 +290,7 @@ public class DgeTableController extends Controller {
         allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
             if (allGenesReader.getGenesLoadedProperty().get()) {
                 Platform.runLater(() ->{
-                    //keggController.setParentController(this, allGenesReader);
+                    keggController.setParentController(this);
                     goTermsController.setParentController(this, allGenesReader, Database.getDb());
                     gseaController.setParentController(this);
                 });
@@ -357,208 +359,217 @@ public class DgeTableController extends Controller {
 
 
     public void filterFoldChangeTable(){
-        foldChangesLinkedList = new LinkedList<>();
 
-        ArrayList<String> genesWithGoFilterList = (!goTermsController.isGoLoaded())?null:goTermsController.genesWithGoTermsForFilter();
+        new Thread(()->{
+
+            Platform.runLater(()->{
+                bottomLeftBox.getChildren().clear();
+                bottomLeftBox.getChildren().add(loadingTableLabel);
+            });
+
+            foldChangesLinkedList = new LinkedList<>();
+
+            ArrayList<String> genesWithGoFilterList = (!goTermsController.isGoLoaded()) ? null : goTermsController.genesWithGoTermsForFilter();
 
 
-        String dgeCollectionName = dgeComparisonCombobox.getValue() + "_dge";
-        boolean filterByProt = protFilterCheckbox.isSelected();
-        boolean hasPeptideEvidenceFilter = peptideEvidenceCheckbox.isSelected();
-        Double pvalThreshold = adjPValFilterFoldChangeSpinner.getValue();
-        Double foldThreshold = foldFilterFoldChangeSpinner.getValue();
-        String geneSymbolFilter = geneFilterFoldChangeTextField.getText().strip().toUpperCase();
+            String dgeCollectionName = dgeComparisonCombobox.getValue() + "_dge";
+            boolean filterByProt = protFilterCheckbox.isSelected();
+            boolean hasPeptideEvidenceFilter = peptideEvidenceCheckbox.isSelected();
+            Double pvalThreshold = adjPValFilterFoldChangeSpinner.getValue();
+            Double foldThreshold = foldFilterFoldChangeSpinner.getValue();
+            String geneSymbolFilter = geneFilterFoldChangeTextField.getText().strip();
+            if(Config.isReferenceGuided())
+                geneSymbolFilter = geneSymbolFilter.toUpperCase();
 
-        List<Filter> filters = new ArrayList<>(4);
-        if(geneSymbolFilter.length()>0){
+            List<Filter> filters = new ArrayList<>(4);
+            System.out.println(geneSymbolFilter);
+            if (geneSymbolFilter.length() > 0) {
 
-            if(!Config.isReferenceGuided()){
-                filters.add(or(regex("symbol", "^.*" + geneSymbolFilter + ".*$"),
-                        regex("names", "^.*" + geneSymbolFilter + ".*$")));
-            }else{
-                filters.add(regex("symbol", "^.*" + geneSymbolFilter + ".*$"));
+                if (!Config.isReferenceGuided()) {
+                    filters.add(or(regex("symbol", "^.*" + geneSymbolFilter + ".*$"),
+                            regex("names", "^.*" + geneSymbolFilter + ".*$")));
+                } else {
+                    filters.add(regex("symbol", "^.*" + geneSymbolFilter + ".*$"));
+                }
             }
-        }
-//        filters.add(eq("type", "lncRNA"));
+    //        filters.add(eq("type", "lncRNA"));
 
 
-
-        if(Config.haveReplicates(dgeComparisonCombobox.getValue().split("vs"))){
-            filters.add(and(lte("padj", pvalThreshold), not(
-                    and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
-            )));
-        }else{
-            filters.add(not(and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold)
-            )));
-        }
-
-
-
-        if(hasPeptideEvidenceFilter){
-            filters.add( eq("hasPeptideEvidence", true));
-        }
-        if (genesWithGoFilterList != null && genesWithGoFilterList.size() > 0) {
-            if (genesWithGoFilterList.size() == 1) {
-                filters.add(eq("symbol", genesWithGoFilterList.get(0)));
-            } else  {
-                filters.add(in("symbol", genesWithGoFilterList.toArray()));
+            if (Config.haveReplicates(dgeComparisonCombobox.getValue().split("vs"))) {
+                filters.add(and(lte("padj", pvalThreshold), not(
+                        and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
+                )));
+            } else {
+                filters.add(not(and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold)
+                )));
             }
 
-        }
 
-        Cursor dgeFindCursor = Database.getDb().getCollection(dgeCollectionName).find(and(filters.toArray(new Filter[]{})));
-        boolean updateTableBool = true;
-
-        if (dgeFindCursor.size() == 0) {
-            updateTableBool = false;
-        } else {
-
-            HashSet<String> msRuns = new HashSet<>();
-
-
-
-            for (Document dgeDoc : dgeFindCursor) {
-
-                String dgeGeneSymbol = (String) dgeDoc.get("symbol");
-                String type = null;
-                if(dgeDoc.get("type")!=null){
-                    type = (String) dgeDoc.get("type");
+            if (hasPeptideEvidenceFilter) {
+                filters.add(eq("hasPeptideEvidence", true));
+            }
+            if (genesWithGoFilterList != null && genesWithGoFilterList.size() > 0) {
+                if (genesWithGoFilterList.size() == 1) {
+                    filters.add(eq("symbol", genesWithGoFilterList.get(0)));
+                } else {
+                    filters.add(in("symbol", genesWithGoFilterList.toArray()));
                 }
 
+            }
 
-                if (keggController.isKeggLoaded()){
-                    if (!keggController.isInKegg(dgeGeneSymbol)) {
-                        continue;
+            Cursor dgeFindCursor = Database.getDb().getCollection(dgeCollectionName).find(and(filters.toArray(new Filter[]{})));
+            boolean updateTableBool = true;
+
+            if (dgeFindCursor.size() == 0) {
+                updateTableBool = false;
+            } else {
+
+                HashSet<String> msRuns = new HashSet<>();
+
+
+                for (Document dgeDoc : dgeFindCursor) {
+
+                    String dgeGeneSymbol = (String) dgeDoc.get("symbol");
+                    String type = null;
+                    if (dgeDoc.get("type") != null) {
+                        type = (String) dgeDoc.get("type");
                     }
-                }
 
 
-                double dgeFoldChange;
-                if(dgeDoc.get("log2fc") instanceof Long)
-                    dgeFoldChange = ((Long) dgeDoc.get("log2fc")).doubleValue();
-                else
-                    dgeFoldChange = (double) dgeDoc.get("log2fc");
+                    if (keggController.isKeggLoaded()) {
+                        if (!keggController.isInKegg(dgeGeneSymbol)) {
+                            continue;
+                        }
+                    }
 
-                Double dgePVal=null;
-                if(dgeDoc.containsKey("padj")) {
-                    if (dgeDoc.get("padj") instanceof Long)
-                        dgePVal = ((Long) dgeDoc.get("padj")).doubleValue();
+
+                    double dgeFoldChange;
+                    if (dgeDoc.get("log2fc") instanceof Long)
+                        dgeFoldChange = ((Long) dgeDoc.get("log2fc")).doubleValue();
                     else
-                        dgePVal = (double) dgeDoc.get("padj");
-                }
-                //boolean hasPeptideEvidence = (boolean) dgeDoc.get("hasPeptideEvidence");
-                boolean hasPeptideEvidence = false;
+                        dgeFoldChange = (double) dgeDoc.get("log2fc");
 
-                FoldChangeTableModel currFoldChange = new FoldChangeTableModel(dgeGeneSymbol, type, dgeFoldChange, dgePVal);
+                    Double dgePVal = null;
+                    if (dgeDoc.containsKey("padj")) {
+                        if (dgeDoc.get("padj") instanceof Long)
+                            dgePVal = ((Long) dgeDoc.get("padj")).doubleValue();
+                        else
+                            dgePVal = (double) dgeDoc.get("padj");
+                    }
+                    //boolean hasPeptideEvidence = (boolean) dgeDoc.get("hasPeptideEvidence");
+                    boolean hasPeptideEvidence = false;
 
-                boolean addToTable=true;
+                    FoldChangeTableModel currFoldChange = new FoldChangeTableModel(dgeGeneSymbol, type, dgeFoldChange, dgePVal);
 
-                if(dgeDoc.containsKey("ms")){
+                    boolean addToTable = true;
 
-                    org.json.simple.JSONObject runsObj = (org.json.simple.JSONObject) dgeDoc.get("ms");
-                    for(Object runName: runsObj.keySet()){
+                    if (dgeDoc.containsKey("ms")) {
 
-                        if(runsObj.get(runName) instanceof org.json.simple.JSONObject) {
+                        org.json.simple.JSONObject runsObj = (org.json.simple.JSONObject) dgeDoc.get("ms");
+                        for (Object runName : runsObj.keySet()) {
 
-                            msRuns.add((String) runName);
-                            org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
+                            if (runsObj.get(runName) instanceof org.json.simple.JSONObject) {
 
-                            Double padj = null;
-                            if (run.containsKey("padj")) {
+                                msRuns.add((String) runName);
+                                org.json.simple.JSONObject run = (org.json.simple.JSONObject) runsObj.get(runName);
 
-                                if (run.get("padj") instanceof Long && ((Long) run.get("padj") == 0))
-                                    padj = 0.;
-                                else
-                                    padj = (Double) run.get("padj");
-                            }
+                                Double padj = null;
+                                if (run.containsKey("padj")) {
 
-                            if (filterByProt && (padj == null || padj > pvalThreshold)) {
-                                addToTable = false;
-                                break;
-                            }
-
-                            try {
-                                Double log2fc = null;
-                                if (run.get("log2fc") instanceof String) {
-                                    if (run.get("log2fc").equals("-Inf")) {
-                                        log2fc = Double.NEGATIVE_INFINITY;
-                                    } else if (run.get("log2fc").equals("Inf")) {
-                                        log2fc = Double.POSITIVE_INFINITY;
-                                    } else {
-                                        log2fc = 0.;
-                                    }
-                                } else {
-                                    log2fc = (Double) run.get("log2fc");
+                                    if (run.get("padj") instanceof Long && ((Long) run.get("padj") == 0))
+                                        padj = 0.;
+                                    else
+                                        padj = (Double) run.get("padj");
                                 }
-                                currFoldChange.addMsRun((String) runName, log2fc, padj);
-                            } catch (ClassCastException e) {
-                                e.printStackTrace();
+
+                                if (filterByProt && (padj == null || padj > pvalThreshold)) {
+                                    addToTable = false;
+                                    break;
+                                }
+
+                                try {
+                                    Double log2fc = null;
+                                    if (run.get("log2fc") instanceof String) {
+                                        if (run.get("log2fc").equals("-Inf")) {
+                                            log2fc = Double.NEGATIVE_INFINITY;
+                                        } else if (run.get("log2fc").equals("Inf")) {
+                                            log2fc = Double.POSITIVE_INFINITY;
+                                        } else {
+                                            log2fc = 0.;
+                                        }
+                                    } else {
+                                        log2fc = (Double) run.get("log2fc");
+                                    }
+                                    currFoldChange.addMsRun((String) runName, log2fc, padj);
+                                } catch (ClassCastException e) {
+                                    e.printStackTrace();
+                                }
                             }
+
                         }
 
+
+                    } else if (filterByProt) {
+                        addToTable = false;
+                    }
+                    if (addToTable)
+                        foldChangesLinkedList.add(currFoldChange);
+
+                }
+
+                Platform.runLater(()->{
+                    protComparisonCombobox.getItems().clear();
+                    protComparisonCombobox.getItems().addAll(msRuns);
+                });
+
+            }
+
+
+            boolean finalUpdateTableBool = updateTableBool;
+            Platform.runLater(() -> {
+                if (finalUpdateTableBool) {
+                    protComparisonCombobox.getSelectionModel().select(0);
+                    foldChangeTableView.getItems().clear(); // clear the table
+                    foldChangeTableView.getItems().addAll(foldChangesLinkedList);
+                    numberOfGenesInTableLabel.setText(foldChangeTableView.getItems().size() + " ");
+                    bottomLeftBox.getChildren().clear();
+                    bottomLeftBox.getChildren().add(selectedGeneCharts);
+
+                    if (dgeWebview == null) {
+                        dgeWebview = new WebViewController("plot", new String[]{"plotly", "volcanoPlot"}, plotsGrid.getWidth(), plotsGrid.getHeight() / 3,
+                                "Gene expression", fontSize, this);
+                        proteinDeWebview = new WebViewController("plot", new String[]{"plotly", "volcanoPlot"}, plotsGrid.getWidth(),
+                                plotsGrid.getHeight() / 3, "Protein abundance", fontSize, this);
+                        proteinRnaFcScatter = new WebViewController("plot", new String[]{"plotly", "scatterPlot"}, plotsGrid.getWidth(),
+                                mainGrid.getHeight() / 3, "RNA-Protein fold change correlation", fontSize, this);
+
+
+                        plotsGrid.add(dgeWebview.getWebView(), 0, 0);
+                        plotsGrid.add(proteinDeWebview.getWebView(), 0, 1);
+                        plotsGrid.add(proteinRnaFcScatter.getWebView(), 0, 2);
                     }
 
+                    volcanoPlotThread(foldChangesLinkedList, adjPValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue(), "dge");
+                    if (protComparisonCombobox.getValue() != null) {
+                        proteinDeWebview.getWebView().setVisible(true);
+                        proteinRnaFcScatter.getWebView().setVisible(true);
+                        volcanoPlotThread(foldChangesLinkedList, adjPValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue(), "proteinDe");
+                        proteinRnaFcPlotThread(foldChangesLinkedList);
+                    } else {
+                        proteinDeWebview.getWebView().setVisible(false);
+                        proteinRnaFcScatter.getWebView().setVisible(false);
+                    }
 
-                }else if(filterByProt){
-                    addToTable=false;
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Info");
+                    alert.setHeaderText(null);
+                    alert.setContentText("No gene found with selected search criteria. Table won't update.");
+
+                    alert.showAndWait();
                 }
-                if(addToTable)
-                    foldChangesLinkedList.add(currFoldChange);
-
-            }
-
-            protComparisonCombobox.getItems().clear();
-            protComparisonCombobox.getItems().addAll(msRuns);
-
-
-        }
-
-
-        boolean finalUpdateTableBool = updateTableBool;
-        Platform.runLater(() -> {
-            if(finalUpdateTableBool) {
-                protComparisonCombobox.getSelectionModel().select(0);
-                foldChangeTableView.getItems().clear(); // clear the table
-                foldChangeTableView.getItems().addAll(foldChangesLinkedList);
-                numberOfGenesInTableLabel.setText(foldChangeTableView.getItems().size() + " ");
-                if(selectedGeneCharts.getChildren().size()==1){
-                    selectedGeneCharts.getChildren().clear();
-                }
-
-                if(dgeWebview==null){
-                    dgeWebview = new WebViewController("plot", new String[]{"plotly", "volcanoPlot"}, plotsGrid.getWidth(), plotsGrid.getHeight()/3,
-                            "Gene expression", fontSize, this);
-                    proteinDeWebview = new WebViewController("plot", new String[]{"plotly", "volcanoPlot"}, plotsGrid.getWidth(),
-                            plotsGrid.getHeight()/3, "Protein abundance", fontSize, this);
-                    proteinRnaFcScatter = new WebViewController("plot", new String[]{"plotly", "scatterPlot"}, plotsGrid.getWidth(),
-                            mainGrid.getHeight()/3, "RNA-Protein fold change correlation", fontSize, this);
-
-
-                    plotsGrid.add(dgeWebview.getWebView(), 0, 0);
-                    plotsGrid.add(proteinDeWebview.getWebView(), 0, 1);
-                    plotsGrid.add(proteinRnaFcScatter.getWebView(), 0, 2);
-                }
-
-                volcanoPlotThread(foldChangesLinkedList, adjPValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue(), "dge");
-                if(protComparisonCombobox.getValue()!=null){
-                    proteinDeWebview.getWebView().setVisible(true);
-                    proteinRnaFcScatter.getWebView().setVisible(true);
-                    volcanoPlotThread(foldChangesLinkedList, adjPValFilterFoldChangeSpinner.getValue(), foldFilterFoldChangeSpinner.getValue(), "proteinDe");
-                    proteinRnaFcPlotThread(foldChangesLinkedList);
-                }else{
-                    proteinDeWebview.getWebView().setVisible(false);
-                    proteinRnaFcScatter.getWebView().setVisible(false);
-                }
-
-            } else {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Info");
-                alert.setHeaderText(null);
-                alert.setContentText("No gene found with selected search criteria. Table won't update.");
-
-                alert.showAndWait();
-            }
-        });
+            });
+        }).start();
 
 
     }
@@ -761,6 +772,7 @@ public class DgeTableController extends Controller {
 
     public static ConfidentBarChart drawSelectedGeneReadCount(String gene, Pane container, double fontSize){
 
+
         NitriteCollection collection = Database.getDb().getCollection("readCounts");
         Cursor documents = collection.find(Filters.eq("gene", gene));
 
@@ -841,9 +853,8 @@ public class DgeTableController extends Controller {
     public static void drawSelectedGeneProteinQuant(String gene, Pane container, double fontSize, String msRun){
 
 
-
         NitriteCollection collection = Database.getDb().getCollection("genePeptides");
-        Document result = collection.find(and(eq("gene", gene), eq("run", msRun))).firstOrDefault();
+        Document result = collection.find(and(eq("gene", gene), eq("run", Config.getParentRun(msRun)))).firstOrDefault();
 
 
 
@@ -1044,8 +1055,6 @@ public class DgeTableController extends Controller {
 
             ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
 
-            Iterator<String> it = res.getJSONObject("peptides").getJSONObject(res.getJSONObject("peptides").keys().next())
-                    .getJSONObject("intensity").keys();
 
 
             Set<String> samples = Config.getRunSamples(msRun);
@@ -1131,6 +1140,7 @@ public class DgeTableController extends Controller {
             proteinConfidentBarChart.addGroups(groups);
             proteinConfidentBarChart.setReference(refCondition);
             proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+
         }
 
 
@@ -1177,7 +1187,6 @@ public class DgeTableController extends Controller {
 
         if(foldChangeTableView.getSelectionModel().getSelectedItem()!=null){
             String gene = foldChangeTableView.getSelectionModel().getSelectedItem().getGeneSymbol();
-
             selectedGeneCharts.getChildren().clear();
             drawSelectedGeneReadCount(gene, selectedGeneCharts, fontSize);
             drawSelectedGeneProteinQuant(gene, selectedGeneCharts, fontSize, protComparisonCombobox.getValue());
@@ -1221,5 +1230,26 @@ public class DgeTableController extends Controller {
     }
 
     public static DgeTableController getInstance(){ return instance; }
+
+    public void searchForGene(String gene){
+        boolean found = false;
+        for(FoldChangeTableModel row: foldChangeTableView.getItems()){
+            if(row.getGeneSymbol().equals(gene)){
+                foldChangeTableView.getItems().clear();
+                foldChangeTableView.getItems().add(row);
+                geneFilterFoldChangeTextField.setText(gene);
+                found = true;
+                break;
+            }
+        }
+        if(!found){
+            adjPValFilterFoldChangeSpinner.getValueFactory().setValue(1.);
+            foldFilterFoldChangeSpinner.getValueFactory().setValue(0.);
+            peptideEvidenceCheckbox.setSelected(false);
+            geneFilterFoldChangeTextField.setText(gene);
+            filterFoldChangeTable();
+
+        }
+    }
 
 }

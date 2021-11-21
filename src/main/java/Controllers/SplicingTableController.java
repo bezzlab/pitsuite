@@ -282,7 +282,7 @@ public class SplicingTableController extends Controller {
 
         if(allGenesReader.getGenesLoadedProperty().get()){
             Platform.runLater(() -> {
-                keggController.setParentController(this, allGenesReader);
+                keggController.setParentController(this);
                 goTermsController.setParentController(this, allGenesReader, Database.getDb());
                 gseaController.setParentController(this);
             });
@@ -290,7 +290,7 @@ public class SplicingTableController extends Controller {
             allGenesReader.getGenesLoadedProperty().addListener((observableValue, aBoolean, t1) -> {
                 if (allGenesReader.getGenesLoadedProperty().get()) {
                     Platform.runLater(() -> {
-                        keggController.setParentController(this, allGenesReader);
+                        keggController.setParentController(this);
                         goTermsController.setParentController(this, allGenesReader, Database.getDb());
                         gseaController.setParentController(this);
                     });
@@ -383,8 +383,12 @@ public class SplicingTableController extends Controller {
                 }
             }
 
-
-            Cursor splicingCursor = splicingDPsiColl.find(and(filters.toArray(new Filter[]{})));
+            Cursor splicingCursor;
+            if(filters.size()>0){
+                splicingCursor = splicingDPsiColl.find(and(filters.toArray(new Filter[]{})));
+            }else{
+                splicingCursor = splicingDPsiColl.find();
+            }
             boolean updateTableBool = true;
 
             if (splicingCursor.size() == 0) {
@@ -406,7 +410,7 @@ public class SplicingTableController extends Controller {
 
                     String tmpEventKey = (String) tmpDoc.get("event");
                     Double tmpDeltaPsi = Double.valueOf(tmpDoc.get("deltaPsi").toString());
-                    Double tmpPval = Double.valueOf(tmpDoc.get("pval").toString());
+                    Double tmpPval = tmpDoc.containsKey("pval")?Double.parseDouble(tmpDoc.get("pval").toString()):Double.NaN;
                     String tmpEventType = (String) tmpDoc.get("eventType");
                     boolean tmpPepEvidence = (boolean) tmpDoc.get("pepEvidence");
                     Double geneRatioDiff = (Double) tmpDoc.get("geneRatioDiff");

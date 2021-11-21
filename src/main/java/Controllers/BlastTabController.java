@@ -4,6 +4,7 @@ import Cds.Peptide;
 import Singletons.Config;
 import Singletons.Database;
 import com.jfoenix.controls.JFXTextField;
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -17,6 +18,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
@@ -26,8 +28,15 @@ import javafx.scene.text.Text;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
+import org.dizitart.no2.Cursor;
+import org.dizitart.no2.Document;
+import org.dizitart.no2.Filter;
+import org.dizitart.no2.NitriteCollection;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import utilities.MSRun;
 
+import javax.print.Doc;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
@@ -38,9 +47,20 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.dizitart.no2.filters.Filters.*;
+
 public class BlastTabController implements Initializable {
 
-
+    @FXML
+    private JFXTextField hitSearchField;
+    @FXML
+    private TableView<ProteinTableRow> proteinTable;
+    @FXML
+    private TableColumn<ProteinTableRow, String> proteinColumn;
+    @FXML
+    private TableColumn<ProteinTableRow, Double> evalueProteinColumn;
+    @FXML
+    private CheckBox peptideFilterBox;
     @FXML
     private TableColumn<Hit, Double> queryCoverageColumn;
     @FXML
@@ -70,8 +90,6 @@ public class BlastTabController implements Initializable {
     @FXML
     private Spinner<Double> evalThresholdSpinner = new Spinner<Double>();
 
-    @FXML
-    private ListView<String> listView = new ListView<String>();
     private ArrayList<String> queriesList = new ArrayList<String>();
     private ObservableList<String> observableList = FXCollections.observableArrayList();
 
@@ -86,18 +104,18 @@ public class BlastTabController implements Initializable {
 
     private ArrayList<Hsp> hspsList = new ArrayList<Hsp>();
 
-    private MSRun selectedRun;
     private ArrayList<Peptide> allPeptides; /* all peptides from "allTranscripts.json" */
     @FXML
     private Label numberOfPeptides;
     @FXML
     private Label peptideSeqs;
 
+    private String selectedProtein;
+
 
 
         @Override
         public void initialize (URL location, ResourceBundle resources){
-            loadRun();
             blastIndex = new BlastIndex();
             blastIndex.load();
 
@@ -107,6 +125,13 @@ public class BlastTabController implements Initializable {
             evalThresholdSpinner.setValueFactory(evalFactory);
             evalThresholdSpinner.getValueFactory().setValue(0.010);
             evalThresholdSpinner.setEditable(true);
+
+            proteinColumn.setCellValueFactory(new PropertyValueFactory<>("protein"));
+            evalueProteinColumn.setCellValueFactory(new PropertyValueFactory<>("evalue"));
+            proteinColumn.prefWidthProperty().bind(proteinTable.widthProperty().divide(2));
+            evalueProteinColumn.prefWidthProperty().bind(proteinTable.widthProperty().divide(2));
+
+            proteinTable.getSortOrder().add(evalueProteinColumn);
 
             /* hit table */
             definitionColumn.setCellValueFactory(new PropertyValueFactory<>("definition"));
@@ -124,6 +149,42 @@ public class BlastTabController implements Initializable {
             queryCoverageColumn.setSortType(TableColumn.SortType.DESCENDING);
             hitTable.getSortOrder().add(evalueColumn);
             hitTable.sort();
+
+            proteinTable.setRowFactory(tv -> {
+                TableRow<ProteinTableRow> row = new TableRow<>();
+                row.setOnMouseClicked(event -> {
+                    if (!(row.isEmpty())) {
+                        if (event.getButton().equals(MouseButton.PRIMARY)) {
+                            selectProtein(row.getItem());
+                            numberOfHits.setText(hitTable.getItems().size() + "");
+                        }else if(event.getButton().equals(MouseButton.SECONDARY)){
+                            final ContextMenu rowMenu = new ContextMenu();
+                            MenuItem dgeMenu = new MenuItem("Show Differencial gene expression");
+                            dgeMenu.setOnAction(e -> {
+                                ResultsController.getInstance().moveToTab(2);
+                                DgeTableController.getInstance().searchForGene(row.getItem().getProtein().split("_i")[0]);
+                            });
+
+                            MenuItem browserMenu = new MenuItem("Show gene browser");
+                            browserMenu.setOnAction(e -> {
+                                ResultsController.getInstance().moveToTab(1);
+                                GeneBrowserController.getInstance().showGeneBrowser(row.getItem().getProtein().split("_i")[0]);
+                            });
+
+                            rowMenu.getItems().add(dgeMenu);
+                            rowMenu.getItems().add(browserMenu);
+
+                            row.contextMenuProperty().bind(
+                                    Bindings.when(row.emptyProperty())
+                                            .then((ContextMenu) null)
+                                            .otherwise(rowMenu));
+                        }
+                    }
+
+                });
+                return row;
+            });
+
 
             hitTable.setRowFactory(tv -> {
                 TableRow<Hit> row = new TableRow<>();
@@ -155,63 +216,38 @@ public class BlastTabController implements Initializable {
 
             querySearchField.textProperty().addListener((observable, oldValue, newValue) -> {
                 filterQueries();
-                if (querySearchField.getText().length() == 0) {
-                    listView.getItems().clear();
-                    listView.getItems().addAll(queriesList);
-                }
+            });
+            hitSearchField.textProperty().addListener((observable, oldValue, newValue) -> {
+                filterQueries();
             });
 
             evalThresholdSpinner.valueProperty().addListener((observable, oldValue, newValue) -> {
-                String g = listView.getSelectionModel().getSelectedItem();
-                selectGene(g);
+                ProteinTableRow g = proteinTable.getSelectionModel().getSelectedItem();
+                selectProtein(g);
                 filterHits();
 
             });
         }
 
         /* load peptide list for peptide browser */
-        public void loadRun () {
+        public HashSet<Peptide> findGenePeptides (String gene) {
 
-            selectedRun = new MSRun("SILAC", Config.getOutputPath());
-
-            new Thread(() -> {
-
-                HashSet<String> conditions = new HashSet<>();
-                for (String subrun : Config.getSubRuns(selectedRun.getName())) {
-                    conditions.addAll(Config.getRunSamples(subrun));
-
-                }
-
-                Iterator<String> condIterator = conditions.iterator();
-
-                selectedRun.load(Database.getDb(), Config.getOutputPath(), "SILAC", condIterator.next(), condIterator.next());
-
-                allPeptides = new ArrayList<>(selectedRun.getAllPeptides());
-
-            }).start();
-        }
-
-        public void setParentController (ResultsController parentController){
-            //blastIndex.load();
-            //selectGene("TRINITY_DN155677_c0_g1_i1.p1");
-        }
-
-        /* handles mouse clicks on query list */
-        public void click_on_qlist () {
-            listView.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
-                @Override
-                public void handle(MouseEvent click) {
-
-                    if (click.getClickCount() == 1) {
-                        String currentItemSelected = listView.getSelectionModel().getSelectedItem();
-                        selectGene(currentItemSelected);
-                        numberOfHits.setText(hitTable.getItems().size() + "");
+            NitriteCollection collection = Database.getDb().getCollection("genePeptides");
+            Cursor cursor = collection.find(eq("gene", gene));
+            HashSet<Peptide> peptides = new HashSet<>(cursor.size());
+            for (Document doc : cursor) {
+                org.json.simple.JSONObject peptidesObj = doc.get("peptides", org.json.simple.JSONObject.class);
+                for(Object o: peptidesObj.keySet()){
+                    String peptide = (String) o;
+                    if(peptidesObj.get(peptide) instanceof org.json.simple.JSONObject){
+                        peptides.add(new Peptide(peptide, new MSRun((String) doc.get("run"))));
                     }
                 }
-            });
 
+            }
+            return peptides;
         }
+
 
         StringConverter<Double> doubleConverter = new StringConverter<>() {
 
@@ -247,7 +283,7 @@ public class BlastTabController implements Initializable {
             HashMap<String, BlastIndex.BlastIndexRecord> records = new HashMap<>();
 
             public void load() {
-                String filepath = "C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/blastIndex.csv";
+                String filepath = Config.getOutputPath()+"/blast/blastIndex.csv";
                 try {
                     File myObj = new File(filepath);
                     Scanner myReader = new Scanner(myObj);
@@ -262,7 +298,7 @@ public class BlastTabController implements Initializable {
                     e.printStackTrace();
                 }
                 getKeys();
-                addToListview(queriesList);
+                filterQueries();
                 getNoOfQueries();
             }
 
@@ -271,10 +307,7 @@ public class BlastTabController implements Initializable {
                 queriesList.addAll(records.keySet());
             }
 
-            public void addToListview(ArrayList<String> x) {
-                observableList.addAll(queriesList);
-                listView.setItems(observableList);
-            }
+
 
             public HashMap<String, BlastIndex.BlastIndexRecord> getRecords() {
                 return records;
@@ -305,102 +338,108 @@ public class BlastTabController implements Initializable {
         }
 
 
-        public void selectGene (String geneId){
+        public void selectProtein (ProteinTableRow row){
 
             Double eValThreshold = evalThresholdSpinner.getValue();
 
             hitTable.getItems().clear();
             alignmentPane.getChildren().clear();
             allHits = new ArrayList<>();
+            selectedProtein = row.getProtein();
+
+            if(Double.isNaN(row.getEvalue()))
+                drawNovelSequence(selectedProtein);
+            else {
 
 
-            try {
-                long positionToRead = blastIndex.getRecords().get(geneId).getStart();
-                int amountBytesToRead = (int) (blastIndex.getRecords().get(geneId).getEnd() - positionToRead);
-                String geneName = blastIndex.getRecords().get(geneId).getGene();
+                try {
+                    long positionToRead = blastIndex.getRecords().get(selectedProtein).getStart();
+                    int amountBytesToRead = (int) (blastIndex.getRecords().get(selectedProtein).getEnd() - positionToRead);
 
-                RandomAccessFile f = new RandomAccessFile(new File("C:/Users/KAROL/Desktop/pitgui2/david_bat/blast/output.xml"), "r");
-                //f.seek(2643);
-                byte[] b = new byte[amountBytesToRead];
-                f.seek(positionToRead);
 
-                f.read(b);
-                String str = new String(b);
+                    RandomAccessFile f = new RandomAccessFile(new File(Config.getOutputPath() + "/blast/output.xml"), "r");
 
-                Pattern queryLengthPattern = Pattern.compile("<Iteration_query-len>(\\d+)</Iteration_query-len>");
-                Matcher queryLengthMatcher = queryLengthPattern.matcher(str);
-                if (queryLengthMatcher.find()) {
-                    int queryLength = Integer.parseInt(queryLengthMatcher.group(1));
-                    Pattern pattern = Pattern.compile("<Hit>(.*?)</Hit>", Pattern.DOTALL);
-                    Matcher hitsMatcher = pattern.matcher(str);
-                    while (hitsMatcher.find()) {
-                        for (int i = 1; i <= hitsMatcher.groupCount(); i++) {
-                            String hitStr = hitsMatcher.group(i);
+                    byte[] b = new byte[amountBytesToRead];
+                    f.seek(positionToRead);
 
-                            pattern = Pattern.compile("<Hit_def>(.*?)</Hit_def>.*?<Hit_len>(\\d+)</Hit_len>", Pattern.DOTALL);
-                            Matcher hitMatcher = pattern.matcher(hitStr);
-                            if (hitMatcher.find()) {
-                                String hitDef = hitMatcher.group(1);
-                                int hitLen = Integer.parseInt(hitMatcher.group(2));
-                                Hit hit = new Hit(hitDef, hitLen, queryLength);
+                    f.read(b);
+                    String str = new String(b);
 
-                                pattern = Pattern.compile("<Hsp>(.*?)</Hsp>", Pattern.DOTALL);
-                                Matcher HspsMatcher = pattern.matcher(hitStr);
-                                while (HspsMatcher.find()) {
-                                    for (int j = 1; j <= HspsMatcher.groupCount(); j++) {
-                                        String hspStr = HspsMatcher.group(j);
-                                        pattern = Pattern.compile("<Hsp_evalue>(.*?)</Hsp_evalue>.*?<Hsp_query-from>" +
-                                                "(.*?)</Hsp_query-from>.*?<Hsp_query-to>(.*?)</Hsp_query-to>.*?" +
-                                                "<Hsp_hit-from>(.*?)</Hsp_hit-from>.*?<Hsp_hit-to>(.*?)</Hsp_hit-to>.*?" +
-                                                "<Hsp_qseq>(.*?)</Hsp_qseq>.*?<Hsp_hseq>(.*?)</Hsp_hseq>", Pattern.DOTALL);
-                                        Matcher hspMatcher = pattern.matcher(hspStr);
-                                        if (hspMatcher.find()) {
-                                            int hitFrom = Integer.parseInt(hspMatcher.group(4));
-                                            int hitTo = Integer.parseInt(hspMatcher.group(5));
-                                            Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                    Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
+                    Pattern queryLengthPattern = Pattern.compile("<Iteration_query-len>(\\d+)</Iteration_query-len>");
+                    Matcher queryLengthMatcher = queryLengthPattern.matcher(str);
+                    if (queryLengthMatcher.find()) {
+                        int queryLength = Integer.parseInt(queryLengthMatcher.group(1));
+                        Pattern pattern = Pattern.compile("<Hit>(.*?)</Hit>", Pattern.DOTALL);
+                        Matcher hitsMatcher = pattern.matcher(str);
+                        while (hitsMatcher.find()) {
+                            for (int i = 1; i <= hitsMatcher.groupCount(); i++) {
+                                String hitStr = hitsMatcher.group(i);
 
-                                            if (hitFrom < hitTo) {
-                                                if (hsp1.getEvalue() < eValThreshold) {
+                                pattern = Pattern.compile("<Hit_def>(.*?)</Hit_def>.*?<Hit_len>(\\d+)</Hit_len>", Pattern.DOTALL);
+                                Matcher hitMatcher = pattern.matcher(hitStr);
+                                if (hitMatcher.find()) {
+                                    String hitDef = hitMatcher.group(1);
+                                    int hitLen = Integer.parseInt(hitMatcher.group(2));
+                                    Hit hit = new Hit(hitDef, hitLen, queryLength);
 
-                                                    hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                            Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
-                                                }
-                                            } else {
-                                                if (hsp1.getEvalue() < eValThreshold) {
+                                    pattern = Pattern.compile("<Hsp>(.*?)</Hsp>", Pattern.DOTALL);
+                                    Matcher HspsMatcher = pattern.matcher(hitStr);
+                                    while (HspsMatcher.find()) {
+                                        for (int j = 1; j <= HspsMatcher.groupCount(); j++) {
+                                            String hspStr = HspsMatcher.group(j);
+                                            pattern = Pattern.compile("<Hsp_evalue>(.*?)</Hsp_evalue>.*?<Hsp_query-from>" +
+                                                    "(.*?)</Hsp_query-from>.*?<Hsp_query-to>(.*?)</Hsp_query-to>.*?" +
+                                                    "<Hsp_hit-from>(.*?)</Hsp_hit-from>.*?<Hsp_hit-to>(.*?)</Hsp_hit-to>.*?" +
+                                                    "<Hsp_qseq>(.*?)</Hsp_qseq>.*?<Hsp_hseq>(.*?)</Hsp_hseq>", Pattern.DOTALL);
+                                            Matcher hspMatcher = pattern.matcher(hspStr);
+                                            if (hspMatcher.find()) {
+                                                int hitFrom = Integer.parseInt(hspMatcher.group(4));
+                                                int hitTo = Integer.parseInt(hspMatcher.group(5));
+                                                Hsp hsp1 = new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                        Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7));
 
-                                                    hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
-                                                            Integer.parseInt(hspMatcher.group(3)), hitLen - hitFrom, hitLen - hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                                if (hitFrom < hitTo) {
+                                                    if (hsp1.getEvalue() < eValThreshold) {
+
+                                                        hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                                Integer.parseInt(hspMatcher.group(3)), hitFrom, hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                                    }
+                                                } else {
+                                                    if (hsp1.getEvalue() < eValThreshold) {
+
+                                                        hit.addHsp(new Hsp(Double.parseDouble(hspMatcher.group(1)), Integer.parseInt(hspMatcher.group(2)),
+                                                                Integer.parseInt(hspMatcher.group(3)), hitLen - hitFrom, hitLen - hitTo, hspMatcher.group(6), hspMatcher.group(7)));
+                                                    }
                                                 }
                                             }
                                         }
                                     }
-                                }
-                                boolean hspsNotEmpty = true;
-                                if (hit.getHsps().isEmpty()) {
-                                    hspsNotEmpty = false;
-                                }
-                                if (hspsNotEmpty) {
-                                    allHits.add(hit);
+                                    boolean hspsNotEmpty = true;
+                                    if (hit.getHsps().isEmpty()) {
+                                        hspsNotEmpty = false;
+                                    }
+                                    if (hspsNotEmpty) {
+                                        allHits.add(hit);
 
+                                    }
                                 }
                             }
                         }
                     }
+
+                    hitTable.getItems().addAll(allHits);
+                    numberOfHits.setText(hitTable.getItems().size() + "");
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-
-                hitTable.getItems().addAll(allHits);
-                numberOfHits.setText(hitTable.getItems().size() + "");
-
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
 
 
         private void filterHits () {
 
-            System.out.println("phio;hhohio");
             ArrayList<Hit> filteredHits = new ArrayList<>();
             for (Hit hit : allHits) {
 
@@ -433,21 +472,72 @@ public class BlastTabController implements Initializable {
             speciesAutocompleteBinding = TextFields.bindAutoCompletion(searchSpeciesField, species);
         }
 
+        @FXML
         private void filterQueries () {
-            ArrayList<String> filteredQueries = new ArrayList<>();
-            for (String q : queriesList) {
-                if (querySearchField.getText().length() > 0 && q.toUpperCase(Locale.ROOT).contains(querySearchField.getText().toUpperCase(Locale.ROOT))) {
-                    filteredQueries.add(q);
+
+            proteinTable.getItems().clear();
+
+            NitriteCollection collection = Database.getDb().getCollection("blast");
+            List<Filter> filters = new ArrayList<>(4);
+            if(!querySearchField.getText().isEmpty()){
+                filters.add(regex("protein", "^.*" + querySearchField.getText() + ".*$"));
+            }
+            if(!hitSearchField.getText().isEmpty()){
+                filters.add(regex("hits", "^.*" + hitSearchField.getText() + ".*$"));
+            }
+            if(peptideFilterBox.isSelected()){
+                filters.add(eq("hasPeptideEvidence", true));
+            }
+
+            Iterator<Document> iterator = collection.find(and(filters.toArray(new Filter[]{}))).iterator();
+            while(iterator.hasNext()) {
+                Document doc = iterator.next();
+                if(doc.containsKey("lowestEvalue")){
+                    proteinTable.getItems().add(new ProteinTableRow((String) doc.get("protein"), (double) doc.get("lowestEvalue")));
+                }else{
+                    proteinTable.getItems().add(new ProteinTableRow((String) doc.get("protein"), Double.NaN));
                 }
+
             }
 
-            listView.getItems().clear();
-            listView.getItems().addAll(filteredQueries);
 
-            if (querySearchField.getText().isBlank()) {
-                listView.getItems().clear();
-                listView.getItems().addAll(queriesList);
-            }
+//            if(peptideFilterBox.isSelected()){
+//                Iterator<Document> iterator = Database.getDb().getCollection("allTranscripts").find().iterator();
+//                while(iterator.hasNext()){
+
+
+
+
+
+
+
+
+//            ArrayList<String> filteredQueries = new ArrayList<>();
+//
+//            HashMap<String, Boolean> proteinsHavePeptides = new HashMap<>();
+//            if(peptideFilterBox.isSelected()){
+//                Iterator<Document> iterator = Database.getDb().getCollection("allTranscripts").find().iterator();
+//                while(iterator.hasNext()){
+//                    Document transcript = iterator.next();
+//                    if(transcript.containsKey("CDS")) {
+//                        JSONObject allCdsObj = transcript.get("CDS", JSONObject.class);
+//                        for (Object cdsId : allCdsObj.keySet()) {
+//                            JSONObject cds = (JSONObject) allCdsObj.get(cdsId);
+//                            proteinsHavePeptides.put((String) cdsId, cds.containsKey("peptides"));
+//                        }
+//                    }
+//                }
+//            }
+//            for (String q : queriesList) {
+//                if (querySearchField.getText().length() == 0 || q.toUpperCase(Locale.ROOT).contains(querySearchField.getText().toUpperCase(Locale.ROOT))) {
+//                    if(!peptideFilterBox.isSelected() || proteinsHavePeptides.get(q))
+//                        filteredQueries.add(q);
+//                }
+//            }
+//
+//            listView.getItems().clear();
+//            listView.getItems().addAll(filteredQueries);
+
         }
 
         private void drawAlignment (Hit hit){
@@ -600,13 +690,18 @@ public class BlastTabController implements Initializable {
 
             alignmentPane.getChildren().remove(seqAlignmentPane);
             seqAlignmentPane = new ScrollPane();
-            seqAlignmentPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+            seqAlignmentPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            Text t = new Text("T");
+            t.setFont(Font.font("monospace", FontWeight.SEMI_BOLD, 20));
+            seqAlignmentPane.setPrefHeight((t.getLayoutBounds().getHeight()+10)*4);
             Pane pane = new Pane();
 
             /* define dictionaries for conservative replacement colouring (EMBL-EBI Clustal Omega scheme used) */
 
-            Map<String, Character> conserv_replace_dict = new HashMap<String, Character>();
-            Map<Character, String> reverse_dict = new HashMap<Character, String>();
+            Map<String, Character> conserv_replace_dict = new HashMap<>();
+            Map<Character, String> reverse_dict = new HashMap<>();
+
+            HashSet<Peptide> proteinPeptides = findGenePeptides(selectedProtein.split("_i")[0]);
 
             List<Character> small_red = Arrays.asList('A', 'V', 'F', 'P', 'M', 'I', 'L', 'W');
             List<Character> acidic_blue = Arrays.asList('D', 'E');
@@ -737,33 +832,165 @@ public class BlastTabController implements Initializable {
                 pane.getChildren().add(hitNucleotide);
             }
 
+            HashMap<String, ArrayList<String>> peptideRuns = new HashMap<>();
+            for(Peptide peptide: proteinPeptides){
+                if(!peptideRuns.containsKey(peptide.getSequence())){
+                    peptideRuns.put(peptide.getSequence(), new ArrayList<>());
+                }
+                peptideRuns.get(peptide.getSequence()).add(peptide.getRunName());
+            }
+
+
+            for(Peptide peptide: proteinPeptides){
+                int index = hsp.getQseq().replace("-", "").indexOf(peptide.getSequence());
+                if(index!=-1){
+                    int alignedIndex = 0;
+                    int aaCount=0;
+                    while(aaCount<index){
+                        if(hsp.getQseq().charAt(alignedIndex)!='-'){
+                            aaCount++;
+                        }
+                        alignedIndex++;
+                    }
+
+
+                    int peptideAAcount = 0;
+                    int alignedPeptideLength = 0;
+                    int i = 0;
+                    while(peptideAAcount<peptide.getSequence().length()){
+                        if(hsp.getQseq().charAt(alignedIndex+i)!='-'){
+                            peptideAAcount++;
+                        }
+                        alignedPeptideLength++;
+                        i++;
+                    }
+
+                    Rectangle peptideRectangle = new Rectangle();
+                    Text peptideAA = new Text(String.valueOf(peptide.getSequence().charAt(0)));
+                    FontWeight fontWeight = FontWeight.SEMI_BOLD;
+                    peptideAA.setFont(Font.font("monospace", fontWeight, 20));
+                    peptideRectangle.setWidth(peptideAA.getLayoutBounds().getWidth()*alignedPeptideLength);
+                    peptideRectangle.setX(alignedIndex*peptideAA.getLayoutBounds().getWidth());
+                    peptideRectangle.setHeight(peptideAA.getLayoutBounds().getHeight());
+                    peptideRectangle.setY(3*peptideAA.getLayoutBounds().getHeight());
+                    peptideRectangle.setFill(Color.YELLOW);
+                    pane.getChildren().add(peptideRectangle);
+                    Text peptideLabel = new Text("Peptide");
+                    peptideLabel.setFont(Font.font("monospace", fontWeight, 20));
+                    peptideLabel.setX(alignedIndex*peptideAA.getLayoutBounds().getWidth()+peptideRectangle.getWidth()/2-peptideLabel.getLayoutBounds().getWidth()/2);
+                    peptideLabel.setY(3*peptideAA.getLayoutBounds().getHeight()+peptideLabel.getLayoutBounds().getHeight()-5);
+                    pane.getChildren().add(peptideLabel);
+                    addPeptideClickEvents(peptideRectangle, peptideLabel, peptide, peptideRuns);
+
+
+                }
+            }
+
 
             seqAlignmentPane.setContent(pane);
             seqAlignmentPane.setPrefWidth(width);
             seqAlignmentPane.setLayoutY(200);
             alignmentPane.getChildren().add(seqAlignmentPane);
 
-            /* add matching peptide seqs from allTranscripts.json */
-            String hsp_seq = hsp.getQseq();
-            ArrayList<String> peptide_matches = new ArrayList<>();
-            Iterator<Peptide> it1 = allPeptides.iterator();
-            while (it1.hasNext()) {
-                Peptide peptide = it1.next();
-                if (hsp_seq.contains(peptide.getSequence())) {
-                    peptide_matches.add(peptide.getSequence());
+
+        }
+
+        private void drawNovelSequence(String proteinId){
+
+            alignmentPane.getChildren().remove(seqAlignmentPane);
+            seqAlignmentPane = new ScrollPane();
+            seqAlignmentPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+            Text t1 = new Text("T");
+            t1.setFont(Font.font("monospace", FontWeight.SEMI_BOLD, 20));
+            seqAlignmentPane.setMinHeight((t1.getLayoutBounds().getHeight()+10)*4);
+
+            System.out.println(proteinId.split(".p")[0]);
+            Document doc = Database.getDb().getCollection("allTranscripts")
+                    .find(eq("transcriptID", proteinId.split(".p")[0])).firstOrDefault();
+            JSONObject allCds = (JSONObject) doc.get("CDS");
+            JSONObject cdsObj = (JSONObject) allCds.get(proteinId);
+
+            String seq = (String) cdsObj.get("sequence");
+            JSONArray peptides=null;
+            if(cdsObj.containsKey("peptides")){
+                peptides = (JSONArray) cdsObj.get("peptides");
+            }
+
+
+
+            Pane pane = new Pane();
+            for (int i = 0; i < seq.length(); i++) {
+                Text t = new Text(String.valueOf(seq.charAt(i)));
+                t.setFont(Font.font("monospace", FontWeight.SEMI_BOLD, 20));
+                t.setX(i*t.getLayoutBounds().getWidth());
+                t.setY(t.getLayoutBounds().getHeight());
+                pane.getChildren().add(t);
+            }
+            if(peptides!=null){
+
+
+                HashMap<String, ArrayList<String>> peptideRuns = new HashMap<>();
+                for(Object o: peptides){
+                    JSONObject peptide = (JSONObject) o;
+                    String peptideSeq = (String) peptide.get("sequence");
+                    String peptideRun = (String) peptide.get("run");
+                    if(!peptideRuns.containsKey(peptideSeq)){
+                        peptideRuns.put(peptideSeq, new ArrayList<>());
+                    }
+                    peptideRuns.get(peptideSeq).add(peptideRun);
+                }
+
+
+                for(Object o: peptides){
+                    JSONObject p = (JSONObject) o;
+                    String peptideSeq = (String) p.get("sequence");
+                    Peptide peptide = new Peptide(peptideSeq, new MSRun((String) p.get("run")));
+                    int index = seq.indexOf(peptideSeq);
+                    if(index!=-1){
+                        Text t = new Text(String.valueOf(seq.charAt(0)));
+                        Rectangle r = new Rectangle();
+                        r.setX(index*t.getLayoutBounds().getWidth());
+                        r.setWidth(peptideSeq.length()*t.getLayoutBounds().getWidth());
+                        r.setHeight(t.getLayoutBounds().getHeight()+10);
+                        r.setY(t.getLayoutBounds().getHeight()+20);
+                        r.setFill(Color.YELLOW);
+                        pane.getChildren().add(r);
+                        Text peptideLabel = new Text("Peptide");
+                        peptideLabel.setFont(Font.font("monospace", FontWeight.SEMI_BOLD, 20));
+                        peptideLabel.setX(index*t.getLayoutBounds().getWidth()+r.getWidth()/2-peptideLabel.getLayoutBounds().getWidth()/2);
+                        peptideLabel.setY(peptideLabel.getLayoutBounds().getHeight()+peptideLabel.getLayoutBounds().getHeight());
+                        pane.getChildren().add(peptideLabel);
+                        addPeptideClickEvents(r, peptideLabel, peptide, peptideRuns);
+                    }
                 }
             }
 
-            Integer size = peptide_matches.size();
+            seqAlignmentPane.setContent(pane);
+            alignmentPane.getChildren().add(seqAlignmentPane);
 
-            if (size > 0) {
-                numberOfPeptides.setText(size.toString());
-                String result = String.join("; ", peptide_matches);
-                peptideSeqs.setText(result);
-            } else {
-                numberOfPeptides.setText("0");
-                peptideSeqs.setText("");
-            }
+        }
+
+        public void addPeptideClickEvents(Rectangle rectangle, Text peptideLabel,  Peptide peptide, HashMap<String, ArrayList<String>> peptideRuns){
+
+
+            EventHandler<MouseEvent> eventHandler = mouseEvent -> {
+                if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+
+                    if(peptideRuns.get(peptide.getSequence()).size()>1){
+                        ChoiceDialog<String> choiceDialog = new ChoiceDialog<>(peptideRuns.get(peptide.getSequence()).get(0),
+                                (peptideRuns.get(peptide.getSequence())));
+                        choiceDialog.showAndWait();
+                        PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), choiceDialog.getSelectedItem());
+                    }else
+                        PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), peptide.getRunName());
+
+                    ResultsController.getInstance().showPeptideTab(peptide);
+
+                }
+            };
+            rectangle.setOnMouseClicked(eventHandler);
+            peptideLabel.setOnMouseClicked(eventHandler);
+
         }
 
 
@@ -895,8 +1122,26 @@ public class BlastTabController implements Initializable {
         }
 
         private void getNoOfQueries () {
-            Integer number = listView.getItems().size();
+            Integer number = proteinTable.getItems().size();
             noOfQueries.setText(number.toString());
+        }
+
+        public class ProteinTableRow{
+            private final String protein;
+            private final double evalue;
+
+            public ProteinTableRow(String protein, double evalue) {
+                this.protein = protein;
+                this.evalue = evalue;
+            }
+
+            public String getProtein() {
+                return protein;
+            }
+
+            public double getEvalue() {
+                return evalue;
+            }
         }
 }
 

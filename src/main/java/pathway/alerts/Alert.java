@@ -30,18 +30,27 @@ public abstract class Alert {
 
     public static void populateGenes(Pane container, Element element, Class alertClass){
         container.getChildren().clear();
-        Accordion accordion = new Accordion();
-        AnchorFitter.fitAnchor(accordion);
-        container.getChildren().add(accordion);
-        for(pathway.alerts.Alert alert: element.getAlerts().stream().filter(e->e.getClass().equals(alertClass)).toArray(pathway.alerts.Alert[]::new)){
-            System.out.println(alert);
-            AnchorPane alertPane = new AnchorPane();
-            TitledPane titledPane = new TitledPane(alert.getGene(), alertPane);
-            titledPane.setMaxWidth(container.getWidth());
 
-            accordion.getPanes().add(titledPane);
-            alert.drawCell(alertPane, titledPane);
+        Alert[] alerts = element.getAlerts().stream().filter(e->e.getClass().equals(alertClass)).toArray(Alert[]::new);
+        AnchorPane alertPane = new AnchorPane();
+        if(alerts.length==1){
+            container.getChildren().add(alertPane);
+            AnchorPane.setRightAnchor(alertPane, 10.);
+            AnchorPane.setLeftAnchor(alertPane, 0.);
+            alerts[0].drawCell(alertPane, null);
+        }else{
+            Accordion accordion = new Accordion();
+            AnchorFitter.fitAnchor(accordion);
+            container.getChildren().add(accordion);
+            for(pathway.alerts.Alert alert: alerts){
+                TitledPane titledPane = new TitledPane(alert.getGene(), alertPane);
+                titledPane.setMaxWidth(container.getWidth());
+
+                accordion.getPanes().add(titledPane);
+                alert.drawCell(alertPane, titledPane);
+            }
         }
+
     }
 
 

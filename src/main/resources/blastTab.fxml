@@ -36,7 +36,14 @@
                     </children>
                 </HBox>
                 <JFXTextField fx:id="querySearchField" promptText="Search for queries" VBox.vgrow="ALWAYS" />
-                <ListView fx:id="listView" onMouseClicked="#click_on_qlist" VBox.vgrow="ALWAYS" />
+                <JFXTextField fx:id="hitSearchField" promptText="Search for hit" VBox.vgrow="ALWAYS" />
+                <CheckBox fx:id="peptideFilterBox" text="Proteins with peptide evidence" selected="true" onMouseClicked="#filterQueries"/>
+                <TableView fx:id="proteinTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="proteinColumn" text="Protein"/>
+                        <TableColumn fx:id="evalueProteinColumn" text="E-value"/>
+                    </columns>
+                </TableView>
                 <Label id="info_label" text="Conservative substitution legend:" style="-fx-font-size: 12px; -fx-text-fill: black" VBox.vgrow="ALWAYS"/>
                 <Label id="info_label" text="* - Small (small+ hydrophobic (incl.aromatic -Y))" style="-fx-font-size: 12px; -fx-text-fill: #DC143C;" VBox.vgrow="ALWAYS"/>
                 <Label id="info_label" text="* - Acidic" style="-fx-font-size: 12px; -fx-text-fill: #0000FF;" VBox.vgrow="ALWAYS"/>
