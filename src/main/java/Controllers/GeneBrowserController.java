@@ -1118,309 +1118,6 @@ public class GeneBrowserController implements Initializable {
     }
 
 
-//    private void displayCdsCentricView() {
-//        isAGeneDisplayed = true;
-//        geneExonsSeqsVBox.getChildren().remove(1, geneExonsSeqsVBox.getChildren().size());
-//
-//        double rectanglesAreaWidth = representationWidthFinal;
-//
-//        int startGenomCoord = (int) geneSlider.getLowValue();
-//        int endGenomCoord = (int) geneSlider.getHighValue();
-//
-//        // draw depth
-//        if (showDepthInGeneBrowserBool) {
-//            bamPaneController.show((int) geneSlider.getLowValue(), (int) geneSlider.getHighValue());
-//        }
-//
-//        // tpm threshold, if tpm < tpmThreshold, the seq is not shown
-//        double tpmThreshold = Double.parseDouble(minTpmFilterGeneBrowserTextField.getText());
-//        String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
-//
-//
-//        // identify unique cds, use: sequence, Start genom coord and End genom coords
-//        HashMap<Pair<String, Pair<Integer, Integer>>, ArrayList<String>> seqStartEndCoordTranscIdsMap = new HashMap<>();
-//        HashMap<Pair<String, Pair<Integer, Integer>>, Double> seqStartEndCoordSumTpmMap = new HashMap<>();
-//        HashMap<Pair<String, Pair<Integer, Integer>>, ArrayList<Pair<String, Pair<Integer, Integer>>>> cdsSeqStartEndCoordPfamDescStartEndCoords = new HashMap<>();
-//        HashMap<Pair<String, Pair<Integer, Integer>>, ArrayList<Pair<String, Pair<Integer, Integer>>>> cdsSeqStartEndCoordPeptidesSeqCoordsMap = new HashMap<>();
-//        HashMap<Pair<String, Pair<Integer, Integer>>, ArrayList<String>> cdsSeqStartEndCoorddistinctPeptidesMap = new HashMap<>();
-//
-//
-//        for (CdsCondSample tmpCdsCondSample : cdsCondSamplePerTranscCondSample) {
-//            String cdsTranscId = tmpCdsCondSample.getTranscID();
-//            int cdsStartPos = tmpCdsCondSample.getStart();
-//            int cdsEndPos = tmpCdsCondSample.getEnd();
-//            String cdsSeq = tmpCdsCondSample.getSequence();
-//
-//            // filter by condition
-//            if (!tmpCdsCondSample.getCondition().equals(conditionToSortBy)){
-//                continue;
-//            }
-//
-//            // filter by avgTPM
-//            Double avgTPM = transcriptHashMap.get(cdsTranscId).getAverageTPMByCondition(conditionToSortBy);
-//            if (avgTPM.equals(Double.NaN)) { // could be NaN, since it may not be present in some condition
-//                avgTPM = 0.0;
-//            }
-//            if (avgTPM < tpmThreshold) { // filter by average TPM
-//                continue;
-//            }
-//
-//            int cdsStartGenomCoord = transcriptHashMap.get(cdsTranscId).genomCoordFromSeqPos(cdsStartPos) - 1; // - 1 cause  start is not inclusive
-//            int cdsEndGenomCoord = transcriptHashMap.get(cdsTranscId).genomCoordFromSeqPos(cdsEndPos);
-//            double cdsTranscTpmCumSumByCond = transcriptHashMap.get(cdsTranscId).getCumSumTPMByCondition(conditionToSortBy);
-//
-//            Pair<String, Pair<Integer, Integer>> seqStartEndCoodsPair = new Pair<>(cdsSeq, new Pair<>(cdsStartGenomCoord, cdsEndGenomCoord));
-//
-//            if (!seqStartEndCoordTranscIdsMap.keySet().contains(seqStartEndCoodsPair)) { // new
-//                seqStartEndCoordTranscIdsMap.put(seqStartEndCoodsPair, new ArrayList<String>());
-//                seqStartEndCoordTranscIdsMap.get(seqStartEndCoodsPair).add(cdsTranscId);
-//
-//                seqStartEndCoordSumTpmMap.put(seqStartEndCoodsPair, cdsTranscTpmCumSumByCond); //cumsum to sort
-//
-//                // get pfams
-//                if (tmpCdsCondSample.hasPfam()) {
-//
-//                    ArrayList<Pair<String, Pair<Integer, Integer>>> pfamsDescStartEndGenomCoords = new ArrayList<>();
-//
-//                    for (Pfam tmpPfam : tmpCdsCondSample.getPfams()) {
-//                        int pfamAaStart = tmpPfam.getAaStart();
-//                        int pfamAaEnd = tmpPfam.getAaEnd();
-//                        String pfamDesc = tmpPfam.getDesc();
-//
-//
-//                        // get rna seq position
-//                        int pfamRnaStart = -999;
-//                        int pfamRnaEnd = -999;
-//
-//                        if (tmpCdsCondSample.getStrand().equals("+")){
-//                            pfamRnaStart = tmpCdsCondSample.getStart() + ((pfamAaStart - 1) * 3) -1; // -1 since are 1 indexed
-//                            pfamRnaEnd = tmpCdsCondSample.getStart() + ((pfamAaEnd - 1) * 3) + 2; // -1 since are 1 indexed
-//                        } else {
-//                            pfamRnaEnd = tmpCdsCondSample.getEnd() - ((pfamAaStart - 1) * 3) ; // -1 since are 1 indexed
-//                            pfamRnaStart =  tmpCdsCondSample.getEnd() - ((pfamAaEnd - 1) * 3) - 3; // -1 since are 1 indexed
-//                        }
-//
-//
-//                        int pfamStartCoord = transcriptHashMap.get(cdsTranscId).genomCoordFromSeqPos(pfamRnaStart);
-//                        int pfamEndCoord = transcriptHashMap.get(cdsTranscId).genomCoordFromSeqPos(pfamRnaEnd);
-//
-//                        Pair<String, Pair<Integer, Integer>> pfamDescStartEndCoordsPair = new Pair<>(pfamDesc, new Pair<>(pfamStartCoord, pfamEndCoord));
-//
-//                        pfamsDescStartEndGenomCoords.add(pfamDescStartEndCoordsPair);
-//                    }
-//
-//
-//                    cdsSeqStartEndCoordPfamDescStartEndCoords.put(seqStartEndCoodsPair, pfamsDescStartEndGenomCoords);
-//                }
-//
-//            } else { // existing cds
-//                if (!seqStartEndCoordTranscIdsMap.get(seqStartEndCoodsPair).contains(cdsTranscId)) {
-//                    seqStartEndCoordTranscIdsMap.get(seqStartEndCoodsPair).add(cdsTranscId);
-//                    double cumTpmSum = seqStartEndCoordSumTpmMap.get(seqStartEndCoodsPair) + cdsTranscTpmCumSumByCond;
-//                    seqStartEndCoordSumTpmMap.put(seqStartEndCoodsPair, cumTpmSum);  //cumsum to sort
-//                }
-//            }
-//
-//
-//            // peptides
-//            if (tmpCdsCondSample.hasPeptides()){
-//
-//                if (!cdsSeqStartEndCoordPeptidesSeqCoordsMap.containsKey(seqStartEndCoodsPair)){
-//                    cdsSeqStartEndCoordPeptidesSeqCoordsMap.put(seqStartEndCoodsPair, new ArrayList<>());
-//                    cdsSeqStartEndCoorddistinctPeptidesMap.put(seqStartEndCoodsPair, new ArrayList<String>());
-//                }
-//
-//                for (Peptide tpmPeptide : tmpCdsCondSample.getPeptides()){
-//                    String pepSeq = tpmPeptide.getSequence();
-//
-//                    if (!cdsSeqStartEndCoorddistinctPeptidesMap.get(seqStartEndCoodsPair).contains(pepSeq)){
-//                        cdsSeqStartEndCoorddistinctPeptidesMap.get(seqStartEndCoodsPair).add(pepSeq); // prevent replicates
-//                        getPepPos(cdsSeq, pepSeq, tmpCdsCondSample,seqStartEndCoodsPair, cdsSeqStartEndCoordPeptidesSeqCoordsMap );
-//
-//                    }
-//                }
-//            }
-//        }
-//
-//        // sort (descending) cds by cumsumTpm
-//        Comparator<Map.Entry<Pair<String, Pair<Integer, Integer>>, Double>> valueComparator = Comparator.comparing(Map.Entry::getValue);
-//        Map<Pair<String, Pair<Integer, Integer>>, Double> sortedseqStartEndCoordSumTpmMap =
-//                seqStartEndCoordSumTpmMap.entrySet().stream().
-//                        sorted(valueComparator.reversed()).
-//                        collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-//                                (e1, e2) -> e1, LinkedHashMap::new));
-//
-//
-//        for (Map.Entry<Pair<String, Pair<Integer, Integer>>, Double> startEndTranscIdEntry : sortedseqStartEndCoordSumTpmMap.entrySet()) {
-//            Pair<String, Pair<Integer, Integer>> seqStartEndPair = startEndTranscIdEntry.getKey();
-//            Pair<Integer, Integer> cdsStartEndPair = seqStartEndPair.getValue();
-//            ArrayList<String> cdsTranscIdList = seqStartEndCoordTranscIdsMap.get(seqStartEndPair);
-//            ArrayList<String> transcriptsIdsAboveThresholdArray = new ArrayList<>();
-//
-//
-//            // draw transcripts
-//            // sort transcID by condition average TPM
-//            if (!conditionToSortBy.equals("")) {
-//                ArrayList<Pair<String, Double>> cdsTranscIDconditionAverageTPM = new ArrayList<>();
-//
-//                for (String cdsTranscId : cdsTranscIdList) {
-//                    Double avgTPM = transcriptHashMap.get(cdsTranscId).getAverageTPMByCondition(conditionToSortBy);
-//                    if (avgTPM.equals(Double.NaN)) { // could be NaN, since it may not be present in some condition
-//                        avgTPM = 0.0;
-//                    }
-//                    if (avgTPM >= tpmThreshold) { // filter by average TPM
-//                        Pair<String, Double> transcAvgTPMPair = new Pair(cdsTranscId, avgTPM);
-//                        cdsTranscIDconditionAverageTPM.add(transcAvgTPMPair);
-//                    }
-//                }
-//
-//                // sort by average tpm
-//                cdsTranscIDconditionAverageTPM.sort(Comparator.comparing(p -> p.getValue()));
-//                Collections.reverse(cdsTranscIDconditionAverageTPM);
-//
-//                // get transcript ids sorted by average tpm
-//                for (Pair<String, Double> transcIDAvgPair : cdsTranscIDconditionAverageTPM) {
-//                    transcriptsIdsAboveThresholdArray.add(transcIDAvgPair.getKey());
-//                }
-//
-//                // draw either exons or sequences, depending on the distance
-//                drawTranscOrSequences();
-//
-//                // draw cds
-//                HBox cdsHBox = new HBox();
-//                HBox pepHBox = new HBox();
-//
-//                Pane cdsPane = new Pane();
-//                Group cdsGroup = new Group();
-//                Pane pepPane = new Pane();
-//                Group pepGroup = new Group();
-//
-//                Rectangle cdsRectangle = new Rectangle();
-//                int height = 10;
-//                cdsHBox.setPrefHeight(height);
-//                pepHBox.setPrefHeight(height);
-//                cdsRectangle.setHeight(height);
-//
-//                // tooltip for cds
-//                Tooltip cdsToolTip = new Tooltip("CDS");
-//                cdsToolTip.setShowDelay(Duration.millis(500));
-//                cdsToolTip.setFont(Font.font(fontSize));
-//                cdsToolTip.setShowDuration(Duration.seconds(4));
-//                Tooltip.install(cdsRectangle, cdsToolTip);
-//
-//                // on click action
-//                cdsRectangle.setOnMouseClicked(mouseEvent -> {
-//                    if (mouseEvent.getClickCount() == 1 && mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-//                        String rectCdsSeq = seqStartEndPair.getKey();
-//                        displayCdsTab(rectCdsSeq);
-//                    }
-//                });
-//
-//                //  color depending on having peptides
-//                if (cdsSeqStartEndCoordPeptidesSeqCoordsMap.get(seqStartEndPair) != null) {
-//                    cdsRectangle.setFill(Color.rgb(217, 33, 122));
-//                    cdsRectangle.setStroke(Color.WHITE);
-//                } else {
-//                    cdsRectangle.setFill(Color.rgb(217, 33, 122, 0.5));
-//                    cdsRectangle.setStroke(Color.WHITE);
-//                }
-//
-//                // min-max coords in view
-//                int cdsStartCoordInView = Math.max(startGenomCoord, cdsStartEndPair.getKey());
-//                int cdsEndCoordInView = Math.min(endGenomCoord, cdsStartEndPair.getValue());
-//
-//                double totalSize = endGenomCoord - startGenomCoord;
-//
-//                cdsRectangle.setX(rectanglesAreaWidth * (getProportion(cdsStartCoordInView, startGenomCoord, totalSize)));
-//                cdsRectangle.setWidth(rectanglesAreaWidth * (getProportion(cdsEndCoordInView, cdsStartCoordInView, totalSize)));
-//                cdsGroup.getChildren().add(cdsRectangle);
-//
-//
-//                // if has pfams, add pfam rectangles
-//                if (cdsSeqStartEndCoordPfamDescStartEndCoords.get(seqStartEndPair) != null) {
-//                    ArrayList<Pair<String, Pair<Integer, Integer>>> pfamDescStartEndCoordsPairArray = cdsSeqStartEndCoordPfamDescStartEndCoords.get(seqStartEndPair);
-//
-//                    for (Pair<String, Pair<Integer, Integer>> pfamDescStartEndCoordsPair : pfamDescStartEndCoordsPairArray) {
-//                        Rectangle pfamRectangle = new Rectangle();
-//                        pfamRectangle.setHeight(height);
-//
-//                        pfamRectangle.setFill(Color.rgb(153, 255, 153));
-//                        pfamRectangle.setStroke(Color.WHITE);
-//
-//                        String pfamDesc = pfamDescStartEndCoordsPair.getKey();
-//                        int pfamStartCoord = pfamDescStartEndCoordsPair.getValue().getKey();
-//                        int pfamEndCoord = pfamDescStartEndCoordsPair.getValue().getValue();
-//
-//
-//                        int pfamStartCoordInView = Math.max(startGenomCoord, pfamStartCoord);
-//                        int pfamEndCoordInView = Math.min(endGenomCoord, pfamEndCoord);
-//
-//                        double totalSizeInView = endGenomCoord - startGenomCoord;
-//
-//                        // Tooltip for pfam domain
-//                        Tooltip pfamToolTip = new Tooltip(pfamDesc);
-//                        pfamToolTip.setShowDelay(Duration.ZERO);
-//                        Tooltip.install(pfamRectangle, pfamToolTip);
-//                        pfamToolTip.setShowDuration(Duration.seconds(4));
-//
-//
-//                        pfamRectangle.setX(rectanglesAreaWidth * (getProportion(pfamStartCoordInView, startGenomCoord, totalSizeInView)));
-//                        pfamRectangle.setWidth(rectanglesAreaWidth * (getProportion(pfamEndCoordInView, pfamStartCoordInView, totalSizeInView)));
-//                        cdsGroup.getChildren().add(pfamRectangle);
-//                    }
-//                }
-//
-//                // draw peptides: get rectangles
-//                if (cdsSeqStartEndCoordPeptidesSeqCoordsMap.get(seqStartEndPair) != null ) {
-//                    ArrayList<Pair<String, Pair<Integer, Integer>>> pepSeqStartEndCoordsArray = cdsSeqStartEndCoordPeptidesSeqCoordsMap.get(seqStartEndPair);
-//                    pepGroup = getPepGroup(height, startGenomCoord, endGenomCoord, rectanglesAreaWidth, pepSeqStartEndCoordsArray);
-//                }
-//
-//                cdsPane.getChildren().add(cdsGroup);
-//                cdsHBox.getChildren().add(cdsPane);
-//                geneExonsSeqsVBox.getChildren().add(cdsHBox);
-//
-//                // add peptides
-//                if (pepGroup.getChildren().size() > 0 ) {
-//                    pepPane.getChildren().add(pepGroup);
-//                    pepHBox.getChildren().add(pepPane);
-//                    geneExonsSeqsVBox.getChildren().add(pepHBox);
-//                }
-//
-//            }
-//        }
-//
-//
-//        // include the transcripts that don't have CDS
-//        ArrayList<String> transcWithNoCds = new ArrayList<>();
-//        ArrayList<Pair<String, Double>> transcWithNoCdsTranscIDconditionAverageTPM = new ArrayList<>();
-//        for (Map.Entry<String, Transcript> transcriptEntry : transcriptHashMap.entrySet()) {
-//            String transcId = transcriptEntry.getKey();
-//            Transcript tmpTransc = transcriptEntry.getValue();
-//            if (!tmpTransc.getHasCds()) { // if doesn't have cds
-//                Double avgTPM = transcriptHashMap.get(transcId).getAverageTPMByCondition(conditionToSortBy);
-//                if (avgTPM.equals(Double.NaN)) { // could be NaN, since it may not be present in some condition
-//                    avgTPM = 0.0;
-//                }
-//                if (avgTPM >= tpmThreshold) { // filter by average TPM
-//                    Pair<String, Double> transcAvgTPMPair = new Pair(transcId, avgTPM);
-//                    transcWithNoCdsTranscIDconditionAverageTPM.add(transcAvgTPMPair);
-//                }
-//            }
-//        }
-//        // sort by tpm
-//        transcWithNoCdsTranscIDconditionAverageTPM.sort(Comparator.comparing(p -> p.getValue()));
-//        Collections.reverse(transcWithNoCdsTranscIDconditionAverageTPM);
-//        // get transcIds
-//        for (Pair<String, Double> avgTpmPair : transcWithNoCdsTranscIDconditionAverageTPM) {
-//            transcWithNoCds.add(avgTpmPair.getKey());
-//        }
-//
-//        // draw either exons or sequences, depending on the distance
-//        drawTranscOrSequences();
-//
-//
-//    }
 
 
     private Group getPepGroup (CDS cds, Transcript transcript, double height, int startGenomCoord, int endGenomCoord,
@@ -2090,8 +1787,12 @@ public class GeneBrowserController implements Initializable {
             Pane group = new Pane();
 
             final double width = rectanglesMaxWidth / charNum;
-            int height = (int) Math.round(representationHeightFinal * 0.02);
+            //int height = (int) Math.round(representationHeightFinal * 0.02);
+            Text templateBase = new Text("A");
+            templateBase.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
+            double height = templateBase.getLayoutBounds().getHeight()+10;
             double currentX = 0;
+
 
 
             for (int i = 0; i < subSeq.length(); i++) {
@@ -2128,10 +1829,6 @@ public class GeneBrowserController implements Initializable {
                     EventHandler<MouseEvent> eventHandler = mouseEvent -> {
                         mouseEvent.consume();
                         if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
-                            int genomCoord = finalI + (int) geneSlider.getLowValue();
-//                        transcIDVarTableTextField.setText(transcriptId);   //TODO:!!
-//                        genomeStartCoordVarTableSpinner.getValueFactory().setValue(genomCoord);
-//                        genomeEndCoordVarTableSpinner.getValueFactory().setValue(genomCoord);
 
                             for (CDS cds : transcript.getCdss()) {
 
@@ -2407,7 +2104,15 @@ public class GeneBrowserController implements Initializable {
         HBox cdsHBox = new HBox();
         HBox pepHBox = new HBox();
 
-        int height = (int) Math.round(representationHeightFinal * 0.02);
+        //int height = (int) Math.round(representationHeightFinal * 0.02);
+        double height;
+        if (geneSlider.getHighValue() - geneSlider.getLowValue() <= 500) {
+            Text templateAA = new Text();
+            templateAA.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
+            height = templateAA.getLayoutBounds().getHeight()+10;
+        }else{
+            height = Math.round(representationHeightFinal * 0.02);
+        }
         cdsHBox.setPrefHeight(height);
 
         Pane cdsPane = new Pane();
@@ -2760,7 +2465,10 @@ public class GeneBrowserController implements Initializable {
         Pane group = new Pane();
 
         final double width = representationWidthFinal / seq.length();
-        int height = (int) Math.round(representationHeightFinal * 0.02);
+
+        Text templateAA = new Text();
+        templateAA.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
+        double height  = templateAA.getLayoutBounds().getHeight()+10;
 
 
 
