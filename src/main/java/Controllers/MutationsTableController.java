@@ -303,7 +303,7 @@ public class MutationsTableController implements Initializable {
                 long startTime = System.currentTimeMillis();
                 Cursor mutationsCursor = Database.getDb().getCollection("mutations").find(and(filters.toArray(new Filter[]{})));
                 long estimatedTime = System.currentTimeMillis() - startTime;
-                System.out.println(estimatedTime);
+                System.out.println(estimatedTime + mutationsCursor.size());
 
 
 
@@ -321,7 +321,7 @@ public class MutationsTableController implements Initializable {
                         Long varPos = (Long) mutationDoc.get("refPos");
                         String varAlt = (String) mutationDoc.get("alt");
                         String varRef = (String) mutationDoc.get("ref");
-                        String chr = (String) mutationDoc.get("chr");
+                        String chr = String.valueOf(mutationDoc.get("chr"));
                         boolean hasPeptideEvidence = (boolean) mutationDoc.get("hasPeptideEvidence");
                         Map<String, Map< String, Map<String, Object>>> conditions =
                                 (Map<String, Map<String, Map<String, Object>>>) mutationDoc.get("condition");

@@ -161,13 +161,16 @@ public class DatabaseGeneration {
                         configParser(filePathString);
                         break;
                     case "ptm":
-                        ptmParser(filePathString);
+                        ptmParser(filePath);
                         break;
                     case "transcriptCount":
                         transcriptCountsParser(filePath);
                         break;
                     case "blast":
                         blastParser(filePathString);
+                        break;
+                    case "kinaseActivity":
+                        kinaseActivityParser(filePath);
                         break;
                 }
 
@@ -203,6 +206,7 @@ public class DatabaseGeneration {
         pathsMap.put("transcriptUsage", new ArrayList<>());
         pathsMap.put("transcriptCount", new ArrayList<>());
         pathsMap.put("ptm", new ArrayList<>());
+        pathsMap.put("kinaseActivity", new ArrayList<>());
         pathsMap.put("blast", new ArrayList<>());
 
 
@@ -254,10 +258,12 @@ public class DatabaseGeneration {
                     pathsMap.get("transcriptUsage").add(filePath);
                 }else if (filePath.getFileName().toString().contains("transcriptReadCount_normalised")){
                     pathsMap.get("transcriptCount").add(filePath);
-                }else if (filePath.toAbsolutePath().toString().contains("phosphorylation") && filePath.getFileName().toString().equals("ptm.json")){
+                }else if (filePath.getFileName().toString().equals("ptm.json")){
                     pathsMap.get("ptm").add(filePath);
                 }else if (filePath.getFileName().toString().equals("hits.json")){
                     pathsMap.get("blast").add(filePath);
+                }else if (filePath.getFileName().toString().equals("kinaseActivity.json")){
+                    pathsMap.get("kinaseActivity").add(filePath);
                 }
 
             }
@@ -1287,7 +1293,7 @@ public class DatabaseGeneration {
         }
     }
 
-    private void ptmParser(String filePath){
+    private void ptmParser(Path filePath){
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
         NitriteCollection ptmCollection = db.getCollection("ptm");
 
@@ -1298,7 +1304,7 @@ public class DatabaseGeneration {
 
         try {
 
-            Object obj = parser.parse(new FileReader(filePath));
+            Object obj = parser.parse(new FileReader(filePath.toString()));
 
             JSONObject ptms = (JSONObject) obj;
             for (Object o: ptms.keySet()) {
@@ -1316,9 +1322,9 @@ public class DatabaseGeneration {
 
                 Document doc = new Document(ptm);
                 doc.put("id", ptmId);
-                if(filePath.contains("phosphorylation")){
-                    doc.put("type", "phosphorylation");
-                }
+                doc.put("comparison", filePath.getParent().getFileName().toString());
+                doc.put("type", filePath.getParent().getParent().getFileName().toString());
+
 
                 dgeDocsToDBList.add(doc);
 
@@ -1331,10 +1337,58 @@ public class DatabaseGeneration {
                 ptmCollection.insert(splicDocsArray);
             }
 
-            ptmCollection.createIndex("type", IndexOptions.indexOptions(IndexType.NonUnique, false));
-            ptmCollection.createIndex("gene", IndexOptions.indexOptions(IndexType.NonUnique, false));
-            ptmCollection.createIndex("id", IndexOptions.indexOptions(IndexType.Unique, false));
-            ptmCollection.createIndex("run", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            db.close();
+
+
+
+        } catch (ParseException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void kinaseActivityParser(Path filePath){
+        Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
+        NitriteCollection ptmCollection = db.getCollection("kinaseActivity");
+
+
+        ArrayList<Document> dgeDocsToDBList = new ArrayList<>();
+
+        JSONParser parser = new JSONParser();
+
+        try {
+
+            Object obj = parser.parse(new FileReader(filePath.toString()));
+
+            JSONObject ptms = (JSONObject) obj;
+            for (Object o: ptms.keySet()) {
+
+                String ptmId = (String) o;
+
+                JSONObject ptm = (JSONObject) ptms.get(ptmId);
+                if (dgeDocsToDBList.size() >= 10000) {
+                    Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                    splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                    ptmCollection.insert(splicDocsArray);
+                    dgeDocsToDBList = new ArrayList<>();
+                }
+
+
+                Document doc = new Document(ptm);
+                doc.put("id", ptmId);
+                doc.put("comparison", filePath.getParent().getFileName().toString());
+                doc.put("type", filePath.getParent().getParent().getFileName().toString());
+
+
+                dgeDocsToDBList.add(doc);
+
+
+            }
+
+            if(dgeDocsToDBList.size() > 0){
+                Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                ptmCollection.insert(splicDocsArray);
+            }
 
             db.close();
 
@@ -1344,6 +1398,9 @@ public class DatabaseGeneration {
             e.printStackTrace();
         }
     }
+
+
+
     private void blastParser(String filePath){
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
         NitriteCollection blastCollection = db.getCollection("blast");
@@ -1413,8 +1470,7 @@ public class DatabaseGeneration {
             NitriteCollection peptideQuantCollection = db.getCollection("peptideQuant");
             NitriteCollection peptideMapCollection = db.getCollection("peptideMap");
             NitriteCollection genePeptidesCollection = db.getCollection("genePeptides");
-
-
+            NitriteCollection ptmCollection = db.getCollection("ptm");
             NitriteCollection allTranscriptsCollection = db.getCollection("allTranscripts");
 
 
@@ -1432,6 +1488,11 @@ public class DatabaseGeneration {
 
             allTranscriptsCollection.createIndex("gene", IndexOptions.indexOptions(IndexType.NonUnique, false));
             allTranscriptsCollection.createIndex("transcriptID", IndexOptions.indexOptions(IndexType.Unique, false));
+
+            ptmCollection.createIndex("type", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("gene", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("id", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("run", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
 
             db.close();
