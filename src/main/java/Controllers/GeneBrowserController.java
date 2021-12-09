@@ -1,6 +1,8 @@
 package Controllers;
 
 import Cds.*;
+import Controllers.MSControllers.ProteinMSController;
+import Controllers.MSControllers.StructureController;
 import Controllers.drawerControllers.DrawerController;
 import FileReading.AllGenesReader;
 import FileReading.FastaIndex;
@@ -66,7 +68,7 @@ import java.util.regex.Pattern;
 
 import static java.util.Comparator.comparing;
 
-public class GeneBrowserController implements Initializable {
+public class GeneBrowserController extends Controller implements Initializable {
 
 
     @FXML
@@ -1120,8 +1122,8 @@ public class GeneBrowserController implements Initializable {
 
 
 
-    private Group getPepGroup (CDS cds, Transcript transcript, double height, int startGenomCoord, int endGenomCoord,
-                               double rectanglesAreaWidth){
+    public static Group getPepGroup (CDS cds, Transcript transcript, double height, int startGenomCoord, int endGenomCoord,
+                               double rectanglesAreaWidth, double fontSize, Controller parent){
 
 
         Group pepGroup = new Group();
@@ -1173,28 +1175,38 @@ public class GeneBrowserController implements Initializable {
                                 Rectangle pepRect = new Rectangle();
                                 pepRect.setHeight(height);
 
-                                pepRect.setOnMouseClicked(mouseEvent -> {
-                                    if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
-                                        if (mouseEvent.getClickCount() == 2) {
+                                if(parent!=null && parent.getClass().equals(ProteinMSController.class)){
+                                    Pair<Integer, Integer> peptidePositionInCds = peptide.getPosInCds(cds);
+                                    if (peptidePositionInCds != null) {
+                                        System.out.println((peptidePositionInCds.getKey()+" "+(peptidePositionInCds.getValue())));
+                                        pepRect.setOnMouseEntered(event -> StructureController.getInstance().colorPositions(peptidePositionInCds.getKey(), peptidePositionInCds.getValue()));
+                                        pepRect.setOnMouseExited(event -> StructureController.getInstance().reset());
+                                    }
 
-                                            if (peptideSeqsRuns.get(pepSeq).size() > 1) {
-                                                ChoiceDialog d = new ChoiceDialog(peptideSeqsRuns.get(pepSeq).iterator().next(),
-                                                        peptideSeqsRuns.get(pepSeq).toArray());
+                                }else if(parent !=null && parent.getClass().equals(GeneBrowserController.class)){
+
+                                    pepRect.setOnMouseClicked(mouseEvent -> {
+                                        if (mouseEvent.getButton().equals(MouseButton.PRIMARY)) {
+                                            if (mouseEvent.getClickCount() == 2) {
+
+                                                if (peptideSeqsRuns.get(pepSeq).size() > 1) {
+                                                    ChoiceDialog d = new ChoiceDialog(peptideSeqsRuns.get(pepSeq).iterator().next(),
+                                                            peptideSeqsRuns.get(pepSeq).toArray());
 
 
-                                                d.showAndWait();
-                                                ControllersBasket.getResultsController().moveToTab(5);
-                                                ControllersBasket.getPeptideTableController()
-                                                        .findPeptideInTable(pepSeq, (String) d.getSelectedItem());
-                                            } else {
-                                                ControllersBasket.getResultsController().moveToTab(5);
-                                                ControllersBasket.getPeptideTableController()
-                                                        .findPeptideInTable(pepSeq, peptideSeqsRuns.get(pepSeq).iterator().next());
-
+                                                    d.showAndWait();
+                                                    ControllersBasket.getResultsController().moveToTab(5);
+                                                    ControllersBasket.getPeptideTableController()
+                                                            .findPeptideInTable(pepSeq, (String) d.getSelectedItem());
+                                                } else {
+                                                    ControllersBasket.getResultsController().moveToTab(5);
+                                                    ControllersBasket.getPeptideTableController()
+                                                            .findPeptideInTable(pepSeq, peptideSeqsRuns.get(pepSeq).iterator().next());
+                                                }
                                             }
                                         }
-                                    }
-                                });
+                                    });
+                                }
 
                                 // tooltip for peptides
                                 Tooltip pepToolTip = new Tooltip("Peptide");
@@ -1664,7 +1676,7 @@ public class GeneBrowserController implements Initializable {
      * @param totalSize total size of the window or sequence
      * @return a double that is the proportion.
      */
-    private double getProportion(double end, double start, double totalSize) {
+    private static double getProportion(double end, double start, double totalSize) {
 
         if (totalSize > 0) {
             return (end - start) / (totalSize);
@@ -2062,7 +2074,7 @@ public class GeneBrowserController implements Initializable {
     }
 
 
-    private Pair<Integer, Integer> getPepPos(String pepSeq, CDS cds, Transcript transcript){
+    public static Pair<Integer, Integer> getPepPos(String pepSeq, CDS cds, Transcript transcript){
 
         // replace I for L, since leusine and isoleucine have the same mass and are indistiguishable in mass spec
         String tmpPepSeq = pepSeq.replace("I", "L");
@@ -2383,7 +2395,7 @@ public class GeneBrowserController implements Initializable {
 
             if (cds.getPeptides().size() > 0) {
 
-                pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth);
+                pepGroup = getPepGroup(cds, transcript, height, startGenomCoord, endGenomCoord, rectanglesAreaWidth, fontSize, this);
             }
             // add peptides
             if (pepGroup.getChildren().size() > 0) {

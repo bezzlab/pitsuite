@@ -2,7 +2,10 @@ package Controllers;
 
 
 import Cds.Peptide;
+import Controllers.MSControllers.MSController;
+import Controllers.MSControllers.PTMController;
 import FileReading.AllGenesReader;
+import FileReading.UniprotProteinsCollection;
 import Singletons.ControllersBasket;
 import Singletons.Database;
 import Singletons.TrackFiles;
@@ -10,7 +13,6 @@ import export.ProVcf;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
-import javafx.application.HostServices;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.fxml.FXML;
@@ -52,10 +54,10 @@ public class ResultsController implements Initializable {
     private BrowserController browserController;
     private DgeTableController dgeTableController;
     private SplicingTableController splicingTableController;
-    private PeptideTableController peptideTableController;
+    private MSController msController;
     private TranscriptUsageController transcriptUsageController;
     private SystemController systemController;
-    private PhosphoController phosphoController;
+    private PTMController phosphoController;
     private BlastTabController blastTabController;
     // tabs
     @FXML
@@ -138,70 +140,69 @@ public class ResultsController implements Initializable {
 
     public void load(){
 
-        resultsTabPane.getSelectionModel().select(2);
-        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
-        try {
-            Parent root = fxmlLoader1.load();
-            dgeTableController = fxmlLoader1.getController();
-            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
-            resultsTabPane.getTabs().get(2).setContent(root);
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-
-        Platform.runLater(() -> {
-            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/splicingTable" + ".fxml"));
-            try {
-                Parent root = fxmlLoader2.load();
-
-                splicingTableController = fxmlLoader2.getController();
-                splicingTableController.setParentControler(this, allGenesReader);
-                resultsTabPane.getTabs().get(3).setContent(root);
-            } catch(Exception e){
-                e.printStackTrace();
-            }
-        });
+//        resultsTabPane.getSelectionModel().select(2);
+//        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
+//        try {
+//            Parent root = fxmlLoader1.load();
+//            dgeTableController = fxmlLoader1.getController();
+//            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
+//            resultsTabPane.getTabs().get(2).setContent(root);
+//        } catch(Exception e){
+//            e.printStackTrace();
+//        }
+//
+//        Platform.runLater(() -> {
+//            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/splicingTable" + ".fxml"));
+//            try {
+//                Parent root = fxmlLoader2.load();
+//
+//                splicingTableController = fxmlLoader2.getController();
+//                splicingTableController.setParentControler(this, allGenesReader);
+//                resultsTabPane.getTabs().get(3).setContent(root);
+//            } catch(Exception e){
+//                e.printStackTrace();
+//            }
+//        });
 
 
 
         PauseTransition pauseTransition = new PauseTransition(Duration.seconds(0.2));
-        pauseTransition.setOnFinished(event -> {
-            Platform.runLater(() -> {
-                FXMLLoader fxmlLoader = new FXMLLoader(SettingsController.class.getResource("/mutationsTable" + ".fxml"));
-                try {
-                    Parent root = fxmlLoader.load();
-                    mutationsTableController = fxmlLoader.getController();
-                    mutationsTableController.setParentControler(this, projectName, allGenesReader);
-                    resultsTabPane.getTabs().get(0).setContent(root);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
+//        pauseTransition.setOnFinished(event -> {
+//            Platform.runLater(() -> {
+//                FXMLLoader fxmlLoader = new FXMLLoader(SettingsController.class.getResource("/mutationsTable" + ".fxml"));
+//                try {
+//                    Parent root = fxmlLoader.load();
+//                    mutationsTableController = fxmlLoader.getController();
+//                    mutationsTableController.setParentControler(this, projectName, allGenesReader);
+//                    resultsTabPane.getTabs().get(0).setContent(root);
+//                } catch(Exception e){
+//                    e.printStackTrace();
+//                }
+//            });
+//
+//
+//            Platform.runLater(() -> {
+//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
+//                try {
+//                    Parent root = fxmlLoader2.load();
+//
+//                    browserController = fxmlLoader2.getController();
+//                    browserController.setParentControler(this, settings, projectName, allGenesReader);
+//                    resultsTabPane.getTabs().get(1).setContent(root);
+//                } catch(Exception e){
+//                    e.printStackTrace();
+//                }
+//            });
 //
 //
             Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/ms" + ".fxml"));
                 try {
                     Parent root = fxmlLoader2.load();
 
-                    browserController = fxmlLoader2.getController();
-                    browserController.setParentControler(this, settings, projectName, allGenesReader);
-                    resultsTabPane.getTabs().get(1).setContent(root);
-                } catch(Exception e){
-                    e.printStackTrace();
-                }
-            });
-//
-//
-            Platform.runLater(() -> {
-                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/peptideTable" + ".fxml"));
-                try {
-                    Parent root = fxmlLoader2.load();
-
-                    peptideTableController = fxmlLoader2.getController();
-                    peptideTableController.setParentController(this);
+                    msController = fxmlLoader2.getController();
+                    //msController.setParentController(this);
                     resultsTabPane.getTabs().get(5).setContent(root);
-                    ControllersBasket.setPeptideTableController(peptideTableController);
                 } catch(Exception e){
                     e.printStackTrace();
                 }
@@ -226,7 +227,7 @@ public class ResultsController implements Initializable {
 //
 //
 //
-        });
+//        });
         pauseTransition.play();
 
         Platform.runLater(() -> {
@@ -261,7 +262,7 @@ public class ResultsController implements Initializable {
             }
 
         Platform.runLater(() -> {
-            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/phospho.fxml"));
+            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/ptm.fxml"));
             try {
                 Parent root = fxmlLoader2.load();
                 resultsTabPane.getTabs().get(7).setContent(root);
@@ -293,7 +294,7 @@ public class ResultsController implements Initializable {
 
         allGenesReader = new AllGenesReader("data/kegg.csv", "data/go-basic.obo",  db);
 
-
+        new Thread(UniprotProteinsCollection::load).start();
 
         load();
 

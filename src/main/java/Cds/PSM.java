@@ -20,14 +20,17 @@ public class PSM {
     private double prob;
     private String label;
     private HashSet<PTM> ptms;
-    private int specIndex;
+    private long specIndex;
     private HashMap<String, Double> intensities;
     private String file;
+    private String modifiedSequence;
+    private String sequence;
 
 
     public PSM(String run, String sequence, double prob) {
         this.run = run;
         this.prob = prob;
+        this.sequence = sequence;
     }
 
     public PSM(String run, String modifications) {
@@ -60,6 +63,18 @@ public class PSM {
         this.prob = prob;
         this.specIndex = specIndex;
         ptms = PTM.parsePtms(modifications);
+        this.file = file;
+
+    }
+
+    public PSM(String modifications, String run,  long specIndex, String file) {
+        this.run = run;
+        this.specIndex = specIndex;
+        //ptms = PTM.parsePtms(modifications);
+        this.modifiedSequence = modifications;
+        System.out.println(modifications);
+        String seq = modifications.replaceAll("\\(.*?\\)\\)", "");
+        sequence = seq.substring(1, seq.length()-1);
         this.file = file;
 
     }
@@ -117,7 +132,9 @@ public class PSM {
         return true;
     }
 
-    public int getSpecIndex() {
+
+
+    public long getSpecIndex() {
         return specIndex;
     }
 
@@ -125,7 +142,19 @@ public class PSM {
         return file;
     }
 
+    public String getModifiedSequence() {
+        return modifiedSequence;
+    }
+
+    public void setIntensities(HashMap<String, Double> intensities) {
+        this.intensities = intensities;
+    }
+
     public HashMap<String, Double> getIntensities() {
         return intensities;
+    }
+
+    public String getSequence() {
+        return sequence;
     }
 }

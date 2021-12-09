@@ -113,7 +113,7 @@ public class SplicingAlert extends Alert {
             r3.setVgrow(Priority.ALWAYS);
             //r3.setPercentHeight(30);
             grid.getRowConstraints().add(r3);
-            SplicingTableController.drawPsiChart(event.getId(), psiChartContainer);
+            SplicingTableController.getInstance().drawPsiChart(event.getId(), psiChartContainer);
 
 
             AnchorPane exonsPane = new AnchorPane();
@@ -213,7 +213,7 @@ public class SplicingAlert extends Alert {
             grid.getRowConstraints().add(r5);
             representationPane.widthProperty().addListener((observable, oldValue, newValue) -> {
                 if(newValue.doubleValue()>0)
-                    SplicingTableController.drawSplicingEventRepresentation(representationPane, event.getId(), String.valueOf(event.getId().charAt(event.getId().length() - 1)), event.getId().split(":")[0].split(";")[1]);
+                    SplicingTableController.getInstance().drawSplicingEventRepresentation(representationPane, event.getId(), String.valueOf(event.getId().charAt(event.getId().length() - 1)), event.getId().split(":")[0].split(";")[1]);
             });
         }
     }

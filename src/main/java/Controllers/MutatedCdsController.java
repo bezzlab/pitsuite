@@ -3,6 +3,7 @@ package Controllers;
 import Cds.CDS;
 import Cds.Peptide;
 import Cds.Transcript;
+import Controllers.MSControllers.PeptideTableController;
 import Controllers.drawerControllers.DrawerController;
 import TablesModels.Variation;
 import com.jfoenix.controls.JFXDrawer;

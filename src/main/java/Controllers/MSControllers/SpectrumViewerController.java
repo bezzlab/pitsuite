@@ -1,4 +1,4 @@
-package Controllers;
+package Controllers.MSControllers;
 
 import Cds.PSM;
 import TablesModels.PeptideSampleModel;
@@ -303,8 +303,9 @@ public class SpectrumViewerController implements Initializable {
     private void parseBinaries(PSM psm, MSRun run, String peptide){
 
         String filepath = Config.getRunPath(run.getName())+"/"+psm.getFile()+".mzML";
+        run.loadIndex(psm.getFile());
 
-        HashMap<Integer, Long> index = run.getIndex(psm.getFile());
+        HashMap<Long, Long> index = run.getIndex(psm.getFile());
 
 
 

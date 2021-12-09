@@ -132,6 +132,17 @@
             <artifactId>javafx-swing</artifactId>
             <version>13.0.1</version>
         </dependency>
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-structure</artifactId>
+            <version>6.0.1</version>
+        </dependency>
+        <!-- if you want to use the visualisation tools you need also this one: -->
+        <dependency>
+            <groupId>org.biojava</groupId>
+            <artifactId>biojava-structure-gui</artifactId>
+            <version>6.0.1</version>
+        </dependency>
 
 
     </dependencies>

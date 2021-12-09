@@ -1,20 +1,16 @@
-package Controllers;
+package Controllers.MSControllers;
 
 import Cds.PTM;
 import Singletons.Database;
 import com.brunomnsilva.smartgraph.graph.Graph;
 import com.brunomnsilva.smartgraph.graph.GraphEdgeList;
 import com.brunomnsilva.smartgraph.graph.Vertex;
-import com.brunomnsilva.smartgraph.graphview.SmartCircularSortedPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
 import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartRandomPlacementStrategy;
 import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Accordion;
@@ -26,12 +22,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.web.WebView;
-import javafx.util.Pair;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.json.JSONObject;
@@ -47,19 +38,14 @@ import utilities.Kinase;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static Controllers.PathwayController.toHexString;
+import static org.dizitart.no2.filters.Filters.eq;
 
-public class PhosphoController implements Initializable {
+public class KinaseController implements Initializable {
 
     @FXML
     private AnchorPane dgePane;
@@ -96,6 +82,7 @@ public class PhosphoController implements Initializable {
 
     private SmartGraphPanel<String, String> graphView;
     private Graph<String, String> g;
+    private String ptm;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -159,7 +146,7 @@ public class PhosphoController implements Initializable {
             });
             return row;
         });
-        loadPhosphosites();
+
         loadKinases();
 
         g = new GraphEdgeList<>();
@@ -168,11 +155,12 @@ public class PhosphoController implements Initializable {
 
         graphView.setAutomaticLayout(true);
 
-        graphPane.getChildren().clear();
-        graphPane.getChildren().add(graphView);
-        AnchorFitter.fitAnchor(graphView);
-
-        Platform.runLater(()->graphView.init());
+        Platform.runLater(()->{
+            graphPane.getChildren().clear();
+            graphPane.getChildren().add(graphView);
+            AnchorFitter.fitAnchor(graphView);
+            //graphView.init();
+        });
 
 
 
@@ -180,8 +168,9 @@ public class PhosphoController implements Initializable {
     }
 
 
-    public void loadPhosphosites(){
-        Cursor ptmCursor = Database.getDb().getCollection("ptm").find();
+    public void loadPtm(String ptmName){
+        this.ptm = ptmName;
+        Cursor ptmCursor = Database.getDb().getCollection("ptm").find(eq("type", ptm));
         Pattern pattern = Pattern.compile("\\(([A-Z])(\\d+)\\)");
 
         for(Document doc: ptmCursor){
@@ -403,6 +392,14 @@ public class PhosphoController implements Initializable {
             }
         });
 
+    }
+
+    public String getPtm() {
+        return ptm;
+    }
+
+    public void setPtm(String ptm) {
+        this.ptm = ptm;
     }
 
     public void showGeneData(String gene){

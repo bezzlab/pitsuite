@@ -1,6 +1,7 @@
 package Cds;
 
 import Singletons.Config;
+import javafx.util.Pair;
 import org.dizitart.no2.Document;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -311,4 +312,12 @@ public class Peptide {
     }
 
     public double getFoldChange(){return foldChange;}
+
+    public Pair<Integer, Integer> getPosInCds(CDS cds){
+        int start = cds.getSequence().indexOf(sequence);
+        if(start!=-1){
+            return new Pair<>(start+1, start+sequence.length());
+        }else
+            return null;
+    }
 }

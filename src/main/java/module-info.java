@@ -24,6 +24,8 @@ module pitguivTwo {
     exports pathway.alerts;
     exports Controllers.drawerControllers;
     requires grep4j;
+    requires biojava.structure;
+    requires biojava.structure.gui;
 
     opens Cds;
     opens Controllers;
@@ -33,6 +35,8 @@ module pitguivTwo {
     opens Controllers.drawerControllers;
     opens pathway.alerts;
     opens utilities;
+    opens Controllers.MSControllers;
+    exports Controllers.MSControllers;
 
     requires org.kordamp.iconli.core;
     requires org.kordamp.ikonli.javafx;

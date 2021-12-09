@@ -1,5 +1,7 @@
 package Singletons;
 
+import javafx.scene.Parent;
+import org.apache.commons.math3.util.Combinations;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -112,6 +114,31 @@ public class Config {
 
             return runSamples;
         }
+    }
+
+    public static HashSet<String> getRunConditions(String run){
+        HashSet<String> conditions = new HashSet<>();
+        if(isCombinedRun(run)){
+            if(getRunType(run).equals("LABELFREE")){
+                for(String subrun: getSubRuns(run)){
+                    conditions.addAll(getRunConditions(subrun));
+                }
+            }else{
+                return getRunConditions(getSubRuns(run).get(0));
+            }
+
+        }else{
+
+            if(getRunType(run).equals("TMT") || getRunType(run).equals("SILAC")){
+                for(String sample: getRunSamples(run)){
+                    conditions.add(sample.split("/")[0]);
+                }
+
+            }else{
+                conditions.add(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("condition"));
+            }
+        }
+        return conditions;
     }
 
     public static String getOutputPath(){
@@ -270,14 +297,70 @@ public class Config {
                     if((msRun.equals(subrun)))
                         return combinedRun;
                 }
-
-
             }
-
-
-
         }
         return msRun;
+    }
+
+    public static HashSet<String> getPTMSearched(String run){
+        HashSet<String> ptms = new HashSet<>();
+        if(isCombinedRun(run)){
+            for(String subrun: getSubRuns(run)){
+                ptms.addAll(getPTMSearched(subrun));
+            }
+        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("modifications")){
+            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("fixed")){
+                for(Object mod: config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("fixed")){
+                    ptms.add((String) mod);
+                }
+
+            }
+            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("variable")){
+                for(Object mod: config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("variable")){
+                    ptms.add((String) mod);
+                }
+            }
+        }
+        return ptms;
+    }
+
+    public static HashMap<String, ArrayList<String>> getAllPTMSearched(){
+        HashMap<String, ArrayList<String>> allPtms = new HashMap();
+        for(String run: getRuns()){
+            HashSet<String> ptmRun = getPTMSearched(run);
+            for(String ptm: ptmRun){
+                if(!allPtms.containsKey(ptm)){
+                    allPtms.put(ptm, new ArrayList<>());
+                }
+                allPtms.get(ptm).add(run);
+            }
+
+        }
+        return allPtms;
+    }
+
+    public static String getSpecies(){
+        if(config.has("species")){
+            return config.getString("species");
+        }
+        return null;
+    }
+
+    public static List<String> getComparisons(List<String> conditions){
+        List<String> comparisons = new ArrayList<>();
+        for (int[] comb : new Combinations(conditions.size(), 2)) {
+            String condA, condB;
+            if (conditions.get(comb[0]).toLowerCase(Locale.ROOT).compareTo(conditions.get(comb[1]).toLowerCase(Locale.ROOT)) < 0) {
+                condA = conditions.get(comb[0]);
+                condB = conditions.get(comb[1]);
+            } else {
+                condA = conditions.get(comb[1]);
+                condB = conditions.get(comb[0]);
+            }
+            comparisons.add(condA + " vs " + condB);
+        }
+
+        return comparisons;
     }
 }
 

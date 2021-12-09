@@ -1,7 +1,7 @@
 package Singletons;
 
 import Controllers.GeneBrowserController;
-import Controllers.PeptideTableController;
+import Controllers.MSControllers.PeptideTableController;
 import Controllers.ResultsController;
 import javafx.scene.Scene;
 

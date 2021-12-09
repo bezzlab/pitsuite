@@ -865,7 +865,7 @@ public class DgeTableController extends Controller {
         yAxisLineChart.setLabel("Peptide intensity");
         LineChart<String,Number> lineChart =
                 new LineChart<>(xAxisLineChart,yAxisLineChart);
-        lineChart.setTitle("Differential peptide intensity");
+        lineChart.setTitle("Differencial peptide intensity");
         lineChart.setStyle("-fx-font-size: " + fontSize + "px;");
         lineChart.prefWidthProperty().bind(container.widthProperty().divide(3));
 
@@ -878,7 +878,6 @@ public class DgeTableController extends Controller {
 //        allSeriesAbundance.add(new XYChart.Data(conditionKey+" "+sampleKey, condition.getInt(sampleKey));
 
 
-        boolean isSILAC = false;
 
         ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
         proteinConfidentBarChart.setMeanOrMedian("median");

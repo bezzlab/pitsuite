@@ -12,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -38,6 +39,8 @@ import java.util.concurrent.Future;
 public class FXMLDocumentController implements Initializable {
 
     @FXML
+    private ListView projectsListview;
+    @FXML
     private VBox runPitPane;
     @FXML
     private PITRunnerController PITRunnerController;
@@ -47,26 +50,16 @@ public class FXMLDocumentController implements Initializable {
     private MenuItem openProjectMenuItem;
     @FXML
     private Button newProject;
-
     @FXML
     private ProgressBar loadingBar;
     @FXML
     private Label progressDialog;
-
     @FXML
     private SplitPane splitPane;
-
-
-
     @FXML
     private VBox configPane;
-
     @FXML
     Button genConfigFile;
-
-    @FXML
-    private AnchorPane leftPane;
-
     @FXML
     private Button existingProject;
     @FXML
@@ -75,17 +68,14 @@ public class FXMLDocumentController implements Initializable {
     private Label directoryToSaveDBLabel;
     @FXML
     private Label nameLabel;
-
     @FXML
     private TextField directoryFieldTextField;
     @FXML
     private TextField pathTosaveDatabaseTextField;
-
     @FXML
     private Button directoryFieldBrowseButton;
     @FXML
     private Button pathTosaveDatabaseButton;
-
     @FXML
     private TextField newProjNameTextField;
     @FXML
@@ -184,14 +174,12 @@ public class FXMLDocumentController implements Initializable {
         try {
             existingProjectsJArray = (org.json.simple.JSONArray) parser.parse(new FileReader(existingProjectsJsonPath));
         } catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
         }
 
-        ListView projectsList = new ListView();
-        projectsList.setLayoutX(0);
-        projectsList.setLayoutY(40);
-        projectsList.setPrefHeight(1080);
-        projectsList.setPrefWidth(307.2);
+
+
+
 
 
         if (existingProjectsJArray != null && existingProjectsJArray.size() > 0) {
@@ -209,7 +197,7 @@ public class FXMLDocumentController implements Initializable {
                 Tooltip.install(existingHyperLink, pathTooltip);
 //                existingProjectsPathsMap.put(projName, projectPath);
 
-                projectsList.getItems().add(existingHyperLink);
+                projectsListview.getItems().add(existingHyperLink);
 
 
 
@@ -241,7 +229,6 @@ public class FXMLDocumentController implements Initializable {
             directoryFieldTextField.setText(selectedFile.toString());
         });
 
-        leftPane.getChildren().add(projectsList);
 
         pathTosaveDatabaseButton.setOnAction(event -> {
             DirectoryChooser chooser = new DirectoryChooser();

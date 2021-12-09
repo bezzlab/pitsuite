@@ -2,7 +2,7 @@ package utilities;
 
 import Cds.PTM;
 import Cds.Peptide;
-import Controllers.PeptideTableController;
+import Controllers.MSControllers.PeptideTableController;
 import javafx.application.Platform;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
@@ -29,7 +29,7 @@ public class MSRun {
     private Set<String> channels;
     private ArrayList<MSRun> subRuns;
     private String output;
-    HashMap<String, HashMap<Integer, Long>> mzmlIndexes = new HashMap();
+    HashMap<String, HashMap<Long, Long>> mzmlIndexes = new HashMap();
     private String type;
 
     public MSRun(String name, String output) {
@@ -100,21 +100,19 @@ public class MSRun {
 
     }
 
-    private void loadIndex(String file){
-        String path = Config.getRunPath(name)+"/"+file+".mzML.index";
-        try {
-            Files.lines(Path.of(path)).forEach(line -> {
-                String[] lineSplit = line.split(",");
+    public void loadIndex(String file){
+        if(!mzmlIndexes.containsKey(file)){
+            mzmlIndexes.put(file, new HashMap<>());
+            String path = Config.getRunPath(name)+"/"+file+".mzML.index";
+            try {
+                Files.lines(Path.of(path)).forEach(line -> {
+                    String[] lineSplit = line.split(",");
+                    mzmlIndexes.get(file).put(Long.parseLong(lineSplit[0]), Long.parseLong(lineSplit[1]));
+                });
 
-                if(!mzmlIndexes.containsKey(file)){
-                    mzmlIndexes.put(file, new HashMap<>());
-                }
+            } catch (IOException ignored) {
 
-                mzmlIndexes.get(file).put(Integer.parseInt(lineSplit[0]), Long.parseLong(lineSplit[1]));
-            });
-
-        } catch (IOException e) {
-
+            }
         }
     }
 
@@ -156,7 +154,7 @@ public class MSRun {
     }
 
     
-    public HashMap<Integer, Long> getIndex(String file){
+    public HashMap<Long, Long> getIndex(String file){
         return mzmlIndexes.get(file);
     }
 
@@ -234,6 +232,7 @@ public class MSRun {
             return null;
         }
     }
+
 
     public String getType() {
         return type;

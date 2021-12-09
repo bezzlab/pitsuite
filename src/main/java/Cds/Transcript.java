@@ -68,6 +68,52 @@ public class Transcript {
             JSONArray o = (JSONArray) obj;
             exons.add(new Exon(((Long) o.get(0)).intValue(), ((Long) o.get(1)).intValue()));
         }
+
+        cdss = new HashSet<>();
+
+        variations = new ArrayList<>();
+        tpm = (HashMap<String, HashMap<String, Double>>) document.get("TPM");
+        if(document.containsKey("CDS")){
+
+            JSONObject transcriptCds = (JSONObject) document.get("CDS");
+
+            CDS cds;
+            for (Object key : transcriptCds.keySet()) {
+                if (transcriptCds.get(key) instanceof JSONObject) {
+                    JSONObject cdsObj = (JSONObject) transcriptCds.get(key);
+                    String seq = (String) cdsObj.get("sequence");
+
+                    cds = new CDS((String) cdsObj.get("strand"), seq, (String) key);
+                    if(cdsObj.containsKey("uniprot")){
+                        cds.setUniprotId((String) cdsObj.get("uniprot"));
+                    }
+
+                    cdss.add(cds);
+
+                    cds.addTranscript(this, ((Long) cdsObj.get("start")).intValue(), ((Long) cdsObj.get("end")).intValue());
+
+                    if (((JSONObject) transcriptCds.get(key)).containsKey("peptides")) {
+                        JSONArray peptides = (JSONArray) ((JSONObject) transcriptCds.get(key)).get("peptides");
+                        for (Object pepObj : peptides) {
+                            JSONObject pepO = (JSONObject) pepObj;
+
+                            cds.addPeptide((String) pepO.get("sequence"), (String) pepO.get("mod"), (String) pepO.get("run"));
+                        }
+                    }
+
+                    if(cdsObj.containsKey("pfam")){
+                        JSONArray domains = (JSONArray) cdsObj.get("pfam");
+                        for(Object obj: domains){
+                            JSONObject o = (JSONObject) obj;
+                            cds.addPfam(new Pfam(((Long) o.get("start")).intValue(), ((Long) o.get("end")).intValue(), (String) o.get("desc"), (String) o.get("id")));
+                        }
+                    }
+
+                }
+            }
+
+
+        }
     }
 
 

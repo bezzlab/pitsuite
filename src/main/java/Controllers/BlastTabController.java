@@ -1,20 +1,19 @@
 package Controllers;
 
 import Cds.Peptide;
+import Controllers.MSControllers.PeptideTableController;
 import Singletons.Config;
 import Singletons.Database;
 import com.jfoenix.controls.JFXTextField;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
@@ -36,7 +35,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utilities.MSRun;
 
-import javax.print.Doc;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;

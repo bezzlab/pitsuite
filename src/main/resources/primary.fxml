@@ -14,6 +14,8 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.ListView?>
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" stylesheets="@cssStyleSheets/styleSheet.css" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.FXMLDocumentController">
     <children>
         <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -49,11 +51,19 @@
                     <children>
                         <SplitPane fx:id="splitPane" dividerPositions="0.16" minHeight="1080.0" minWidth="1920.0">
                             <items>
-                                <AnchorPane fx:id="leftPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                                <VBox  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+                                    <Label  text="Existing projects:" VBox.vgrow="NEVER" />
+                                    <ScrollPane fitToHeight="true" fitToWidth="true" VBox.vgrow="ALWAYS"   >
+                                        <content>
+                                            <ListView fx:id="projectsListview" />
+                                        </content>
+                                    </ScrollPane>
+                                </VBox>
+                               <!-- <AnchorPane fx:id="leftPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                                     <children>
                                         <Label layoutX="0.0" layoutY="15.0" text="Existing projects:" AnchorPane.leftAnchor="26.0" AnchorPane.topAnchor="15.0" />
                                     </children>
-                                </AnchorPane>
+                                </AnchorPane>-->
                                 <AnchorPane fx:id="rightPane" minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                                     <children>
                                         <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" x="300.0" y="20.0">

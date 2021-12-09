@@ -648,7 +648,11 @@ public class DatabaseGeneration {
                     Document peptideMapDoc = new Document();
                     peptideMapDoc.put("gene", key);
                     peptideMapDoc.put("run", runName);
-                    peptideMapDoc.put("peptides", jsonObject.get(key));
+                    JSONObject geneObj = (JSONObject) jsonObject.get(key);
+                    peptideMapDoc.put("peptides", geneObj.get("peptides"));
+                    if(geneObj.containsKey("intensity")){
+                        peptideMapDoc.put("intensity", geneObj.get("intensity"));
+                    }
                     peptidesDocsToDbList.add(peptideMapDoc);
                 }
 
@@ -1296,6 +1300,7 @@ public class DatabaseGeneration {
     private void ptmParser(Path filePath){
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
         NitriteCollection ptmCollection = db.getCollection("ptm");
+        System.out.println("PTM "+filePath.toString());
 
 
         ArrayList<Document> dgeDocsToDBList = new ArrayList<>();
@@ -1324,6 +1329,7 @@ public class DatabaseGeneration {
                 doc.put("id", ptmId);
                 doc.put("comparison", filePath.getParent().getFileName().toString());
                 doc.put("type", filePath.getParent().getParent().getFileName().toString());
+                doc.put("run", filePath.getParent().getParent().getParent().getParent().getFileName().toString());
 
 
                 dgeDocsToDBList.add(doc);
@@ -1376,6 +1382,7 @@ public class DatabaseGeneration {
                 Document doc = new Document(ptm);
                 doc.put("id", kinase);
                 doc.put("comparison", filePath.getParent().getFileName().toString());
+                doc.put("run", filePath.getParent().getParent().getParent().getParent().getFileName().toString());
 
 
                 dgeDocsToDBList.add(doc);
@@ -1492,6 +1499,7 @@ public class DatabaseGeneration {
             ptmCollection.createIndex("gene", IndexOptions.indexOptions(IndexType.NonUnique, false));
             ptmCollection.createIndex("id", IndexOptions.indexOptions(IndexType.NonUnique, false));
             ptmCollection.createIndex("run", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            ptmCollection.createIndex("comparison", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
 
             db.close();
