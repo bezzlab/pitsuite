@@ -3,12 +3,18 @@ A complete software suite for PIT analysis
 
 
 
+
+
+
 PITsuite is a software pipeline developped for the analysis and integration of RNA-Seq and Mass spectrometry data. 
 ![components](https://user-images.githubusercontent.com/19326121/143864818-4a23f6fe-7da1-46e8-8a6d-9243b52d3a3c.png)
 
 PIT, the core analysis pipeline performs the analysis from the raw files. The results can then be imported into PITgui, a Java graphical user interface developped for this purpose.
 
 Below are listed screenshots from PITgui, highlighting different features present in the application.
+
+
+https://user-images.githubusercontent.com/19326121/145688353-b05598a1-528f-4199-81f6-f430eb4127bb.mp4
 
 ![dge](https://user-images.githubusercontent.com/19326121/143865117-e0ca718d-9211-4c09-9b00-1b727cefb860.png)
 1.Differential gene expression tab showing a table of differential gene expression and gene abundance for all genes identified with filters. A click on a row shows detailed information about a specific gene at the bottom. 2. Gene Set Enrichment analysis performed directly from PITgui at the RNA and protein level. PITgui supports enrichment of GO terms and KEGG pathways. 3. GO terms and KEGG pathways can also be used to filter the genes table or see the GO terms or KEGG pathway corresponding to the selected gene. A chosen KEGG pathway can be displayed and coloured according to the differential gene expression calculated by PIT.
