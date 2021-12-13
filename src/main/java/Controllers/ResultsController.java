@@ -140,16 +140,16 @@ public class ResultsController implements Initializable {
 
     public void load(){
 
-//        resultsTabPane.getSelectionModel().select(2);
-//        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
-//        try {
-//            Parent root = fxmlLoader1.load();
-//            dgeTableController = fxmlLoader1.getController();
-//            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
-//            resultsTabPane.getTabs().get(2).setContent(root);
-//        } catch(Exception e){
-//            e.printStackTrace();
-//        }
+        resultsTabPane.getSelectionModel().select(2);
+        FXMLLoader fxmlLoader1 = new FXMLLoader(SettingsController.class.getResource("/dgeTable" + ".fxml"));
+        try {
+            Parent root = fxmlLoader1.load();
+            dgeTableController = fxmlLoader1.getController();
+            dgeTableController.setParentController(this, settings, projectName, allGenesReader);
+            resultsTabPane.getTabs().get(2).setContent(root);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
 //
 //        Platform.runLater(() -> {
 //            FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/splicingTable" + ".fxml"));
@@ -181,18 +181,18 @@ public class ResultsController implements Initializable {
 //            });
 //
 //
-//            Platform.runLater(() -> {
-//                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
-//                try {
-//                    Parent root = fxmlLoader2.load();
-//
-//                    browserController = fxmlLoader2.getController();
-//                    browserController.setParentControler(this, settings, projectName, allGenesReader);
-//                    resultsTabPane.getTabs().get(1).setContent(root);
-//                } catch(Exception e){
-//                    e.printStackTrace();
-//                }
-//            });
+            Platform.runLater(() -> {
+                FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/browser" + ".fxml"));
+                try {
+                    Parent root = fxmlLoader2.load();
+
+                    browserController = fxmlLoader2.getController();
+                    browserController.setParentControler(this, settings, projectName, allGenesReader);
+                    resultsTabPane.getTabs().get(1).setContent(root);
+                } catch(Exception e){
+                    e.printStackTrace();
+                }
+            });
 //
 //
             Platform.runLater(() -> {

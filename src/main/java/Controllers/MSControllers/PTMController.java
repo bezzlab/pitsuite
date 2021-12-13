@@ -13,12 +13,14 @@ import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartRandomPlacementStrategy;
 import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
+import graphics.GraphicTools;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
@@ -51,6 +53,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.DoubleBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
@@ -59,6 +62,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static Controllers.PathwayController.instance;
 import static Controllers.PathwayController.toHexString;
 import static org.dizitart.no2.filters.Filters.and;
 import static org.dizitart.no2.filters.Filters.eq;
@@ -86,10 +90,6 @@ public class PTMController implements Initializable {
     @FXML
     private GridPane grid;
     @FXML
-    private AnchorPane dgePane;
-    @FXML
-    private Pane graphPane;
-    @FXML
     private TableView<PTM> ptmTable;
     @FXML
     private TableColumn<PTM, String> ptmGeneColumn;
@@ -104,9 +104,12 @@ public class PTMController implements Initializable {
     @FXML
     private VBox expressionPane;
 
-    private SmartGraphPanel<String, String> graphView;
-    private Graph<String, String> g;
     private String ptm;
+    private Graph<String, String>  g;
+    private AnchorPane graphPane;
+    private SmartGraphPanel<String, String> graphView;
+    private Pair<Double, Double> minMaxLog2fc;
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -133,6 +136,8 @@ public class PTMController implements Initializable {
                             intensitiesPane.getChildren().clear();
                             showIntensity(ptmTable.getSelectionModel().getSelectedItem());
                             showPSM(ptmTable.getSelectionModel().getSelectedItem().getId(), "phospho");
+                            if(ptm.equals("Phospho (STY)") && Config.getSpecies()!=null && Config.getSpecies().equalsIgnoreCase("HOMO SAPIENS"))
+                                showPhosphositesKinases(row.getItem(), g, graphView);
                         }
                     }
                 }
@@ -155,27 +160,6 @@ public class PTMController implements Initializable {
             spectrumViewerController.select(psm, new MSRun(psm.getRun()), psm.getSequence());
         });
 
-
-
-        g = new GraphEdgeList<>();
-        SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
-        graphView = new SmartGraphPanel<>(g, strategy);
-
-        graphView.setAutomaticLayout(true);
-
-
-
-
-        Platform.runLater(()->{
-//            graphPane.getChildren().clear();
-//            graphPane.getChildren().add(graphView);
-//            AnchorFitter.fitAnchor(graphView);
-            //graphView.init();
-        });
-
-
-
-
     }
 
 
@@ -188,8 +172,24 @@ public class PTMController implements Initializable {
 
         if (ptm.equals("Phospho (STY)") && Config.getSpecies() != null && Config.getSpecies().equalsIgnoreCase("HOMO SAPIENS")) {
             Tab kinasesTab = new Tab();
+            graphPane = new AnchorPane();
+            kinasesTab.setContent(graphPane);
             kinasesTab.setText("Kinases");
             detailsTabpane.getTabs().add(kinasesTab);
+            g = new GraphEdgeList<>();
+            SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
+            graphView = new SmartGraphPanel<>(g, strategy);
+
+            graphView.setAutomaticLayout(true);
+            graphPane.getChildren().clear();
+            graphPane.getChildren().add(graphView);
+            AnchorFitter.fitAnchor(graphView);
+            Platform.runLater(()-> graphView.init());
+
+            graphView.setVertexDoubleClickAction(graphVertex -> {
+                KinaseController.getInstance().selectKinase(graphVertex.getUnderlyingVertex().element(), runCombobox.getSelectionModel().getSelectedItem(), comparisonCombobox.getSelectionModel().getSelectedItem());
+                MSController.getInstance().selectTab("Kinase activity");
+            });
         }
 
         runCombobox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
@@ -212,8 +212,10 @@ public class PTMController implements Initializable {
         ptmTable.getItems().clear();
         Cursor ptmCursor = Database.getDb().getCollection("ptm").find(and(eq("type", ptm), eq("comparison", comparisonCombobox.getSelectionModel().getSelectedItem().replace(" ", "")),
                 eq("run", runCombobox.getSelectionModel().getSelectedItem())));
-        System.out.println(ptmCursor.size());
         Pattern pattern = Pattern.compile("\\(([A-Z])(\\d+)\\)");
+
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
 
         for(Document doc: ptmCursor){
             JSONObject json = new JSONObject(doc);
@@ -222,6 +224,13 @@ public class PTMController implements Initializable {
             if (matcher.find()) {
                 PTM ptm = new PTM(matcher.group(1), Integer.parseInt(matcher.group(2)), json.getString("gene"), json.getDouble("log2fc"), json.has("pval") ? json.getDouble("pval") : Double.NaN, json.getJSONObject("samples"),
                         json.getString("type"));
+
+                if(ptm.getLog2fc()<min)
+                    min = ptm.getLog2fc();
+                if(ptm.getLog2fc()>max)
+                    max = ptm.getLog2fc();
+
+
                 if(json.has("kinases")){
                     for(Object o: json.getJSONArray("kinases")){
                         ptm.addKinase((String) o);
@@ -230,6 +239,7 @@ public class PTMController implements Initializable {
                 ptmTable.getItems().add(ptm);
             }
         }
+        minMaxLog2fc = new Pair<>(min, max);
     }
 
 
@@ -258,7 +268,7 @@ public class PTMController implements Initializable {
 
     }
 
-    public void showPhosphositesKinases(PTM ptm){
+    public void showPhosphositesKinases(PTM ptm, Graph<String, String> g, SmartGraphPanel<String, String> graphView){
 
         HashSet<String> nodes = new HashSet<>();
         HashSet<String> kinases = new HashSet<>();
@@ -272,41 +282,45 @@ public class PTMController implements Initializable {
 
         TreeMap<Double, String> targetsOrdered = new TreeMap<>();
         targetsOrdered.put(ptm.getLog2fc(), ptm.getId());
-        final double[] min = {Double.POSITIVE_INFINITY};
-        final double[] max = { Double.NEGATIVE_INFINITY };
-
-        min[0] = ptm.getLog2fc();
-        max[0] = ptm.getLog2fc();
 
         if(ptm.getKinases()!=null) {
             for (String kinase : ptm.getKinases()) {
                 g.insertVertex(kinase);
                 nodes.add(kinase);
+                kinases.add(kinase);
                 g.insertEdge(kinase, ptm.getId(), kinase + "->" + ptm.getId());
-
             }
         }
 
-        //graphView.update();
-
-        //generateGraph(g, targetsOrdered, min, max,  nodes,  kinases);
+        graphView.update();
+        Pair<Double, Double> kinaseMinMaxFc = KinaseController.getInstance().getMinMaxLog2fc();
+        generateGraph(g, targetsOrdered, kinaseMinMaxFc.getKey(), kinaseMinMaxFc.getValue(),  nodes,  kinases);
     }
 
 
-    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double[] min, double[] max, HashSet<String> nodes, HashSet<String> kinases){
-
+    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double min, double max, HashSet<String> nodes, HashSet<String> kinases){
 
         addNewNodesListeners(min, max, targetsOrdered, nodes, g, kinases);
-
 
         new Thread(() -> {
             try {
                 Thread.sleep(100);
-                for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
-                    double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
+                HashMap<String, Double> kinasesLog2fc = KinaseController.getInstance().getKinasesLog2Fc(kinases);
+
+                for (Map.Entry<String, Double> target : kinasesLog2fc.entrySet()) {
+                    double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getValue() - min) / (max - min);
                     Color color = Color.hsb(hue, 1.0, 1.0);
-                    graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
+                    graphView.getStylableVertex(target.getKey()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
                 }
+
+                Group heatmap = GraphicTools.drawHeatmap(min, max, 200, 50);
+                Platform.runLater(()->{
+                   if(graphPane.getChildren().size()==2)
+                       graphPane.getChildren().remove(1);
+                    graphPane.getChildren().add(heatmap);
+                });
+
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -314,7 +328,7 @@ public class PTMController implements Initializable {
     }
 
 
-    public void addNewNodesListeners(double[] min, double[] max, TreeMap<Double, String> targetsOrdered, HashSet<String> nodes, Graph<String, String> g, HashSet<String> kinases){
+    public void addNewNodesListeners(double min, double max, TreeMap<Double, String> targetsOrdered, HashSet<String> nodes, Graph<String, String> g, HashSet<String> kinases){
         graphView.setVertexDoubleClickAction(graphVertex -> {
 
 //            Optional<Kinase> newKinase= kinaseTable.getItems().stream().filter(e-> e.getName().equals(graphVertex.getUnderlyingVertex().element())).findFirst();
@@ -475,6 +489,21 @@ public class PTMController implements Initializable {
     public void showPeptideIntensity(HashMap<String, Double> intensities){
         intensitiesPane.getChildren().clear();
         PeptideTableController.drawIntensitiesChart(intensities, intensitiesPane);
+    }
+
+    public HashMap<String, Double> getPTMLog2Fc(HashSet<String> ptms){
+        HashMap<String, Double> ptmsLog2fc = new HashMap<>();
+        for(PTM ptm: ptmTable.getItems()){
+            if(ptms.contains(ptm.getId())){
+                ptmsLog2fc.put(ptm.getId(), ptm.getLog2fc());
+            }
+        }
+        return ptmsLog2fc;
+    }
+
+
+    public Pair<Double, Double> getMinMaxLog2fc() {
+        return minMaxLog2fc;
     }
 
 

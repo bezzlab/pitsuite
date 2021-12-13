@@ -1368,9 +1368,9 @@ public class DatabaseGeneration {
             JSONObject ptms = (JSONObject) obj;
             for (Object o: ptms.keySet()) {
 
-                String kinase = (String) o;
+                String kinaseName = (String) o;
 
-                JSONObject ptm = (JSONObject) ptms.get(kinase);
+                JSONObject kinaseObj = (JSONObject) ptms.get(kinaseName);
                 if (dgeDocsToDBList.size() >= 10000) {
                     Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
                     splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
@@ -1379,8 +1379,8 @@ public class DatabaseGeneration {
                 }
 
 
-                Document doc = new Document(ptm);
-                doc.put("id", kinase);
+                Document doc = new Document(kinaseObj);
+                doc.put("id", kinaseName);
                 doc.put("comparison", filePath.getParent().getFileName().toString());
                 doc.put("run", filePath.getParent().getParent().getParent().getParent().getFileName().toString());
 

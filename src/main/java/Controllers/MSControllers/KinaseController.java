@@ -1,6 +1,8 @@
 package Controllers.MSControllers;
 
 import Cds.PTM;
+import Controllers.DgeTableController;
+import Singletons.Config;
 import Singletons.Database;
 import com.brunomnsilva.smartgraph.graph.Graph;
 import com.brunomnsilva.smartgraph.graph.GraphEdgeList;
@@ -10,19 +12,18 @@ import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartRandomPlacementStrategy;
 import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
+import graphics.GraphicTools;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Accordion;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
+import javafx.scene.Group;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.web.WebView;
+import javafx.util.Pair;
 import org.dizitart.no2.Cursor;
 import org.dizitart.no2.Document;
 import org.json.JSONObject;
@@ -43,12 +44,17 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.dizitart.no2.filters.Filters.and;
 import static org.dizitart.no2.filters.Filters.eq;
 
 public class KinaseController implements Initializable {
 
     @FXML
-    private AnchorPane dgePane;
+    private ComboBox<String> runCombobox;
+    @FXML
+    private ComboBox<String> comparisonCombobox;
+    @FXML
+    private VBox expressionBox;
     @FXML
     private Pane graphPane;
     @FXML
@@ -57,28 +63,14 @@ public class KinaseController implements Initializable {
     private TableColumn<Kinase, Double> kinaseLog2fcColumn;
     @FXML
     private TableColumn<Kinase, Double> kinasePvalColumn;
-    @FXML
-    private WebView kinaseWebview;
-    @FXML
-    private Accordion kinaseAccordion;
+
     @FXML
     private TableView<Kinase> kinaseTable;
-    @FXML
-    private Accordion accordion;
-    @FXML
-    private AnchorPane intensityPane;
-    @FXML
-    private TableView<PTM> phosphoTable;
-    @FXML
-    private TableColumn<PTM, String> phosphoGeneColumn;
-    @FXML
-    private TableColumn<PTM, Integer> posColumn;
-    @FXML
-    private TableColumn<PTM, String> residueColumn;
-    @FXML
-    private TableColumn<PTM, Double> phosphoLog2fcColumn;
-    @FXML
-    private TableColumn<PTM, Double> phosphoPvalColumn;
+
+    private static KinaseController instance;
+
+    private Pair<Double, Double> minMaxLog2fc;
+
 
     private SmartGraphPanel<String, String> graphView;
     private Graph<String, String> g;
@@ -87,17 +79,7 @@ public class KinaseController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
 
-        phosphoGeneColumn.setCellValueFactory( new PropertyValueFactory<>("gene"));
-        posColumn.setCellValueFactory( new PropertyValueFactory<>("pos"));
-        residueColumn.setCellValueFactory( new PropertyValueFactory<>("residue"));
-        phosphoLog2fcColumn.setCellValueFactory( new PropertyValueFactory<>("Log2fc"));
-        phosphoPvalColumn.setCellValueFactory( new PropertyValueFactory<>("pval"));
-
-        phosphoGeneColumn.prefWidthProperty().bind(phosphoTable.widthProperty().divide(5));
-        posColumn.prefWidthProperty().bind(phosphoTable.widthProperty().divide(5));
-        residueColumn.prefWidthProperty().bind(phosphoTable.widthProperty().divide(5));
-        phosphoLog2fcColumn.prefWidthProperty().bind(phosphoTable.widthProperty().divide(5));
-        phosphoPvalColumn.prefWidthProperty().bind(phosphoTable.widthProperty().divide(5));
+        instance = this;
 
         kinaseColumn.setCellValueFactory( new PropertyValueFactory<>("name"));
         kinaseLog2fcColumn.setCellValueFactory( new PropertyValueFactory<>("Log2fc"));
@@ -107,39 +89,31 @@ public class KinaseController implements Initializable {
         kinaseLog2fcColumn.prefWidthProperty().bind(kinaseTable.widthProperty().divide(3));
         kinasePvalColumn.prefWidthProperty().bind(kinaseTable.widthProperty().divide(3));
 
-        phosphoTable.setRowFactory(tv -> {
-            TableRow<PTM> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!(row.isEmpty())) {
-                    if (event.getButton().equals(MouseButton.PRIMARY)){
-                        if ( event.getClickCount() == 1 )
-                            showIntensity(phosphoTable.getSelectionModel().getSelectedItem());
-                    }
-                }
-            });
-            return row;
-        });
+
+
+
+
+
+
+        g = new GraphEdgeList<>();
+        SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
+        graphView = new SmartGraphPanel<>(g, strategy);
+
+        graphView.setAutomaticLayout(true);
+        graphPane.getChildren().clear();
+        graphPane.getChildren().add(graphView);
+        AnchorFitter.fitAnchor(graphView);
+
+        Platform.runLater(()->graphView.init());
 
         kinaseTable.setRowFactory(tv -> {
             TableRow<Kinase> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!(row.isEmpty())) {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
-                        if ( event.getClickCount() == 1 )
-                            showKinaseTargets(row.getItem());
-                    }
-                }
-            });
-            return row;
-        });
-        phosphoTable.setRowFactory(tv -> {
-            TableRow<PTM> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!(row.isEmpty())) {
-                    if (event.getButton().equals(MouseButton.PRIMARY)){
                         if ( event.getClickCount() == 1 ) {
-                            showPhosphositesKinases(row.getItem());
-                            showGeneData(row.getItem().getGene());
+                            showKinaseTargets(row.getItem());
+                            //showExpression(row.getItem());
                         }
                     }
                 }
@@ -147,145 +121,119 @@ public class KinaseController implements Initializable {
             return row;
         });
 
-        loadKinases();
 
-        g = new GraphEdgeList<>();
-        SmartPlacementStrategy strategy = new SmartRandomPlacementStrategy();
-        graphView = new SmartGraphPanel<>(g, strategy);
+    }
 
-        graphView.setAutomaticLayout(true);
 
-        Platform.runLater(()->{
-            graphPane.getChildren().clear();
-            graphPane.getChildren().add(graphView);
-            AnchorFitter.fitAnchor(graphView);
-            //graphView.init();
+
+    public void loadKinases(ArrayList<String> runs){
+
+        runCombobox.getItems().addAll(runs);
+        runCombobox.getSelectionModel().select(0);
+        comparisonCombobox.getItems().addAll(Config.getComparisons(new ArrayList<>(Config.getRunConditions(runs.get(0)))));
+        comparisonCombobox.getSelectionModel().select(0);
+
+        fillTable(runCombobox.getSelectionModel().getSelectedItem(), comparisonCombobox.getSelectionModel().getSelectedItem().replace(" ", ""));
+
+        runCombobox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
+            fillTable(runCombobox.getSelectionModel().getSelectedItem(), comparisonCombobox.getSelectionModel().getSelectedItem().replace(" ", ""));
+            expressionBox.getChildren().clear();
+            clearGraph();
+        });
+
+        comparisonCombobox.getSelectionModel().selectedItemProperty().addListener((options, oldValue, newValue) -> {
+            fillTable(runCombobox.getSelectionModel().getSelectedItem(), comparisonCombobox.getSelectionModel().getSelectedItem().replace(" ", ""));
+            expressionBox.getChildren().clear();
+
+
         });
 
 
 
-
     }
 
+    public void fillTable(String run, String comparison){
+        kinaseTable.getItems().clear();
 
-    public void loadPtm(String ptmName){
-        this.ptm = ptmName;
-        Cursor ptmCursor = Database.getDb().getCollection("ptm").find(eq("type", ptm));
-        Pattern pattern = Pattern.compile("\\(([A-Z])(\\d+)\\)");
+        double min = Double.POSITIVE_INFINITY;
+        double max = Double.NEGATIVE_INFINITY;
 
-        for(Document doc: ptmCursor){
-            JSONObject json = new JSONObject(doc);
+        Cursor cursor = Database.getDb().getCollection("kinaseActivity").find(and(eq("run", run), eq("comparison", comparison)));
+        for(Document doc: cursor){
 
-            Matcher matcher = pattern.matcher(json.getString("id"));
-            if (matcher.find()) {
-                PTM ptm = new PTM(matcher.group(1), Integer.parseInt(matcher.group(2)), json.getString("gene"), json.getDouble("log2fc"), json.has("pval") ? json.getDouble("pval") : Double.NaN, json.getJSONObject("samples"),
-                        json.getString("type"));
-                if(json.has("kinases")){
-                    for(Object o: json.getJSONArray("kinases")){
-                        ptm.addKinase((String) o);
-                    }
-                }
-                phosphoTable.getItems().add(ptm);
-            }
-        }
-    }
-
-    public void loadKinases(){
-        JSONParser parser = new JSONParser();
-        try {
-            org.json.simple.JSONObject jsonKinases = (org.json.simple.JSONObject) parser.parse(new FileReader("/home/esteban/Documents/tests/KSEA/kinaseActivity.json"));
-            for(Object kinaseName: jsonKinases.keySet()){
-                org.json.simple. JSONObject kinaseObj = (org.json.simple.JSONObject) jsonKinases.get(kinaseName);
-                HashMap<String, Double> targets = new HashMap<>();
-                org.json.simple.JSONObject targetsJson = (org.json.simple.JSONObject) kinaseObj.get("targets");
-                for (Object target: targetsJson.keySet()){
-                    targets.put((String) target, (double) targetsJson.get( target));
-                }
-                kinaseTable.getItems().add(new Kinase((String) kinaseName, (double) kinaseObj.get("log2fc"), (double) kinaseObj.get("pval"), targets));
+            org.json.simple.JSONObject targets = (org.json.simple.JSONObject) doc.get("targets");
+            HashMap<String, Double> targetsMap = new HashMap<>();
+            for(Object ptm: targets.keySet()){
+                targetsMap.put((String) ptm, (double) targets.get(ptm));
             }
 
-        } catch (IOException | ParseException e) {
-            e.printStackTrace();
-        }
-    }
+            double log2fc = (double) doc.get("log2fc");
+            if(log2fc<min)
+                min = log2fc;
+            if(log2fc>max)
+                max = log2fc;
 
-    public void showIntensity(PTM ptm){
 
-        JSONObject intensities = ptm.getIntensities();
-        HashMap<String, ArrayList<Double>> intensitiesHashMap = new HashMap<>();
-        for (String sample : intensities.keySet()) {
-            String[] sampleSplit = sample.split("/");
-            if (!intensitiesHashMap.containsKey(sampleSplit[0]))
-                intensitiesHashMap.put(sampleSplit[0], new ArrayList<>());
-            intensitiesHashMap.get(sampleSplit[0]).add(intensities.getDouble(sample));
+            kinaseTable.getItems().add(new Kinase((String) doc.get("id"), log2fc, (double) doc.get("pval"), targetsMap));
         }
 
-        ConfidentBarChart chart = new ConfidentBarChart();
-        chart.addAll(intensitiesHashMap);
-        chart.draw();
-        intensityPane.getChildren().clear();
-        intensityPane.getChildren().add(chart);
-        AnchorFitter.fitAnchor(chart);
-
-        accordion.setExpandedPane(accordion.getPanes().get(0));
-
+        minMaxLog2fc = new Pair<>(min, max);
     }
 
-    public void showPhosphositesKinases(PTM ptm){
-
-        HashSet<String> nodes = new HashSet<>();
-        HashSet<String> kinases = new HashSet<>();
-
+    public void clearGraph(){
         for(Vertex v: g.vertices()){
             g.removeVertex(v);
         }
+    }
 
-        g.insertVertex(ptm.getId());
-        nodes.add(ptm.getId());
+    public void showExpression(Kinase kinase){
 
-        TreeMap<Double, String> targetsOrdered = new TreeMap<>();
-        targetsOrdered.put(ptm.getLog2fc(), ptm.getId());
-        final double[] min = {Double.POSITIVE_INFINITY};
-        final double[] max = { Double.NEGATIVE_INFINITY };
 
-        min[0] = ptm.getLog2fc();
-        max[0] = ptm.getLog2fc();
+        expressionBox.getChildren().clear();
 
-        if(ptm.getKinases()!=null) {
-            for (String kinase : ptm.getKinases()) {
-                g.insertVertex(kinase);
-                nodes.add(kinase);
-                g.insertEdge(kinase, ptm.getId(), kinase + "->" + ptm.getId());
+        GridPane gridPane = new GridPane();
+        RowConstraints r1 = new RowConstraints();
+        r1.setPercentHeight(50);
+        RowConstraints r2 = new RowConstraints();
+        r2.setPercentHeight(50);
+        gridPane.getRowConstraints().add(r1);
+        gridPane.getRowConstraints().add(r2);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(100);
+        gridPane.getColumnConstraints().add(c1);
 
-            }
+        AnchorPane rnaPane = new AnchorPane();
+        DgeTableController.drawSelectedGeneReadCount(kinase.getName(), rnaPane, 14);
+
+
+        HBox proteinPane = new HBox();
+        DgeTableController.drawSelectedGeneProteinQuant(kinase.getName(), proteinPane, 14, "1", false);
+
+        gridPane.add(rnaPane,0, 0);
+        gridPane.add(proteinPane, 0, 1);
+        expressionBox.getChildren().add(gridPane);
+        VBox.setVgrow(gridPane, Priority.ALWAYS);
+        if(proteinPane.getChildren().size()==0){
+            r1.setPercentHeight(100);
+            r2.setPercentHeight(0);
         }
 
-        graphView.update();
 
-        generateGraph(g, targetsOrdered, min, max,  nodes,  kinases);
     }
+
 
     public void showKinaseTargets(Kinase kinase) {
 
 
         HashSet<String> nodes = new HashSet<>();
-        HashSet<String> kinases = new HashSet<>();
+        HashSet<String> ptms = new HashSet<>();
 
-        for(Vertex v: g.vertices()){
-            g.removeVertex(v);
-        }
+        clearGraph();
         g.insertVertex(kinase.getName());
-        kinases.add(kinase.getName());
         nodes.add(kinase.getName());
 
         TreeMap<Double, String> targetsOrdered = new TreeMap<>();
-        final double[] min = {Double.POSITIVE_INFINITY};
-        final double[] max = { Double.NEGATIVE_INFINITY };
         for (Map.Entry<String, Double> target : kinase.getTargets().entrySet()) {
-            if (target.getValue() < min[0])
-                min[0] = target.getValue();
-            if (target.getValue() > max[0])
-                max[0] = target.getValue();
             targetsOrdered.put(Math.abs(target.getValue()), target.getKey());
         }
 
@@ -293,30 +241,42 @@ public class KinaseController implements Initializable {
             g.insertVertex(target.getValue());
             nodes.add(target.getValue());
             g.insertEdge(kinase.getName(), target.getValue(), kinase.getName() + "->" + target.getValue());
+            ptms.add(target.getValue());
 
         }
 
-        graphView.update();
 
-        generateGraph(g, targetsOrdered, min, max,  nodes,  kinases);
+        graphView.update();
+        Pair<Double, Double> ptmMinMaxFc = MSController.getInstance().getPTMController("Phospho (STY)").getMinMaxLog2fc();
+        generateGraph(g, targetsOrdered, ptmMinMaxFc.getKey(), ptmMinMaxFc.getValue(),  nodes,  ptms);
 
 
     }
 
-    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double[] min, double[] max, HashSet<String> nodes, HashSet<String> kinases){
+    public void generateGraph(Graph<String, String> g, TreeMap<Double, String> targetsOrdered, double min, double max, HashSet<String> nodes, HashSet<String> ptms){
 
 
-        addNewNodesListeners(min, max, targetsOrdered, nodes, g, kinases);
+        addNewNodesListeners(min, max, targetsOrdered, nodes, g, ptms);
 
 
         new Thread(() -> {
             try {
                 Thread.sleep(100);
-                for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
-                    double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
+
+                HashMap<String, Double> ptmsLog2fc = MSController.getInstance().getPTMController("Phospho (STY)").getPTMLog2Fc(ptms);
+
+                for (Map.Entry<String, Double> target : ptmsLog2fc.entrySet()) {
+
+                    double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getValue() - min) / (max - min);
                     Color color = Color.hsb(hue, 1.0, 1.0);
-                    graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
+                    graphView.getStylableVertex(target.getKey()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
                 }
+                Group heatmap = GraphicTools.drawHeatmap(min, max, 200, 50);
+                Platform.runLater(()->{
+                    if(graphPane.getChildren().size()==2)
+                        graphPane.getChildren().remove(1);
+                    graphPane.getChildren().add(heatmap);
+                });
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -324,7 +284,7 @@ public class KinaseController implements Initializable {
     }
 
 
-    public void addNewNodesListeners(double[] min, double[] max, TreeMap<Double, String> targetsOrdered, HashSet<String> nodes, Graph<String, String> g, HashSet<String> kinases){
+    public void addNewNodesListeners(double min, double max, TreeMap<Double, String> targetsOrdered, HashSet<String> nodes, Graph<String, String> g, HashSet<String> kinases){
         graphView.setVertexDoubleClickAction(graphVertex -> {
 
             Optional<Kinase> newKinase= kinaseTable.getItems().stream().filter(e-> e.getName().equals(graphVertex.getUnderlyingVertex().element())).findFirst();
@@ -332,10 +292,6 @@ public class KinaseController implements Initializable {
 
 
                 for (Map.Entry<String, Double> target : newKinase.get().getTargets().entrySet()) {
-                    if (target.getValue() < min[0])
-                        min[0] = target.getValue();
-                    if (target.getValue() > max[0])
-                        max[0] = target.getValue();
                     targetsOrdered.put(Math.abs(target.getValue()), target.getKey());
                 }
 
@@ -356,7 +312,7 @@ public class KinaseController implements Initializable {
                         Thread.sleep(100);
                         Platform.runLater(()->{
                             for (Map.Entry<Double, String> target : targetsOrdered.descendingMap().entrySet()) {
-                                double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min[0]) / (max[0] - min[0]);
+                                double hue = Color.GREEN.getHue() + (Color.RED.getHue() - Color.GREEN.getHue()) * (target.getKey() - min) / (max - min);
                                 Color color = Color.hsb(hue, 1.0, 1.0);
                                 graphView.getStylableVertex(target.getValue()).setStyle("-fx-fill: \""+color+"\"; -fx-stroke: brown;");
                             }
@@ -374,24 +330,28 @@ public class KinaseController implements Initializable {
             }else {
 
 
-                Optional<PTM> ptm = phosphoTable.getItems().stream().filter(e -> e.getId().equals(graphVertex.getUnderlyingVertex().element())).findFirst();
-                if (ptm.isPresent()) {
-                    for (String ptmKinase : ptm.get().getKinases()) {
-                        if (!nodes.contains(ptmKinase)) {
-                            g.insertVertex(ptmKinase);
-                            kinases.add(ptmKinase);
-                            nodes.add(ptmKinase);
-
-                            //graphView.getStylableVertex(ptmKinase).setStyle("-fx-fill: blue");
-                            g.insertEdge(ptmKinase, ptm.get().getId(), ptmKinase + "->" + ptm.get().getId());
-                        }
-
-                        graphView.update();
-                    }
-                }
+//                Optional<PTM> ptm = phosphoTable.getItems().stream().filter(e -> e.getId().equals(graphVertex.getUnderlyingVertex().element())).findFirst();
+//                if (ptm.isPresent()) {
+//                    for (String ptmKinase : ptm.get().getKinases()) {
+//                        if (!nodes.contains(ptmKinase)) {
+//                            g.insertVertex(ptmKinase);
+//                            kinases.add(ptmKinase);
+//                            nodes.add(ptmKinase);
+//
+//                            //graphView.getStylableVertex(ptmKinase).setStyle("-fx-fill: blue");
+//                            g.insertEdge(ptmKinase, ptm.get().getId(), ptmKinase + "->" + ptm.get().getId());
+//                        }
+//
+//                        graphView.update();
+//                    }
+//                }
             }
         });
 
+    }
+
+    public static KinaseController getInstance() {
+        return instance;
     }
 
     public String getPtm() {
@@ -402,27 +362,35 @@ public class KinaseController implements Initializable {
         this.ptm = ptm;
     }
 
-    public void showGeneData(String gene){
 
-        new Thread(()->{
-            Element element = new Element("macromolecule");
-            element.getEntities().add(new Gene(gene));
-            DgeAlert.setAlerts(element, null, false);
-            SplicingAlert.setAlerts(element, null);
-            MutationAlert.setAlerts(element, null);
-            PTMAlert.setAlerts(element, null);
-            Platform.runLater(()->{
-                pathway.alerts.Alert.populateGenes(dgePane, element, DgeAlert.class);
-            });
-
-//        pathway.alerts.Alert.populateGenes(splicingPane, element, SplicingAlert.class);
-//        pathway.alerts.Alert.populateGenes(mutationPane, element, MutationAlert.class);
-//        pathway.alerts.Alert.populateGenes(PTMPane, element, PTMAlert.class);
-        }).start();
-
-
-
+    public void selectKinase(String kinase, String run, String comparison) {
+        if(!run.equals(runCombobox.getSelectionModel().getSelectedItem())){
+            runCombobox.getSelectionModel().select(run);
+        }
+        if(!comparison.equals(comparisonCombobox.getSelectionModel().getSelectedItem())){
+            comparisonCombobox.getSelectionModel().select(run);
+        }
+        fillTable(run, comparison);
+        for(Kinase tableKinase: kinaseTable.getItems()){
+            if(tableKinase.getName().equals(kinase)){
+                kinaseTable.getSelectionModel().select(tableKinase);
+                kinaseTable.scrollTo(tableKinase);
+                break;
+            }
+        }
     }
 
+    public Pair<Double, Double> getMinMaxLog2fc() {
+        return minMaxLog2fc;
+    }
 
+    public HashMap<String, Double> getKinasesLog2Fc(HashSet<String> kinases){
+        HashMap<String, Double> kinasesLog2fc = new HashMap<>();
+        for(Kinase kinase: kinaseTable.getItems()){
+            if(kinases.contains(kinase.getName())){
+                kinasesLog2fc.put(kinase.getName(), kinase.getLog2fc());
+            }
+        }
+        return kinasesLog2fc;
+    }
 }

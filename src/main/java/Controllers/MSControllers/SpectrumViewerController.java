@@ -4,6 +4,7 @@ import Cds.PSM;
 import TablesModels.PeptideSampleModel;
 import com.jfoenix.controls.JFXCheckBox;
 import com.jfoenix.controls.JFXSlider;
+import graphics.AnchorFitter;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -96,7 +97,9 @@ public class SpectrumViewerController implements Initializable {
     public JFXCheckBox h3po4Checkbox;
 
     @FXML
-    public TableView ionTable;
+    private TableView ionTable;
+    @FXML
+    private Pane lorikeetContainer;
     @FXML
     private JFXSlider toleranceSlider;
     @FXML
@@ -108,6 +111,7 @@ public class SpectrumViewerController implements Initializable {
 
     private Config config;
     private HashMap<String, HashMap<Long, Long>> mzmlIndexes;
+    @FXML
     private WebView specWebview;
     private double[] mzs;
     private double[] intensities;
@@ -234,28 +238,7 @@ public class SpectrumViewerController implements Initializable {
         this.config = config;
     }
 
-    public void getMzmlIndex(String run){
 
-        mzmlIndexes = new HashMap<>();
-        for(String sample: config.getRunSamples(run)){
-            //String filename = config.getOutputPath()+"/ms/"+run+"/"+sample+"/files/mzml.index";
-            String filename = config.getOutputPath()+"/ms/"+run+"/"+"/files/mzml.index";
-
-                HashMap<Long, Long> sampleHashMap = new HashMap<>();
-            try {
-                Files.lines(Path.of(filename)).forEach(line -> {
-                    String[] lineSplit = line.split(",");
-                    sampleHashMap.put(Long.parseLong(lineSplit[0]), Long.parseLong(lineSplit[1]));
-                });
-
-                mzmlIndexes.put(sample, sampleHashMap);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 
     @FXML
     public void resetZoom(){
@@ -264,10 +247,14 @@ public class SpectrumViewerController implements Initializable {
 
     public void runLorikeet(double[] mz, double[] intensities, String peptide){
 
-        WebEngine webEngine = specWebview.getEngine();
+        lorikeetContainer.getChildren().clear();
+        WebView webView = new WebView();
+        lorikeetContainer.getChildren().add(webView);
+        AnchorFitter.fitAnchor(webView);
+        WebEngine webEngine = webView.getEngine();
         webEngine.reload();
 
-        specWebview.getEngine().load(getClass().getResource("/Lorikeet/html/example_use2.html").toString());
+        webEngine.load(getClass().getResource("/Lorikeet/html/example_use2.html").toString());
 
         webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
             if (newState == Worker.State.SUCCEEDED) {
@@ -474,7 +461,7 @@ public class SpectrumViewerController implements Initializable {
         ArrayList<HashMap<String, Object>> data = getDatasets(sequence, peptide, peaks);
         drawGraph(data, mzs, intensities);
         makeIonTable();
-        //runLorikeet(mzs, intensities, sequence);
+        runLorikeet(mzs, intensities, sequence);
     }
 
 
@@ -676,7 +663,7 @@ public class SpectrumViewerController implements Initializable {
         String massType = "mono";
         String peakAssignmentType = "intense";
         String peakLabelType = "ion";
-        String massErrorUnit="Th";
+        String massErrorUnit="ppm";
         for(Ion ion: selectedIonTypes){
 
             if(!ionSeriesMatch.get(ion.getType()).containsKey(ion.getCharge())){

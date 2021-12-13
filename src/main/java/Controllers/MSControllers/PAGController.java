@@ -192,7 +192,7 @@ public class PAGController implements Initializable {
     private void getPeptideGenes(ArrayList<String> nodesJson, ArrayList<String> nodes, ArrayList<Pair<Integer, Integer>> links,
                                  ArrayList<String> genesFound, String peptide, boolean addTranscripts, String run){
         NitriteCollection collection = Database.getDb().getCollection("peptideMap");
-        Document doc = collection.find(and(eq("run", run))).firstOrDefault();
+        Document doc = collection.find(and(eq("run", run), eq("peptide", peptide))).firstOrDefault();
 
         JSONObject genesTranscripts = doc.get("transcripts", JSONObject.class);
         for (String gene : (Iterable<String>) genesTranscripts.keySet()) {
@@ -201,6 +201,7 @@ public class PAGController implements Initializable {
 
             if (!nodes.contains(gene)) {
                 nodes.add(gene);
+                System.out.println(gene);
                 genesFound.add(gene);
                 nodesJson.add("{id:" + (nodes.size() - 1) + ", label: \"" +
                         nodes.get(nodes.size() - 1) + "\", shape: \"triangle\", color: \"#D4DCA9\"}");

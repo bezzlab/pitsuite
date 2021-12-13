@@ -12,6 +12,8 @@
 <?import javafx.scene.layout.VBox?>
 
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.web.WebView?>
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.MSControllers.SpectrumViewerController">
    <children>
       <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -28,7 +30,7 @@
             <VBox>
                <children>
                   <Label text="Tolerance" />
-                  <JFXSlider fx:id="toleranceSlider" />
+                  <JFXSlider fx:id="toleranceSlider" min="1" max="40" value="20"/>
                   <JFXButton onMouseClicked="#resetZoom" text="Reset zoom" />
                   <Label text="Ions" />
                   <GridPane>
@@ -57,8 +59,8 @@
                          <JFXCheckBox fx:id="a2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="0" />
                          <JFXCheckBox fx:id="a3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="0" />
                          <JFXCheckBox fx:id="b1" selected="true" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                         <JFXCheckBox fx:id="b2" selected="true" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                         <JFXCheckBox fx:id="b3" selected="true" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                         <JFXCheckBox fx:id="b2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                         <JFXCheckBox fx:id="b3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="1" />
                          <JFXCheckBox fx:id="c1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                          <JFXCheckBox fx:id="c2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="2" />
                          <JFXCheckBox fx:id="c3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="2" />
@@ -66,8 +68,8 @@
                          <JFXCheckBox fx:id="x2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="3" />
                          <JFXCheckBox fx:id="x3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="3" />
                          <JFXCheckBox fx:id="y1" selected="true" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                         <JFXCheckBox fx:id="y2" selected="true" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="4" />
-                         <JFXCheckBox fx:id="y3" selected="true" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+                         <JFXCheckBox fx:id="y2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+                         <JFXCheckBox fx:id="y3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="4" />
                          <JFXCheckBox fx:id="z1" text="1+" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                          <JFXCheckBox fx:id="z2" text="2+" GridPane.columnIndex="2" GridPane.rowIndex="5" />
                          <JFXCheckBox fx:id="z3" text="3+" GridPane.columnIndex="3" GridPane.rowIndex="5" />
@@ -83,7 +85,12 @@
              <TableView fx:id="ionTable" GridPane.columnIndex="1">
 
              </TableView>
-            <Pane fx:id="spectrumPane" GridPane.columnSpan="2" GridPane.rowIndex="1" />
+             <HBox GridPane.columnSpan="2" GridPane.rowIndex="1" >
+                 <Pane fx:id="spectrumPane" HBox.hgrow="ALWAYS"/>
+                 <AnchorPane fx:id="lorikeetContainer"/>
+<!--                 <WebView fx:id="specWebview" />-->
+             </HBox>
+
          </children>
       </GridPane>
    </children>

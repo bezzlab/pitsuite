@@ -553,6 +553,7 @@ public class PeptideTableController implements Initializable {
         container.getChildren().add(confidentBarChart);
     }
 
-
-
+    public SpectrumViewerController getSpectrumViewerController() {
+        return spectrumViewerController;
+    }
 }

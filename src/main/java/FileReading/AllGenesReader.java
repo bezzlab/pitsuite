@@ -159,6 +159,16 @@ public class AllGenesReader {
         return allGenes.get(name);
     }
 
+    public ArrayList<String> findGenes(String subname){
+        ArrayList<String> genes = new ArrayList<>();
+        for(String gene: allGenes.keySet()){
+            if(gene.contains(subname)){
+                genes.add(gene);
+            }
+        }
+        return genes;
+    }
+
     public SimpleBooleanProperty getGenesLoadedProperty(){
         return geneLoadedProperty;
     }

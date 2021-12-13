@@ -164,7 +164,7 @@ public class DgeAlert extends Alert {
 
             changeTable.getItems().add(new CellTableRow("Protein "+entry.getKey(), entry.getValue().getKey(), entry.getValue().getValue()));
 
-            DgeTableController.drawSelectedGeneProteinQuant(gene, container, fontSize, entry.getKey());
+            DgeTableController.drawSelectedGeneProteinQuant(gene, container, fontSize, entry.getKey(), true);
         }
 
         if(proteins.entrySet().size()==0)

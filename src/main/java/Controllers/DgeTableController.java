@@ -236,7 +236,7 @@ public class DgeTableController extends Controller {
 
                             selectedGeneCharts.getChildren().clear();
                             drawSelectedGeneReadCount(rowData.getGeneSymbol(), selectedGeneCharts, fontSize);
-                            drawSelectedGeneProteinQuant(rowData.getGeneSymbol(), selectedGeneCharts, fontSize, protComparisonCombobox.getValue());
+                            drawSelectedGeneProteinQuant(rowData.getGeneSymbol(), selectedGeneCharts, fontSize, protComparisonCombobox.getValue(), true);
 
                             if (goTermsController.isGoLoaded()) {
                                 goTermsController.setGoTermsGeneTable(rowData.getGeneSymbol());
@@ -844,275 +844,267 @@ public class DgeTableController extends Controller {
 
         bc2.draw();
         HBox.setHgrow(bc2, Priority.ALWAYS);
+        VBox.setVgrow(bc2, Priority.ALWAYS);
 
         container.getChildren().add(bc2);
         return bc2;
     }
 
 
-    public static void drawSelectedGeneProteinQuant(String gene, Pane container, double fontSize, String msRun){
+    public static void drawSelectedGeneProteinQuant(String gene, Pane container, double fontSize, String msRun, boolean showLineChart){
 
 
         NitriteCollection collection = Database.getDb().getCollection("genePeptides");
         Document result = collection.find(and(eq("gene", gene), eq("run", Config.getParentRun(msRun)))).firstOrDefault();
+        if(result!=null) {
 
 
+            final CategoryAxis xAxisLineChart = new CategoryAxis();
+            final NumberAxis yAxisLineChart = new NumberAxis();
+            yAxisLineChart.setLabel("Peptide intensity");
+            LineChart<String, Number> lineChart =
+                    new LineChart<>(xAxisLineChart, yAxisLineChart);
+            lineChart.setTitle("Differencial peptide intensity");
+            lineChart.setStyle("-fx-font-size: " + fontSize + "px;");
+            lineChart.prefWidthProperty().bind(container.widthProperty().divide(3));
 
 
-
-        final CategoryAxis xAxisLineChart = new CategoryAxis();
-        final NumberAxis yAxisLineChart = new NumberAxis();
-        yAxisLineChart.setLabel("Peptide intensity");
-        LineChart<String,Number> lineChart =
-                new LineChart<>(xAxisLineChart,yAxisLineChart);
-        lineChart.setTitle("Differencial peptide intensity");
-        lineChart.setStyle("-fx-font-size: " + fontSize + "px;");
-        lineChart.prefWidthProperty().bind(container.widthProperty().divide(3));
-
-
-
-        ArrayList<XYChart.Series> allSeriesAbundance = new ArrayList<>();
-        ArrayList<XYChart.Series> allPeptidesSeries = new ArrayList<>();
+            ArrayList<XYChart.Series> allSeriesAbundance = new ArrayList<>();
+            ArrayList<XYChart.Series> allPeptidesSeries = new ArrayList<>();
 
 //        XYChart.Series s = new XYChart.Series();
 //        allSeriesAbundance.add(new XYChart.Data(conditionKey+" "+sampleKey, condition.getInt(sampleKey));
 
 
-
-        ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
-        proteinConfidentBarChart.setMeanOrMedian("median");
-        proteinConfidentBarChart.setTitle("Differencial protein abundance");
-        proteinConfidentBarChart.setMin(0);
-        //proteinConfidentBarChart.setMaxSize(250,400);
-        //proteinConfidentBarChart.setStyle("-fx-font-size: 30px;");
-
-
-        String referenceCondition = Config.getReferenceMSCondition(msRun);
-
-        proteinConfidentBarChart.setReference(referenceCondition);
-        proteinConfidentBarChart.prefWidthProperty().bind(container.widthProperty().divide(3));
+            ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
+            proteinConfidentBarChart.setMeanOrMedian("median");
+            proteinConfidentBarChart.setTitle("Differencial protein abundance");
+            proteinConfidentBarChart.setMin(0);
+            //proteinConfidentBarChart.setMaxSize(250,400);
+            //proteinConfidentBarChart.setStyle("-fx-font-size: 30px;");
 
 
+            String referenceCondition = Config.getReferenceMSCondition(msRun);
+
+            proteinConfidentBarChart.setReference(referenceCondition);
+            proteinConfidentBarChart.prefWidthProperty().bind(container.widthProperty().divide(3));
 
 
-        if(Config.getRunType(msRun).equals("SILAC")){
+            if (Config.getRunType(msRun).equals("SILAC")) {
 
-            JSONObject res = new JSONObject(result).getJSONObject("peptides");
+                JSONObject res = new JSONObject(result).getJSONObject("peptides");
 
-            HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
-            for(String peptide: res.keySet()){
-                JSONObject peptideObj = res.getJSONObject(peptide).getJSONObject("intensity");
-                for(String subRun: peptideObj.keySet()){
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
+                for (String peptide : res.keySet()) {
+                    JSONObject peptideObj = res.getJSONObject(peptide).getJSONObject("intensity");
+                    for (String subRun : peptideObj.keySet()) {
 
-                    if(!groups.containsKey(subRun)){
-                        groups.put(subRun, new HashMap<>());
-                    }
-
-                    JSONObject subRunObj = peptideObj.getJSONObject(subRun);
-
-                    Set<String> conditions = subRunObj.keySet();
-                    for(String condition: conditions){
-                        if(!groups.get(subRun).containsKey(condition)){
-                            groups.get(subRun).put(condition, new ArrayList<>());
+                        if (!groups.containsKey(subRun)) {
+                            groups.put(subRun, new HashMap<>());
                         }
 
-                        if(condition.equals(referenceCondition)){
-                            groups.get(subRun).get(condition).add(1.);
-                        }else{
-                            double ratio = subRunObj.getDouble(condition)/subRunObj.getDouble(referenceCondition);
-                            if(ratio!=Double.POSITIVE_INFINITY){
-                                groups.get(subRun).get(condition)
+                        JSONObject subRunObj = peptideObj.getJSONObject(subRun);
+
+                        Set<String> conditions = subRunObj.keySet();
+                        for (String condition : conditions) {
+                            if (!groups.get(subRun).containsKey(condition)) {
+                                groups.get(subRun).put(condition, new ArrayList<>());
+                            }
+
+                            if (condition.equals(referenceCondition)) {
+                                groups.get(subRun).get(condition).add(1.);
+                            } else {
+                                double ratio = subRunObj.getDouble(condition) / subRunObj.getDouble(referenceCondition);
+                                if (ratio != Double.POSITIVE_INFINITY) {
+                                    groups.get(subRun).get(condition)
+                                            .add(ratio);
+                                }
+
+                            }
+                        }
+                    }
+
+
+                }
+
+
+                proteinConfidentBarChart.addGroups(groups);
+
+                for (String Peptide : res.keySet()) {
+
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(Peptide);
+                    allPeptidesSeries.add(peptideSeries);
+
+                    JSONObject peptideObj = res.getJSONObject(Peptide).getJSONObject("intensity");
+
+                    for (String runKey : peptideObj.keySet()) {
+                        JSONObject runObject = peptideObj.getJSONObject(runKey);
+                        //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
+                        for (String conditionKey : runObject.keySet()) {
+                            double ratio = runObject.getDouble(conditionKey);
+                            //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
+                            peptideSeries.getData().add(new XYChart.Data(conditionKey + " " + runKey, ratio));
+
+                        }
+
+                    }
+                }
+            } else if (Config.getRunType(msRun).equals("LABELFREE")) {
+
+
+                JSONObject res = new JSONObject(result);
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
+
+
+                ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
+
+                Iterator<String> it = res.getJSONObject("peptides").getJSONObject(res.getJSONObject("peptides").keys().next())
+                        .getJSONObject("intensity").keys();
+
+                while (it.hasNext()) {
+                    String run = it.next();
+                    String condition = Config.getRunOrLabelCondition(run);
+                    runsConditions.add(new Pair<>(run, condition));
+                    if (!groups.containsKey(condition)) {
+                        groups.put(condition, new HashMap<>());
+                    }
+                }
+
+                runsConditions.sort(Comparator.comparing(Pair::getValue));
+
+                String refCondition = runsConditions.get(0).getValue();
+
+
+                res = res.getJSONObject("peptides");
+                for (String peptide : res.keySet()) {
+
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(peptide);
+                    allPeptidesSeries.add(peptideSeries);
+
+                    ArrayList<Double> referenceIntensities = new ArrayList<>();
+
+                    for (Pair<String, String> runCondition : runsConditions) {
+
+                        String run = runCondition.getKey();
+                        String condition = runCondition.getValue();
+
+                        double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(run);
+
+                        peptideSeries.getData().add(new XYChart.Data(run, intensity));
+
+
+                        if (condition.equals(refCondition)) {
+                            referenceIntensities.add(intensity);
+                        } else {
+                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
+                                    .average().getAsDouble();
+                            double ratio = intensity / referenceIntensityMean;
+                            if (!groups.get(condition).containsKey(run)) {
+                                groups.get(condition).put(run, new ArrayList<>());
+                            }
+                            if (ratio != Double.POSITIVE_INFINITY) {
+                                groups.get(condition).get(run)
                                         .add(ratio);
                             }
 
                         }
                     }
-                }
+                    for (Pair<String, String> runCondition : runsConditions) {
+                        if (runCondition.getValue().equals(refCondition)) {
+                            String run = runCondition.getKey();
+                            String condition = runCondition.getValue();
+                            double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
+                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
+                                    .average().getAsDouble();
+                            double ratio = intensity / referenceIntensityMean;
+                            if (!groups.get(condition).containsKey(run)) {
+                                groups.get(condition).put(run, new ArrayList<>());
+                            }
+                            if (ratio != Double.POSITIVE_INFINITY) {
+                                groups.get(condition).get(run)
+                                        .add(ratio);
+                            }
 
-
-            }
-
-
-            proteinConfidentBarChart.addGroups(groups);
-
-            for (String Peptide : res.keySet()) {
-
-                XYChart.Series peptideSeries = new XYChart.Series();
-                peptideSeries.setName(Peptide);
-                allPeptidesSeries.add(peptideSeries);
-
-                JSONObject peptideObj = res.getJSONObject(Peptide).getJSONObject("intensity");
-
-                for (String runKey : peptideObj.keySet()) {
-                    JSONObject runObject = peptideObj.getJSONObject(runKey);
-                    //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
-                    for (String conditionKey : runObject.keySet()) {
-                        double ratio = runObject.getDouble(conditionKey);
-                        //peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+sampleKey, Math.log10(condition.getInt(sampleKey))/Math.log10(2)));
-                        peptideSeries.getData().add(new XYChart.Data(conditionKey+" "+runKey, ratio));
-
+                        } else {
+                            break;
+                        }
                     }
 
+
                 }
-            }
-        }else if (Config.getRunType(msRun).equals("LABELFREE")){
+                proteinConfidentBarChart.addGroups(groups);
+                proteinConfidentBarChart.setReference(refCondition);
+                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+
+            } else { //TMT
 
 
-            JSONObject res = new JSONObject(result);
-            HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
+                JSONObject res = new JSONObject(result);
+                HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
 
 
-            ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
-
-            Iterator<String> it = res.getJSONObject("peptides").getJSONObject(res.getJSONObject("peptides").keys().next())
-                    .getJSONObject("intensity").keys();
-
-            while(it.hasNext()){
-                String run = it.next();
-                String condition = Config.getRunOrLabelCondition(run);
-                runsConditions.add(new Pair<>(run, condition));
-                if(!groups.containsKey(condition)){
-                    groups.put(condition, new HashMap<>());
-                }
-            }
-
-            runsConditions.sort(Comparator.comparing(Pair::getValue));
-
-            String refCondition = runsConditions.get(0).getValue();
+                ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
 
 
-
-            res = res.getJSONObject("peptides");
-            for (String peptide : res.keySet()) {
-
-                XYChart.Series peptideSeries = new XYChart.Series();
-                peptideSeries.setName(peptide);
-                allPeptidesSeries.add(peptideSeries);
-
-                ArrayList<Double> referenceIntensities = new ArrayList<>();
-
-                for(Pair<String, String> runCondition: runsConditions){
-
-                    String run = runCondition.getKey();
-                    String condition = runCondition.getValue();
-
-                    double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(run);
-
-                    peptideSeries.getData().add(new XYChart.Data(run, intensity));
-
-
-                    if(condition.equals(refCondition)){
-                        referenceIntensities.add(intensity);
-                    }else{
-                        double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
-                                .average().getAsDouble();
-                        double ratio = intensity/referenceIntensityMean;
-                        if(!groups.get(condition).containsKey(run)) {
-                            groups.get(condition).put(run, new ArrayList<>());
-                        }
-                        if(ratio!=Double.POSITIVE_INFINITY){
-                            groups.get(condition).get(run)
-                                    .add(ratio);
-                        }
-
-                    }
-                }
-                for(Pair<String, String> runCondition: runsConditions){
-                    if(runCondition.getValue().equals(refCondition)){
-                        String run = runCondition.getKey();
-                        String condition = runCondition.getValue();
-                        double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
-                        double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
-                                .average().getAsDouble();
-                        double ratio = intensity/referenceIntensityMean;
-                        if(!groups.get(condition).containsKey(run)) {
-                            groups.get(condition).put(run, new ArrayList<>());
-                        }
-                        if(ratio!=Double.POSITIVE_INFINITY){
-                            groups.get(condition).get(run)
-                                    .add(ratio);
-                        }
-
-                    }else{
-                        break;
-                    }
-                }
-
-
-
-            }
-            proteinConfidentBarChart.addGroups(groups);
-            proteinConfidentBarChart.setReference(refCondition);
-            proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
-
-        }else{ //TMT
-
-
-            JSONObject res = new JSONObject(result);
-            HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
-
-
-            ArrayList<Pair<String, String>> runsConditions = new ArrayList<>();
-
-
-
-            Set<String> samples = Config.getRunSamples(msRun);
-
+                Set<String> samples = Config.getRunSamples(msRun);
 
 
 //                runsConditions.sort(Comparator.comparing(Pair::getValue));
 //
 //                String refCondition = runsConditions.get(0).getValue();
-            String refCondition = "Nsi";
+                String refCondition = "Nsi";
 
 
-            res = res.getJSONObject("peptides");
-            for (String peptide : res.keySet()) {
+                System.out.println(gene);
+                res = res.getJSONObject("peptides");
+                for (String peptide : res.keySet()) {
 
-                XYChart.Series peptideSeries = new XYChart.Series();
-                peptideSeries.setName(peptide);
-                allPeptidesSeries.add(peptideSeries);
+                    XYChart.Series peptideSeries = new XYChart.Series();
+                    peptideSeries.setName(peptide);
+                    allPeptidesSeries.add(peptideSeries);
 
-                ArrayList<Double> referenceIntensities = new ArrayList<>();
+                    ArrayList<Double> referenceIntensities = new ArrayList<>();
 
 
-                if(res.getJSONObject(peptide).getJSONObject("intensity").has(msRun)) {
-                    JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(msRun);
+                    if (res.getJSONObject(peptide).getJSONObject("intensity").has(msRun)) {
+                        JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(msRun);
 
-                    ArrayList<Double> referenceIntensitiesPeptide = new ArrayList<>();
-                    for (String sample : samples) {
-                        if (intensity.get(sample) instanceof Double) {
-                            if (sample.split("/")[0].equals(refCondition)) {
-                                referenceIntensitiesPeptide.add(intensity.getDouble(sample));
+                        ArrayList<Double> referenceIntensitiesPeptide = new ArrayList<>();
+                        for (String sample : samples) {
+                            if (intensity.get(sample) instanceof Double) {
+                                if (sample.split("/")[0].equals(refCondition)) {
+                                    referenceIntensitiesPeptide.add(intensity.getDouble(sample));
+                                }
+                            }
+                        }
+
+                        Double referenceIntensityMean = referenceIntensitiesPeptide.stream().mapToDouble(a -> a).average().getAsDouble();
+                        referenceIntensities.add(referenceIntensityMean);
+
+
+                        for (String sample : samples) {
+                            String condition = sample.split("/")[0];
+                            if (!groups.containsKey(condition)) {
+                                groups.put(condition, new HashMap<>());
+                            }
+                            peptideSeries.getData().add(new XYChart.Data(sample, intensity.get(sample)));
+
+
+                            double ratio = ((Double) intensity.get(sample)) / referenceIntensityMean;
+                            if (!groups.get(condition).containsKey(sample)) {
+                                groups.get(condition).put(sample, new ArrayList<>());
+                            }
+                            if (ratio != Double.POSITIVE_INFINITY) {
+                                groups.get(condition).get(sample)
+                                        .add(ratio);
                             }
                         }
                     }
 
-                    Double referenceIntensityMean = referenceIntensitiesPeptide.stream().mapToDouble(a -> a).average().getAsDouble();
-                    referenceIntensities.add(referenceIntensityMean);
 
-
-                    for (String sample : samples) {
-                        String condition = sample.split("/")[0];
-                        if(!groups.containsKey(condition)){
-                            groups.put(condition, new HashMap<>());
-                        }
-                        peptideSeries.getData().add(new XYChart.Data(sample, intensity.get(sample)));
-
-
-                        double ratio = ((Double) intensity.get(sample)) / referenceIntensityMean;
-                        if (!groups.get(condition).containsKey(sample)) {
-                            groups.get(condition).put(sample, new ArrayList<>());
-                        }
-                        if (ratio != Double.POSITIVE_INFINITY) {
-                            groups.get(condition).get(sample)
-                                    .add(ratio);
-                        }
-                    }
                 }
-
-
-            }
 
 //                    for(Pair<String, String> runCondition: runsConditions){
 //                        if(runCondition.getValue().equals(refCondition)){
@@ -1136,47 +1128,47 @@ public class DgeTableController extends Controller {
 //                    }
 
 
-            proteinConfidentBarChart.addGroups(groups);
-            proteinConfidentBarChart.setReference(refCondition);
-            proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+                proteinConfidentBarChart.addGroups(groups);
+                proteinConfidentBarChart.setReference(refCondition);
+                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
 
-        }
-
-
-
-        HBox.setHgrow(proteinConfidentBarChart, Priority.ALWAYS);
-        VBox.setVgrow(proteinConfidentBarChart, Priority.ALWAYS);
-
-        container.getChildren().add(proteinConfidentBarChart);
-        proteinConfidentBarChart.draw();
-
-        ArrayList<XYChart.Series> allSeries = new ArrayList<>();
-        for(XYChart.Series series: allPeptidesSeries){
-            lineChart.getData().add(series);
-            allSeries.add(series);
-        }
-        HBox.setHgrow(lineChart, Priority.ALWAYS);
-        VBox.setVgrow(lineChart, Priority.ALWAYS);
-        container.getChildren().add(lineChart);
-
-
-        final MenuItem resizeItem = new MenuItem("Save plot");
-        resizeItem.setOnAction(event -> {
-            PlotSaver plotSaver = new PlotSaver("linechart");
-            plotSaver.setData(allSeries, (Stage) lineChart.getScene().getWindow());
-        });
-
-        final ContextMenu menu = new ContextMenu(
-                resizeItem
-        );
-
-        lineChart.setOnMouseClicked(event -> {
-            if (MouseButton.SECONDARY.equals(event.getButton())) {
-                menu.show(lineChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
             }
-        });
 
 
+            HBox.setHgrow(proteinConfidentBarChart, Priority.ALWAYS);
+            VBox.setVgrow(proteinConfidentBarChart, Priority.ALWAYS);
+
+            container.getChildren().add(proteinConfidentBarChart);
+            proteinConfidentBarChart.draw();
+
+            ArrayList<XYChart.Series> allSeries = new ArrayList<>();
+            for (XYChart.Series series : allPeptidesSeries) {
+                lineChart.getData().add(series);
+                allSeries.add(series);
+            }
+            if (showLineChart) {
+                HBox.setHgrow(lineChart, Priority.ALWAYS);
+                VBox.setVgrow(lineChart, Priority.ALWAYS);
+                container.getChildren().add(lineChart);
+            }
+
+
+            final MenuItem resizeItem = new MenuItem("Save plot");
+            resizeItem.setOnAction(event -> {
+                PlotSaver plotSaver = new PlotSaver("linechart");
+                plotSaver.setData(allSeries, (Stage) lineChart.getScene().getWindow());
+            });
+
+            final ContextMenu menu = new ContextMenu(
+                    resizeItem
+            );
+
+            lineChart.setOnMouseClicked(event -> {
+                if (MouseButton.SECONDARY.equals(event.getButton())) {
+                    menu.show(lineChart.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+                }
+            });
+        }
     }
 
 
@@ -1188,7 +1180,7 @@ public class DgeTableController extends Controller {
             String gene = foldChangeTableView.getSelectionModel().getSelectedItem().getGeneSymbol();
             selectedGeneCharts.getChildren().clear();
             drawSelectedGeneReadCount(gene, selectedGeneCharts, fontSize);
-            drawSelectedGeneProteinQuant(gene, selectedGeneCharts, fontSize, protComparisonCombobox.getValue());
+            drawSelectedGeneProteinQuant(gene, selectedGeneCharts, fontSize, protComparisonCombobox.getValue(), true);
         }
 
 

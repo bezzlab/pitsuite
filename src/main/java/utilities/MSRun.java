@@ -81,12 +81,9 @@ public class MSRun {
             allPeptides.put(doc.get("peptide", String.class), peptide);
             for(Object o: doc.get("psms", JSONArray.class)){
                 JSONObject psm = (JSONObject) o;
-                String label = (String) psm.get("label");
                 String file = (String) psm.get("file");
-                if (!mzmlIndexes.containsKey(file)){
-                    mzmlIndexes.put(file, new HashMap<>());
+                if (!mzmlIndexes.containsKey(file))
                     loadIndex(file);
-                }
             }
 
             if(peptideToFind!=null && peptideToFind.getSequence().equals(peptide.getSequence())){
@@ -101,19 +98,20 @@ public class MSRun {
     }
 
     public void loadIndex(String file){
-        if(!mzmlIndexes.containsKey(file)){
-            mzmlIndexes.put(file, new HashMap<>());
-            String path = Config.getRunPath(name)+"/"+file+".mzML.index";
-            try {
-                Files.lines(Path.of(path)).forEach(line -> {
-                    String[] lineSplit = line.split(",");
-                    mzmlIndexes.get(file).put(Long.parseLong(lineSplit[0]), Long.parseLong(lineSplit[1]));
-                });
 
-            } catch (IOException ignored) {
+        mzmlIndexes.put(file, new HashMap<>());
+        String path = Config.getRunPath(name)+"/"+file+".mzML.index";
+        try {
+            Files.lines(Path.of(path)).forEach(line -> {
+                String[] lineSplit = line.split(",");
+                mzmlIndexes.get(file).put(Long.parseLong(lineSplit[0]), Long.parseLong(lineSplit[1]));
+            });
 
-            }
+        } catch (IOException ignored) {
+
         }
+
+
     }
 
     public Collection<Peptide> getAllPeptides() {

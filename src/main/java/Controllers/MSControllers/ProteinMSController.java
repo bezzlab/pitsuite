@@ -461,7 +461,7 @@ public class ProteinMSController extends Controller implements Initializable {
 
     public void showProteinIntensity(String gene){
         intensitiesPane.getChildren().clear();
-        DgeTableController.drawSelectedGeneProteinQuant(gene, intensitiesPane, 15, runCombo.getSelectionModel().getSelectedItem());
+        DgeTableController.drawSelectedGeneProteinQuant(gene, intensitiesPane, 15, runCombo.getSelectionModel().getSelectedItem(), true);
     }
 
     public void showPeptideIntensity(HashMap<String, Double> intensities){

@@ -719,8 +719,22 @@ public class GeneBrowserController extends Controller implements Initializable {
         //  so that sequences can be aligned.
         transcFormatedSequencesMap = new HashMap<>();
 
-        System.out.println(geneIdTextField.getText());
+
         Gene gene = allGenesReader.getGene(geneIdTextField.getText());
+        if(gene==null){
+            List<String> choices = AllGenesReader.getInstance().findGenes(geneIdTextField.getText());
+
+            ChoiceDialog<String> dialog = new ChoiceDialog<>(choices.get(0), choices);
+            dialog.setTitle("Gene browser");
+            dialog.setHeaderText("Select a location for the gene");
+            Optional<String> result = dialog.showAndWait();
+            System.out.println("AAA "+result.get());
+            result.ifPresent(letter -> {
+                geneIdTextField.setText(result.get());
+                displaygeneFromGeneSymbol(result.get(), true);
+            });
+            return;
+        }
 
         cdss = new HashMap<>();
 
