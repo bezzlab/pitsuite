@@ -38,7 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class PITRunnerController implements Initializable {
+public class PITCloudController implements Initializable {
 
     @FXML
     private Button runButton;

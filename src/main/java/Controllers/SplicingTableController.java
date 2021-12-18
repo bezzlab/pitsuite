@@ -620,7 +620,6 @@ public class SplicingTableController extends Controller {
 
 
         }
-
         ConfidentBarChart psiChart = new ConfidentBarChart();
         AnchorFitter.fitAnchor(psiChart);
         psiChart.addAll(psiValues);

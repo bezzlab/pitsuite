@@ -33,9 +33,11 @@ module pitguivTwo {
     opens TablesModels;
     opens graphics;
     opens Controllers.drawerControllers;
+    opens Controllers.config_generation;
     opens pathway.alerts;
     opens utilities;
     opens Controllers.MSControllers;
+    opens Controllers.PITrun;
     exports Controllers.MSControllers;
 
     requires org.kordamp.iconli.core;

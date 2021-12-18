@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.config_generation.MSConfigController">
+   <children>
+      <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <columnConstraints>
+          <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+          <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" />
+        </columnConstraints>
+        <rowConstraints>
+            <RowConstraints vgrow="SOMETIMES" />
+          <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+          <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+          <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="SOMETIMES" />
+        </rowConstraints>
+         <children>
+            <ListView fx:id="runsList" GridPane.rowIndex="4" GridPane.rowSpan="5" />
+            <TextField fx:id="runNameField" onMouseClicked="#addRunName" promptText="Run name" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <ListView fx:id="combinedRunsList" GridPane.rowIndex="1" GridPane.rowSpan="2" />
+            <Button mnemonicParsing="false" onMouseClicked="#addCombinedRun" text="Add combined run" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ComboBox fx:id="combinedRunCombo" GridPane.columnIndex="3" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" />
+            <ListView fx:id="fixedModList" GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.rowSpan="2" />
+            <ListView fx:id="modsList" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="5" />
+            <ListView fx:id="variableModList" GridPane.columnIndex="6" GridPane.rowIndex="5" GridPane.rowSpan="2" />
+            <Label text="Fixed modification selected" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+            <Label text="Variable modifications selected" GridPane.columnIndex="6" GridPane.rowIndex="4" />
+            <Button mnemonicParsing="false" onMouseClicked="#addFixedMod" text="&lt;&lt;" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+            <Button mnemonicParsing="false" onMouseClicked="#removeFixedMod" text="&gt;&gt;" GridPane.columnIndex="2" GridPane.rowIndex="6" />
+            <Button mnemonicParsing="false" onMouseClicked="#addVariableMod" text="&gt;&gt;" GridPane.columnIndex="5" GridPane.rowIndex="5" />
+            <Button mnemonicParsing="false" onMouseClicked="#removeVariableMod" text="&lt;&lt;" GridPane.columnIndex="5" GridPane.rowIndex="6" />
+            <ComboBox fx:id="labelTypeCombo" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="7" />
+            <Label text="Combined runs" />
+            <Label text="Runs" GridPane.rowIndex="3" />
+            <ListView fx:id="rawFilesList" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="8" />
+            <Button mnemonicParsing="false" onMouseClicked="#addRawFile" text="Add raw file" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+            <VBox fx:id="labelsGridContainer" GridPane.columnIndex="4" GridPane.columnSpan="2" GridPane.rowIndex="8" />
+            <Button mnemonicParsing="false" onMouseClicked="#onNext" text="Next" GridPane.columnIndex="6" GridPane.halignment="CENTER" GridPane.rowIndex="8" GridPane.valignment="BOTTOM" />
+            <Button mnemonicParsing="false" onMouseClicked="#addRun" text="Add run" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+         </children>
+      </GridPane>
+   </children>
+</AnchorPane>

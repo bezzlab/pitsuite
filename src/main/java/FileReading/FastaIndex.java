@@ -23,8 +23,9 @@ public class FastaIndex {
 
         chromosomes = new HashMap<>();
 
+        System.out.println(path);
         try(BufferedReader br = new BufferedReader(new FileReader(path+".fai"))) {
-            StringBuilder sb = new StringBuilder();
+
             String line = br.readLine();
 
             while (line != null) {
@@ -55,6 +56,8 @@ public class FastaIndex {
     public String getSequenceAt(String chr, int start, int end){
 
 
+        System.out.println(chromosomes);
+        System.out.println(chr);
         long positionToRead = chromosomes.get(chr) + start - 1 + start/nucleotidesPerLine;
         int amountBytesToRead = (int) (end - start  +
                 (start%nucleotidesPerLine +  end-start)     / nucleotidesPerLine);

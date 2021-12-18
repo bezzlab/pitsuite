@@ -1,6 +1,8 @@
 package Controllers;
 
 
+import Controllers.PITrun.PITRunLocalController;
+import Controllers.config_generation.ConfigGenerationController;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,7 +14,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -38,14 +39,17 @@ import java.util.concurrent.Future;
 
 public class FXMLDocumentController implements Initializable {
 
+    private PITRunLocalController PITLocalRunnerController;
+    @FXML
+    private VBox runPitLocalPane;
     @FXML
     private ListView projectsListview;
     @FXML
     private VBox runPitPane;
     @FXML
-    private PITRunnerController PITRunnerController;
+    private PITCloudController PITCloudController;
     @FXML
-    private configGeneration configGenerationController;
+    private ConfigGenerationController configGenerationController;
     @FXML
     private MenuItem openProjectMenuItem;
     @FXML
@@ -86,6 +90,8 @@ public class FXMLDocumentController implements Initializable {
     private Stage stage;
     String currDatabase = null;
 
+    private static FXMLDocumentController instance;
+
 
 
     public void setStage(Stage stage){
@@ -96,7 +102,6 @@ public class FXMLDocumentController implements Initializable {
         configPane.setVisible(true);
         splitPane.setVisible(false);
         runPitPane.setVisible(false);
-        configGenerationController.setParent(this);
     }
 
 
@@ -126,6 +131,7 @@ public class FXMLDocumentController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle){
+        instance = this;
         directoryFieldTextField.setEditable(false); // not possible to edit the path, only from the one extracted with the button
         pathTosaveDatabaseTextField.setEditable(false);
         createButton.setDisable(true);
@@ -447,5 +453,16 @@ public class FXMLDocumentController implements Initializable {
     public void onRunPIT() {
         splitPane.setVisible(false);
         runPitPane.setVisible(true);
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public static FXMLDocumentController getInstance(){ return instance; }
+
+    public void onRunPITLocally(ActionEvent actionEvent) {
+        splitPane.setVisible(false);
+        runPitLocalPane.setVisible(true);
     }
 }

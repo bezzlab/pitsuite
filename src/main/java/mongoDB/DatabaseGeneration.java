@@ -974,6 +974,7 @@ public class DatabaseGeneration {
      */
     public void splicePsiParser(Path filePath) {
 
+
         Nitrite db = Nitrite.builder().filePath(databasePathAndName ).openOrCreate();
         NitriteCollection currCollection = db.getCollection("SplicingPsi");
 

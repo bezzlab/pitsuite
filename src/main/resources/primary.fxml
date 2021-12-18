@@ -81,6 +81,7 @@
                                         <Label fx:id="directoryLabel" layoutX="343.0" layoutY="338.0" text="Directory:" />
                                         <Button fx:id="newProject" layoutX="315.0" layoutY="213.0" minWidth="130.0" onAction="#newProject" text="New project" />
                                         <Button fx:id="runPitButton" layoutX="315.0" layoutY="400" minWidth="130.0" onAction="#onRunPIT" text="RunPIT" />
+                                        <Button fx:id="runPitLocallyButton" layoutX="315.0" layoutY="400" minWidth="130.0" onAction="#onRunPITLocally" text="Run PIT locally" />
 
                                         <TextField fx:id="newProjNameTextField" layoutX="343.0" layoutY="234.0" prefHeight="25.0" prefWidth="320.0" />
                                         <Button fx:id="createButton" layoutX="671.0" layoutY="390.0" text="Import data" />
@@ -96,18 +97,24 @@
                         </SplitPane>
 
 
-                        <VBox fx:id="configPane" prefHeight="451.0" prefWidth="840.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="560.0" AnchorPane.topAnchor="0.0">
+                        <VBox fx:id="configPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <children>
 
-                                            <fx:include fx:id="configGeneration" source="configGeneration.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                            <fx:include fx:id="configGeneration" source="config.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
 
                                         </children>
                         </VBox>
                         <VBox fx:id="runPitPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                             <children>
 
-                                <fx:include fx:id="PITRunner" VBox.vgrow="ALWAYS" source="pitrunner.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                <fx:include fx:id="PITRunner" VBox.vgrow="ALWAYS" source="pitcloud.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
 
+
+                            </children>
+                        </VBox>
+                        <VBox fx:id="runPitLocalPane" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                            <children>
+                                <fx:include fx:id="PITLocalRunner" VBox.vgrow="ALWAYS" source="pitrunlocal.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                             </children>
                         </VBox>
 

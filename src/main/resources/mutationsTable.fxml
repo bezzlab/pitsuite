@@ -51,7 +51,7 @@
                         <JFXCheckBox fx:id="otherTableFilterCheckbox" text="Other" />
                         <JFXCheckBox fx:id="cdsCheckbox" text="In CDS" selected="true" />
                         <JFXCheckBox fx:id="nonSilentCheckbox" text="Non synonymous" selected="true"/>
-                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="has PSM evidence"/>
+                        <JFXCheckBox fx:id="peptideEvidenceCheckbox" text="has PSM evidence" selected="true"/>
                         <Button fx:id="filterTableButton" mnemonicParsing="false" text="Filter" />
                     </children>
                 </HBox>
