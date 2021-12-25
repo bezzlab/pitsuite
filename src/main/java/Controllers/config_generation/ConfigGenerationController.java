@@ -2,6 +2,7 @@ package Controllers.config_generation;
 
 import Controllers.FXMLDocumentController;
 import Controllers.MSControllers.PAGController;
+import Controllers.PITrun.PITRunLocalController;
 import Controllers.SettingsController;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -141,26 +142,28 @@ public class ConfigGenerationController implements Initializable {
             }else if(run.getLabelType().equals("SILAC")){
                 JSONObject labels = new JSONObject();
                 for(Map.Entry<String, String> entry: run.getLabels().entrySet()){
-                    JSONObject conditionObj = new JSONObject();
-                    JSONArray samplesConditionRun = new JSONArray();
-                    for(Sample sample: SampleConfigController.getInstance().getSamples()){
-                        if(sample.getCondition().equals(entry.getValue())){
-                            samplesConditionRun.put(sample.getName());
+                    if(!entry.getValue().equals("None")) {
+                        JSONObject conditionObj = new JSONObject();
+                        JSONArray samplesConditionRun = new JSONArray();
+                        for (Sample sample : SampleConfigController.getInstance().getSamples()) {
+                            if (sample.getCondition().equals(entry.getValue())) {
+                                samplesConditionRun.put(sample.getName());
+                            }
                         }
-                    }
-                    conditionObj.put("samples", samplesConditionRun);
+                        conditionObj.put("samples", samplesConditionRun);
 
-                    JSONArray conditionLabels = new JSONArray();
-                    if(entry.getKey().equals("Medium")){
-                        conditionLabels.put("Lys4");
-                        conditionLabels.put("Arg8");
-                    }else if(entry.getKey().equals("Heavy")){
-                        conditionLabels.put("Lys8");
-                        conditionLabels.put("Arg10");
-                    }
-                    conditionObj.put("label", conditionLabels);
+                        JSONArray conditionLabels = new JSONArray();
+                        if (entry.getKey().equals("Medium")) {
+                            conditionLabels.put("Lys4");
+                            conditionLabels.put("Arg6");
+                        } else if (entry.getKey().equals("Heavy")) {
+                            conditionLabels.put("Lys8");
+                            conditionLabels.put("Arg10");
+                        }
+                        conditionObj.put("label", conditionLabels);
 
-                    labels.put(entry.getValue(), conditionObj);
+                        labels.put(entry.getValue(), conditionObj);
+                    }
                 }
                 runObj.put("SILAC", labels);
             }
@@ -215,9 +218,30 @@ public class ConfigGenerationController implements Initializable {
             FileWriter file = new FileWriter(sampleConfigController.getOutput()+"/"+sampleConfigController.getProjectName()+"/config.json");
             file.write(json.toString(4));
             file.close();
+
+            showRunPane(sampleConfigController.getOutput()+"/"+sampleConfigController.getProjectName()+"/config.json");
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+
+    public void backToSamples() {
+        container.getChildren().clear();
+        container.getChildren().add(sampleConfigRoot);
+    }
+
+    public void showRunPane(String configPath){
+        FXMLLoader fxmlLoader = new FXMLLoader(SettingsController.class.getResource("/pitrunlocal.fxml"));
+        try {
+            sampleConfigRoot = fxmlLoader.load();
+            PITRunLocalController pitRunLocalController = fxmlLoader.getController();
+            pitRunLocalController.setConfig(configPath);
+            container.getChildren().clear();
+            container.getChildren().add(sampleConfigRoot);
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
 }

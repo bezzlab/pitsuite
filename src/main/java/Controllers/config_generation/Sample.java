@@ -39,4 +39,24 @@ public class Sample {
     public String getSingle() {
         return single;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
+    }
+
+    public void setLeft(String left) {
+        this.left = left;
+    }
+
+    public void setRight(String right) {
+        this.right = right;
+    }
+
+    public void setSingle(String single) {
+        this.single = single;
+    }
 }

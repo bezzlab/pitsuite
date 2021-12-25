@@ -130,7 +130,6 @@ public class DatabaseGeneration {
                     }
                     case "dge":
                         dgeParser(filePath);
-                        System.out.println("dge: " + filePathString);
                         break;
                     case "bamFiles": {
 
@@ -1301,7 +1300,7 @@ public class DatabaseGeneration {
     private void ptmParser(Path filePath){
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
         NitriteCollection ptmCollection = db.getCollection("ptm");
-        System.out.println("PTM "+filePath.toString());
+
 
 
         ArrayList<Document> dgeDocsToDBList = new ArrayList<>();

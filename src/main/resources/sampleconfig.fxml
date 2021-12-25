@@ -6,6 +6,7 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
@@ -26,40 +27,57 @@
         </columnConstraints>
         <rowConstraints>
           <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints vgrow="SOMETIMES" />
             <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+            <RowConstraints vgrow="SOMETIMES" />
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
           <RowConstraints vgrow="ALWAYS" />
             <RowConstraints vgrow="ALWAYS" />
-            <RowConstraints maxHeight="194.0" minHeight="43.0" prefHeight="103.0" vgrow="ALWAYS" />
-            <RowConstraints maxHeight="187.0" minHeight="7.0" prefHeight="99.0" vgrow="ALWAYS" />
-            <RowConstraints maxHeight="112.0" minHeight="10.0" prefHeight="58.0" vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
+            <RowConstraints vgrow="ALWAYS" />
           <RowConstraints vgrow="ALWAYS" />
         </rowConstraints>
          <children>
             <TextField fx:id="projectNameField" promptText="Project name" GridPane.columnSpan="2" />
             <TextField fx:id="outputField" onMouseClicked="#pickOutput" promptText="Output directory" GridPane.columnIndex="2" GridPane.columnSpan="2" />
-            <ListView fx:id="conditionsList" prefHeight="161.0" prefWidth="120.0" GridPane.columnSpan="2" GridPane.rowIndex="5" GridPane.rowSpan="3" />
-            <Button mnemonicParsing="false" onMouseClicked="#addCondition" text="Add condition" GridPane.columnSpan="2" GridPane.rowIndex="3" />
-            <ComboBox fx:id="refConditionCombo" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            <Label text="Add sample" GridPane.columnIndex="3" GridPane.rowIndex="3" />
-            <TextField fx:id="sampleNameField" promptText="Sample name" GridPane.columnIndex="4" GridPane.rowIndex="3" />
-            <ComboBox fx:id="sampleConditionCombo" prefWidth="150.0" GridPane.columnIndex="5" GridPane.rowIndex="3" />
-            <RadioButton fx:id="pairEndedButton" mnemonicParsing="false" text="Pair ended reads" GridPane.columnIndex="4" GridPane.rowIndex="4" />
-            <RadioButton fx:id="singleEndedButton" mnemonicParsing="false" text="Single ended reads" GridPane.columnIndex="5" GridPane.rowIndex="4" />
-            <VBox fx:id="fastqBox" prefHeight="200.0" prefWidth="100.0" GridPane.columnIndex="4" GridPane.rowIndex="5" />
-            <Button mnemonicParsing="false" onMouseClicked="#addSample" text="Add sample" GridPane.columnIndex="3" GridPane.rowIndex="4" />
-            <ListView fx:id="samplesList" prefHeight="200.0" prefWidth="200.0" GridPane.columnIndex="2" GridPane.rowIndex="5" GridPane.rowSpan="3" />
-            <Label text="Reference condition" GridPane.rowIndex="4" />
-            <Button mnemonicParsing="false" onMouseClicked="#addMS" text="Next" GridPane.columnIndex="5" GridPane.rowIndex="7" />
+            <ListView fx:id="conditionsList" prefHeight="161.0" prefWidth="120.0" GridPane.columnSpan="2" GridPane.rowIndex="11" GridPane.rowSpan="3" />
+            <Button mnemonicParsing="false" onMouseClicked="#addCondition" text="Add condition" GridPane.columnSpan="2" GridPane.rowIndex="6" />
+            <ComboBox fx:id="refConditionCombo" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+            <Label text="Add sample" GridPane.columnIndex="3" GridPane.rowIndex="6" />
+            <TextField fx:id="sampleNameField" promptText="Sample name" GridPane.columnIndex="4" GridPane.rowIndex="6" />
+            <ComboBox fx:id="sampleConditionCombo" GridPane.columnIndex="5" GridPane.rowIndex="6" />
+            <RadioButton fx:id="pairEndedButton" mnemonicParsing="false" text="Pair ended reads" GridPane.columnIndex="4" GridPane.rowIndex="8" />
+            <RadioButton fx:id="singleEndedButton" mnemonicParsing="false" text="Single ended reads" GridPane.columnIndex="5" GridPane.rowIndex="8" />
+            <VBox fx:id="fastqBox" GridPane.columnIndex="4" GridPane.columnSpan="2" GridPane.rowIndex="10" />
+            <Button fx:id="addSampleButton" mnemonicParsing="false" onMouseClicked="#addSample" text="Add sample" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="8" />
+            <ListView fx:id="samplesList" GridPane.columnIndex="2" GridPane.rowIndex="11" GridPane.rowSpan="3" />
+            <Label text="Reference condition" GridPane.rowIndex="8" />
+            <Button fx:id="nextButton" mnemonicParsing="false" onMouseClicked="#addMS" text="Next" GridPane.columnIndex="5" GridPane.rowIndex="13" />
             <RadioButton fx:id="refGuidedButton" mnemonicParsing="false" selected="true" text="Reference guided Assembly" GridPane.columnIndex="4" />
             <RadioButton fx:id="denovoButton" mnemonicParsing="false" text="De novo assembly" GridPane.columnIndex="5" />
-            <TextField fx:id="protBlastField" onMouseClicked="#pickProtBlast" promptText="Blast proteome fasta" GridPane.columnIndex="3" GridPane.columnSpan="3" GridPane.rowIndex="1" />
-            <TextField fx:id="refGtfField" onMouseClicked="#pickGtf" promptText="Reference gtf" GridPane.columnSpan="3" GridPane.rowIndex="1" />
-            <TextField fx:id="refFastaField" onMouseClicked="#pickFasta" promptText="Reference fasta" GridPane.columnSpan="3" GridPane.rowIndex="2" />
-            <CheckBox fx:id="splicingCheckbox" mnemonicParsing="false" selected="true" text="Run alternative splicing" GridPane.columnIndex="3" GridPane.rowIndex="5" />
-            <CheckBox fx:id="dgeCheckbox" mnemonicParsing="false" selected="true" text="Run differential gene expression" GridPane.columnIndex="3" GridPane.rowIndex="6" />
-            <CheckBox fx:id="mutationsCheckbox" mnemonicParsing="false" selected="true" text="Run mutations" GridPane.columnIndex="3" GridPane.rowIndex="7" />
-            <TextField fx:id="threadsField" promptText="Threads" GridPane.columnIndex="5" GridPane.rowIndex="5" />
+            <TextField fx:id="protBlastField" onMouseClicked="#pickProtBlast" promptText="Blast proteome fasta" GridPane.columnIndex="3" GridPane.columnSpan="3" GridPane.rowIndex="2" />
+            <TextField fx:id="refGtfField" onMouseClicked="#pickGtf" promptText="Reference gtf" GridPane.columnSpan="3" GridPane.rowIndex="2" />
+            <TextField fx:id="refFastaField" onMouseClicked="#pickFasta" promptText="Reference fasta" GridPane.columnSpan="3" GridPane.rowIndex="4" />
+            <CheckBox fx:id="splicingCheckbox" mnemonicParsing="false" selected="true" text="Run alternative splicing" GridPane.columnIndex="4" GridPane.rowIndex="11" />
+            <CheckBox fx:id="dgeCheckbox" mnemonicParsing="false" selected="true" text="Run differential gene expression" GridPane.columnIndex="4" GridPane.rowIndex="12" />
+            <CheckBox fx:id="mutationsCheckbox" mnemonicParsing="false" selected="true" text="Run mutations" GridPane.columnIndex="4" GridPane.rowIndex="13" />
+            <TextField fx:id="threadsField" promptText="Threads" GridPane.columnIndex="5" GridPane.rowIndex="11" />
+            <Separator orientation="VERTICAL" prefHeight="30.0" GridPane.columnSpan="6" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" />
+            <Separator maxHeight="50.0" minHeight="30.0" prefHeight="30.0" visible="false" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <Separator maxHeight="50.0" minHeight="30.0" prefHeight="30.0" prefWidth="200.0" visible="false" GridPane.rowIndex="9" />
+            <Separator orientation="VERTICAL" prefHeight="30.0" visible="false" GridPane.rowIndex="7" />
+            <Separator orientation="VERTICAL" prefHeight="30.0" visible="false" GridPane.rowIndex="5" />
+            <Separator maxHeight="50.0" minHeight="30.0" visible="false" GridPane.rowIndex="3" />
+            <Button fx:id="deleteConditionButton" mnemonicParsing="false" onMouseClicked="#deleteCondition" text="Delete condition" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+            <Button fx:id="sampleChangesButton" mnemonicParsing="false" onMouseClicked="#saveSampleChanges" text="Save changes" GridPane.columnIndex="3" GridPane.halignment="CENTER" GridPane.rowIndex="9" />
+            <Button fx:id="deleteSampleButton" mnemonicParsing="false" onMouseClicked="#deleteSample" text="Delete sample" GridPane.columnIndex="3" GridPane.rowIndex="10" />
+            <Label text="Conditions" GridPane.columnSpan="2" GridPane.halignment="CENTER" GridPane.rowIndex="10" />
+            <Label text="Samples" GridPane.columnIndex="2" GridPane.halignment="CENTER" GridPane.rowIndex="10" />
          </children>
       </GridPane>
    </children>

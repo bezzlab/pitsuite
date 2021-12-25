@@ -134,10 +134,10 @@ public class DgeTableController extends Controller {
 
         // fold Change Table: reflection for the getters
         geneSymbolFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("geneSymbol"));
-        geneTypeFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("type"));
+
         logFoldFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("logFoldChange"));
         pValFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("pVal"));
-        hasPeptideColumn.setCellValueFactory( new PropertyValueFactory<>("hasPeptideEvidence"));
+        //hasPeptideColumn.setCellValueFactory( new PropertyValueFactory<>("hasPeptideEvidence"));
 //        proteinFcColumn.setCellValueFactory( new PropertyValueFactory<>("proteinFc"));
 //        proteinPvalColumn.setCellValueFactory( new PropertyValueFactory<>("proteinPval"));
 
@@ -154,6 +154,14 @@ public class DgeTableController extends Controller {
             }
             return null;
         });
+
+        Comparator<Double> rnaPvalComparator = (o1, o2) -> {
+            final boolean isDesc = pValFoldChangeTableColumn.getSortType() == TableColumn.SortType.DESCENDING;
+            if (o1 == null && o2 == null) return 0;
+            else if (o1 == null && o2 != null) return isDesc ? -1 : 1;
+            else if (o1 != null && o2 == null) return isDesc ? 1 : -1;
+            else return Double.compare(o1, o2);
+        };
 
         Comparator<Double> proteinFcComparator = (o1, o2) -> {
             final boolean isDesc = proteinFcColumn.getSortType() == TableColumn.SortType.DESCENDING;
@@ -173,14 +181,23 @@ public class DgeTableController extends Controller {
 
         proteinFcColumn.setComparator(proteinFcComparator);
         proteinPvalColumn.setComparator(proteinPvalComparator);
+        pValFoldChangeTableColumn.setComparator(rnaPvalComparator);
 
-        geneSymbolFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        geneTypeFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        logFoldFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        pValFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        hasPeptideColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        proteinFcColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
-        proteinPvalColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        int nbColumns = Config.isReferenceGuided()?6:5;
+        if(!Config.isReferenceGuided()) {
+            foldChangeTableView.getColumns().remove(geneTypeFoldChangeTableColumn);
+        }else{
+            geneTypeFoldChangeTableColumn.setCellValueFactory( new PropertyValueFactory<>("type"));
+            geneTypeFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
+        }
+
+        geneSymbolFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
+
+        logFoldFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
+        pValFoldChangeTableColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
+        //hasPeptideColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(7));
+        proteinFcColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
+        proteinPvalColumn.prefWidthProperty().bind(foldChangeTableView.widthProperty().divide(nbColumns));
 
 
 
@@ -884,7 +901,7 @@ public class DgeTableController extends Controller {
             //proteinConfidentBarChart.setStyle("-fx-font-size: 30px;");
 
 
-            String referenceCondition = Config.getReferenceMSCondition(msRun);
+            String referenceCondition = Config.getReferenceCondition();
 
             proteinConfidentBarChart.setReference(referenceCondition);
             proteinConfidentBarChart.prefWidthProperty().bind(container.widthProperty().divide(3));
@@ -1054,7 +1071,7 @@ public class DgeTableController extends Controller {
 //                runsConditions.sort(Comparator.comparing(Pair::getValue));
 //
 //                String refCondition = runsConditions.get(0).getValue();
-                String refCondition = "Nsi";
+                String refCondition = Config.getReferenceCondition();
 
 
                 System.out.println(gene);

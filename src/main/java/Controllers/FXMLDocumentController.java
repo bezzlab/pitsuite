@@ -21,6 +21,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import mongoDB.DatabaseGeneration;
 import org.json.JSONObject;
+import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
 
 import java.io.File;
@@ -158,21 +159,21 @@ public class FXMLDocumentController implements Initializable {
         createButton.setVisible(false);
 
         File existingProjects = new File(existingProjectsJsonPath);
-         if (!existingProjects.exists()) {
-             try {
-                 existingProjects.createNewFile();
+        if (!existingProjects.exists()) {
+            try {
+                existingProjects.createNewFile();
 
-                 FileWriter existingProjJsonWriter = new FileWriter(existingProjectsJsonPath);
-                 org.json.simple.JSONArray jsonArray = new org.json.simple.JSONArray();
-                 existingProjJsonWriter.write(jsonArray.toString());
-                 existingProjJsonWriter.flush();
-                 existingProjJsonWriter.close();
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
-         }
+                FileWriter existingProjJsonWriter = new FileWriter(existingProjectsJsonPath);
+                org.json.simple.JSONArray jsonArray = new org.json.simple.JSONArray();
+                existingProjJsonWriter.write(jsonArray.toString());
+                existingProjJsonWriter.flush();
+                existingProjJsonWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-         // read existing projects
+        // read existing projects
 //         FileInputStream fis = null;
         JSONParser parser = new JSONParser();
         org.json.simple.JSONArray existingProjectsJArray = null;
@@ -386,10 +387,17 @@ public class FXMLDocumentController implements Initializable {
                 // to write a new proj into the existing projects JSON
                 JSONParser parser = new JSONParser();
                 org.json.simple.JSONArray existingProjectsJArray = null;
-                try {
-                    existingProjectsJArray = (org.json.simple.JSONArray) parser.parse(new FileReader(existingProjectsJsonPath));
-                } catch (Exception e) {
-                    e.printStackTrace();
+                File f = new File(existingProjectsJsonPath);
+                if (f.exists() && !f.isDirectory()) {
+                    try {
+                        existingProjectsJArray = (org.json.simple.JSONArray) parser.parse(new FileReader(existingProjectsJsonPath));
+
+                    } catch(Exception e){
+                        e.printStackTrace();
+                        existingProjectsJArray = new JSONArray();
+                    }
+                }else{
+                    existingProjectsJArray = new JSONArray();
                 }
 
                 // save into existing projects JSON
@@ -403,7 +411,7 @@ public class FXMLDocumentController implements Initializable {
                     existingProjJsonFileWriter = new FileWriter(existingProjectsJsonPath);
                     existingProjJsonFileWriter.write(existingProjectsJArray.toString());
                 } catch (IOException e) {
-                    System.out.println(e);
+                    e.printStackTrace();
                 } finally {
                     existingProjJsonFileWriter.flush();
                     existingProjJsonFileWriter.close();

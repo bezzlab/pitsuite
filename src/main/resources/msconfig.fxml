@@ -15,12 +15,14 @@
    <children>
       <GridPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
           <ColumnConstraints hgrow="SOMETIMES" />
             <ColumnConstraints hgrow="SOMETIMES" />
           <ColumnConstraints hgrow="SOMETIMES" />
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" />
             <ColumnConstraints hgrow="SOMETIMES" />
+            <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
             <ColumnConstraints hgrow="SOMETIMES" />
         </columnConstraints>
         <rowConstraints>
@@ -36,28 +38,31 @@
             <RowConstraints vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <ListView fx:id="runsList" GridPane.rowIndex="4" GridPane.rowSpan="5" />
-            <TextField fx:id="runNameField" onMouseClicked="#addRunName" promptText="Run name" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-            <ListView fx:id="combinedRunsList" GridPane.rowIndex="1" GridPane.rowSpan="2" />
-            <Button mnemonicParsing="false" onMouseClicked="#addCombinedRun" text="Add combined run" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-            <ComboBox fx:id="combinedRunCombo" GridPane.columnIndex="3" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" />
-            <ListView fx:id="fixedModList" GridPane.columnIndex="1" GridPane.rowIndex="5" GridPane.rowSpan="2" />
-            <ListView fx:id="modsList" GridPane.columnIndex="3" GridPane.columnSpan="2" GridPane.rowIndex="5" />
-            <ListView fx:id="variableModList" GridPane.columnIndex="6" GridPane.rowIndex="5" GridPane.rowSpan="2" />
-            <Label text="Fixed modification selected" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-            <Label text="Variable modifications selected" GridPane.columnIndex="6" GridPane.rowIndex="4" />
-            <Button mnemonicParsing="false" onMouseClicked="#addFixedMod" text="&lt;&lt;" GridPane.columnIndex="2" GridPane.rowIndex="5" />
-            <Button mnemonicParsing="false" onMouseClicked="#removeFixedMod" text="&gt;&gt;" GridPane.columnIndex="2" GridPane.rowIndex="6" />
-            <Button mnemonicParsing="false" onMouseClicked="#addVariableMod" text="&gt;&gt;" GridPane.columnIndex="5" GridPane.rowIndex="5" />
-            <Button mnemonicParsing="false" onMouseClicked="#removeVariableMod" text="&lt;&lt;" GridPane.columnIndex="5" GridPane.rowIndex="6" />
-            <ComboBox fx:id="labelTypeCombo" prefWidth="150.0" GridPane.columnIndex="4" GridPane.rowIndex="7" />
+            <ListView fx:id="runsList" GridPane.columnSpan="2" GridPane.rowIndex="5" GridPane.rowSpan="5" />
+            <TextField fx:id="runNameField" onMouseClicked="#addRunName" promptText="Run name" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+            <ListView fx:id="combinedRunsList" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.rowSpan="2" />
+            <Button mnemonicParsing="false" onMouseClicked="#addCombinedRun" text="Add combined run" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <ComboBox fx:id="combinedRunCombo" GridPane.columnIndex="4" GridPane.hgrow="ALWAYS" GridPane.rowIndex="3" />
+            <ListView fx:id="fixedModList" GridPane.columnIndex="2" GridPane.rowIndex="5" GridPane.rowSpan="2" />
+            <ListView fx:id="modsList" GridPane.columnIndex="4" GridPane.columnSpan="2" GridPane.rowIndex="5" />
+            <ListView fx:id="variableModList" GridPane.columnIndex="7" GridPane.columnSpan="2" GridPane.rowIndex="5" GridPane.rowSpan="2" />
+            <Label text="Fixed modification selected" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+            <Label text="Variable modifications selected" GridPane.columnIndex="7" GridPane.columnSpan="2" GridPane.rowIndex="4" />
+            <Button mnemonicParsing="false" onMouseClicked="#addFixedMod" text="&lt;&lt;" GridPane.columnIndex="3" GridPane.rowIndex="5" />
+            <Button mnemonicParsing="false" onMouseClicked="#removeFixedMod" text="&gt;&gt;" GridPane.columnIndex="3" GridPane.rowIndex="6" />
+            <Button mnemonicParsing="false" onMouseClicked="#addVariableMod" text="&gt;&gt;" GridPane.columnIndex="6" GridPane.rowIndex="5" />
+            <Button mnemonicParsing="false" onMouseClicked="#removeVariableMod" text="&lt;&lt;" GridPane.columnIndex="6" GridPane.rowIndex="6" />
+            <ComboBox fx:id="labelTypeCombo" prefWidth="150.0" GridPane.columnIndex="5" GridPane.rowIndex="7" />
             <Label text="Combined runs" />
             <Label text="Runs" GridPane.rowIndex="3" />
-            <ListView fx:id="rawFilesList" GridPane.columnIndex="1" GridPane.columnSpan="3" GridPane.rowIndex="8" />
-            <Button mnemonicParsing="false" onMouseClicked="#addRawFile" text="Add raw file" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-            <VBox fx:id="labelsGridContainer" GridPane.columnIndex="4" GridPane.columnSpan="2" GridPane.rowIndex="8" />
-            <Button mnemonicParsing="false" onMouseClicked="#onNext" text="Next" GridPane.columnIndex="6" GridPane.halignment="CENTER" GridPane.rowIndex="8" GridPane.valignment="BOTTOM" />
-            <Button mnemonicParsing="false" onMouseClicked="#addRun" text="Add run" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+            <ListView fx:id="rawFilesList" GridPane.columnIndex="2" GridPane.columnSpan="3" GridPane.rowIndex="8" />
+            <Button mnemonicParsing="false" onMouseClicked="#addRawFile" text="Add raw file" GridPane.columnIndex="2" GridPane.rowIndex="7" />
+            <VBox fx:id="labelsGridContainer" GridPane.columnIndex="5" GridPane.columnSpan="2" GridPane.rowIndex="8" />
+            <Button mnemonicParsing="false" onMouseClicked="#onNext" text="Next" GridPane.columnIndex="8" GridPane.halignment="CENTER" GridPane.rowIndex="8" GridPane.valignment="BOTTOM" />
+            <Button mnemonicParsing="false" onMouseClicked="#addRun" text="Add run" GridPane.columnIndex="5" GridPane.rowIndex="3" />
+            <Button mnemonicParsing="false" onMouseClicked="#onBack" text="Back" GridPane.columnIndex="7" GridPane.halignment="CENTER" GridPane.rowIndex="8" GridPane.valignment="BOTTOM" />
+            <Button fx:id="deleteRunButton" mnemonicParsing="false" onMouseClicked="#deleteRun" text="Delete run" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+            <Button fx:id="removeFileButton" mnemonicParsing="false" onMouseClicked="#removeFile" text="Remove file" GridPane.columnIndex="4" GridPane.rowIndex="7" />
          </children>
       </GridPane>
    </children>

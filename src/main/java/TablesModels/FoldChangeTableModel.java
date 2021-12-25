@@ -71,6 +71,9 @@ public class FoldChangeTableModel {
         return prot.getPvalue();
     }
 
+    public String getType() {
+        return type;
+    }
 
     public class ProteinFoldChange{
         private final double foldChange;

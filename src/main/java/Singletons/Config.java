@@ -48,9 +48,9 @@ public class Config {
 
 
 
-        if(config.getJSONObject("mzml").has("combine")){
+        if(config.getJSONObject("ms").has("combine")){
 
-            JSONObject combinedRuns = config.getJSONObject("mzml").getJSONObject("combine");
+            JSONObject combinedRuns = config.getJSONObject("ms").getJSONObject("combine");
 
             for (String run : combinedRuns.keySet()) {
                 JSONObject runObj = combinedRuns.getJSONObject(run);
@@ -62,7 +62,7 @@ public class Config {
             }
         }
 
-        for(String run:config.getJSONObject("mzml").getJSONObject("runs").keySet()){
+        for(String run:config.getJSONObject("ms").getJSONObject("runs").keySet()){
             if(!runsProcessed.contains(run)){
                 runsAdded.add(run);
             }
@@ -73,12 +73,12 @@ public class Config {
 
     public static boolean hasQuantification(String run){
 
-//        if(config.getJSONObject("mzml").has("combine") && config.getJSONObject("mzml").getJSONObject("combine").has(run)){
-//            return config.getJSONObject("mzml").getJSONObject("runs")
-//                    .getJSONObject(config.getJSONObject("mzml").getJSONObject("combine").getJSONObject(run)
+//        if(config.getJSONObject("ms").has("combine") && config.getJSONObject("ms").getJSONObject("combine").has(run)){
+//            return config.getJSONObject("ms").getJSONObject("runs")
+//                    .getJSONObject(config.getJSONObject("ms").getJSONObject("combine").getJSONObject(run)
 //                            .getJSONArray("runs").getString(0)).keySet().contains("TMT");
 //        }else{
-//            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).keySet().contains("TMT");
+//            return config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).keySet().contains("TMT");
 //        }
         return true;
 
@@ -86,28 +86,28 @@ public class Config {
 
     public static Set<String> getRunSamples(String run){
 
-        if(config.getJSONObject("mzml").has("combine") &&
-                config.getJSONObject("mzml").getJSONObject("combine").has(run)) {
-            JSONObject runObj = config.getJSONObject("mzml").getJSONObject("runs")
-                    .getJSONObject(config.getJSONObject("mzml").getJSONObject("combine")
+        if(config.getJSONObject("ms").has("combine") &&
+                config.getJSONObject("ms").getJSONObject("combine").has(run)) {
+            JSONObject runObj = config.getJSONObject("ms").getJSONObject("runs")
+                    .getJSONObject(config.getJSONObject("ms").getJSONObject("combine")
                             .getJSONObject(run).getJSONArray("runs").getString(0));
 
             if(runObj.has("TMT")){
                 return runObj.getJSONObject("TMT").keySet();
             }else return null;
 
-        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).keySet().contains("SILAC")){
-            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("SILAC").keySet();
-        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).keySet().contains("TMT")){
-            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("TMT").keySet();
+        }else if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).keySet().contains("SILAC")){
+            return config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("SILAC").keySet();
+        }else if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).keySet().contains("TMT")){
+            return config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("TMT").keySet();
         }else{
             JSONObject conditionsObj = config.getJSONObject("conditions");
 
            HashSet<String> runSamples = new HashSet<>();
 
-           String condition = config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("condition");
-           if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("sample")){
-               runSamples.add(condition+"/"+config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("sample"));
+           String condition = config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getString("condition");
+           if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).has("sample")){
+               runSamples.add(condition+"/"+config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getString("sample"));
            }else{
                runSamples.add(condition+"/1");
            }
@@ -135,7 +135,7 @@ public class Config {
                 }
 
             }else{
-                conditions.add(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getString("condition"));
+                conditions.add(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getString("condition"));
             }
         }
         return conditions;
@@ -146,7 +146,7 @@ public class Config {
     }
 
     public String getMsRunFilePath(String run){
-        return config.getJSONObject("mzml").getJSONObject(run).getString("files");
+        return config.getJSONObject("ms").getJSONObject(run).getString("files");
     }
 
     public static String getFastaPath(){
@@ -159,12 +159,12 @@ public class Config {
     }
 
     public static boolean isCombinedRun(String run){
-        if(!config.getJSONObject("mzml").has("combine")) return false;
-        return config.getJSONObject("mzml").getJSONObject("combine").has(run);
+        if(!config.getJSONObject("ms").has("combine")) return false;
+        return config.getJSONObject("ms").getJSONObject("combine").has(run);
     }
 
     public static List<Object> getCombinedRuns(String run){
-        return config.getJSONObject("mzml").getJSONObject("combine").getJSONObject(run).getJSONArray("runs").toList();
+        return config.getJSONObject("ms").getJSONObject("combine").getJSONObject(run).getJSONArray("runs").toList();
     }
 
     public static String getRunType(String run){
@@ -172,9 +172,9 @@ public class Config {
         if(isCombinedRun(run)){
             return getRunType((String) getCombinedRuns(run).get(0));
         }else{
-            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("SILAC")){
+            if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).has("SILAC")){
                 return "SILAC";
-            } else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("TMT")){
+            } else if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).has("TMT")){
                 return "TMT";
             }else{
                 return "LABELFREE";
@@ -184,8 +184,8 @@ public class Config {
     }
 
     public static String getRunPath(String runName){
-        if(config.getJSONObject("mzml").has("combine")){
-            JSONObject combine = config.getJSONObject("mzml").getJSONObject("combine");
+        if(config.getJSONObject("ms").has("combine")){
+            JSONObject combine = config.getJSONObject("ms").getJSONObject("combine");
             for(String combinedRun: combine.keySet()){
                 if(combine.getJSONObject(combinedRun).getJSONArray("runs").toList().contains(runName)){
                     return config.getString("output")+"/ms/"+combinedRun+"/files/";
@@ -197,8 +197,8 @@ public class Config {
     }
 
     public static String getMainRun(String runName){
-        if(config.getJSONObject("mzml").has("combine")){
-            JSONObject combine = config.getJSONObject("mzml").getJSONObject("combine");
+        if(config.getJSONObject("ms").has("combine")){
+            JSONObject combine = config.getJSONObject("ms").getJSONObject("combine");
             for(String combinedRun: combine.keySet()){
                 if(combine.getJSONObject(combinedRun).getJSONArray("runs").toList().contains(runName)){
                     return combinedRun;
@@ -215,7 +215,7 @@ public class Config {
     public static String getRunOrLabelCondition(String runName){
 
         if(getRunType(runName).equals("LABELFREE")){
-            return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).getString("condition");
+            return config.getJSONObject("ms").getJSONObject("runs").getJSONObject(runName).getString("condition");
         }
         return null;
     }
@@ -223,8 +223,8 @@ public class Config {
 
     public static ArrayList<String> getSubRuns(String runName){
         ArrayList<String> subRuns = new ArrayList<>();
-        if(config.getJSONObject("mzml").has("combine")){
-            for(Object o :config.getJSONObject("mzml").getJSONObject("combine")
+        if(config.getJSONObject("ms").has("combine")){
+            for(Object o :config.getJSONObject("ms").getJSONObject("combine")
                     .getJSONObject(runName).getJSONArray("runs")){
                 subRuns.add((String) o);
             }
@@ -243,20 +243,10 @@ public class Config {
         return true;
     }
 
-    public static String getReferenceMSCondition(String runName){
-        if(isCombinedRun(runName)){
-            if(config.getJSONObject("mzml").getJSONObject("combine").has("reference"))
-                return config.getJSONObject("mzml").getJSONObject("combine").getString("reference");
-            else{
-                return new TreeSet<>(getRunSamples(runName)).iterator().next();
-            }
-        }else{
-            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).has("reference"))
-                return config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(runName).getString("reference");
-            else{
-                return new TreeSet<>(getRunSamples(runName)).iterator().next();
-            }
-        }
+    public static String getReferenceCondition(){
+        if(config.has("reference_condition"))
+            return config.getString("reference_condition");
+        return getConditions().iterator().next();
     }
 
     public static HashMap<String, ArrayList<String>> getPatientsGroups(){
@@ -291,9 +281,9 @@ public class Config {
     }
 
     public static Object getParentRun(String msRun) {
-        if(config.getJSONObject("mzml").has("combine")){
-            for(String combinedRun: config.getJSONObject("mzml").getJSONObject("combine").keySet()){
-                for(Object subrun :config.getJSONObject("mzml").getJSONObject("combine").getJSONObject(combinedRun).getJSONArray("runs")){
+        if(config.getJSONObject("ms").has("combine")){
+            for(String combinedRun: config.getJSONObject("ms").getJSONObject("combine").keySet()){
+                for(Object subrun :config.getJSONObject("ms").getJSONObject("combine").getJSONObject(combinedRun).getJSONArray("runs")){
                     if((msRun.equals(subrun)))
                         return combinedRun;
                 }
@@ -308,15 +298,15 @@ public class Config {
             for(String subrun: getSubRuns(run)){
                 ptms.addAll(getPTMSearched(subrun));
             }
-        }else if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).has("modifications")){
-            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("fixed")){
-                for(Object mod: config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("fixed")){
+        }else if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).has("modifications")){
+            if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("fixed")){
+                for(Object mod: config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("fixed")){
                     ptms.add((String) mod);
                 }
 
             }
-            if(config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("variable")){
-                for(Object mod: config.getJSONObject("mzml").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("variable")){
+            if(config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").has("variable")){
+                for(Object mod: config.getJSONObject("ms").getJSONObject("runs").getJSONObject(run).getJSONObject("modifications").getJSONArray("variable")){
                     ptms.add((String) mod);
                 }
             }

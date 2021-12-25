@@ -1,10 +1,14 @@
 package Controllers.config_generation;
 
 import Controllers.FXMLDocumentController;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -15,6 +19,16 @@ import java.util.*;
 
 public class SampleConfigController implements Initializable {
 
+    @FXML
+    private Button deleteConditionButton;
+    @FXML
+    private Button sampleChangesButton;
+    @FXML
+    private Button deleteSampleButton;
+    @FXML
+    private Button addSampleButton;
+    @FXML
+    private Button nextButton;
     @FXML
     private TextField refGtfField;
     @FXML
@@ -87,10 +101,26 @@ public class SampleConfigController implements Initializable {
             }
         });
 
+        samplesList.setOnMouseClicked(event -> {
+            if (event.getButton().equals(MouseButton.PRIMARY) && event.getClickCount() == 1)
+                clickOnSample(samplesList.getSelectionModel().getSelectedItem());
+        });
+
+
+
+        //nextButton.disableProperty().bind(projectNameField.textProperty().isEmpty().or(Bindings.isEmpty(samplesList.getItems())).or(outputField.textProperty().isEmpty()));
+        deleteConditionButton.disableProperty().bind(conditionsList.getSelectionModel().selectedItemProperty().isNull());
+        deleteSampleButton.disableProperty().bind(samplesList.getSelectionModel().selectedItemProperty().isNull());
+        sampleChangesButton.visibleProperty().bind(samplesList.getSelectionModel().selectedItemProperty().isNotNull());
+        deleteSampleButton.visibleProperty().bind(samplesList.getSelectionModel().selectedItemProperty().isNotNull());
+        addSampleButton.visibleProperty().bind(sampleChangesButton.visibleProperty().not());
+
     }
 
     private void onReadsChange(ToggleGroup readsRadioGroup) {
         fastqBox.getChildren().clear();
+        sampleChangesButton.disableProperty().unbind();
+        addSampleButton.disableProperty().unbind();
         if(readsRadioGroup.getSelectedToggle()==pairEndedButton){
             leftField = new TextField();
             leftField.setPromptText("Left reads fastq");
@@ -99,30 +129,48 @@ public class SampleConfigController implements Initializable {
             rightField.setPromptText("Right reads fastq");
             fastqBox.getChildren().add(rightField);
             leftField.setOnMouseClicked(event -> {
-                FileChooser directoryChooser = new FileChooser();
-                File selectedDirectory = directoryChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "Left reads (*.fq, *.fastq, *.fq.tar.gz, *.fastq.tar.gz, *.fq.zip, *.fastq.zip)", "*.fq", "*.fastq", "*.fq.tar.gz", "*.fastq.tar.gz", "*.fq.zip", "*.fastq.zip"));
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "All files", "*"));
+                File selectedDirectory = fileChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
                 if(selectedDirectory!=null)
                     leftField.setText(selectedDirectory.getAbsolutePath());
             });
             rightField.setOnMouseClicked(event -> {
-                FileChooser directoryChooser = new FileChooser();
-                File selectedDirectory = directoryChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "Right reads (*.fq, *.fastq, *.fq.tar.gz, *.fastq.tar.gz, *.fq.zip, *.fastq.zip)", "*.fq", "*.fastq", "*.fq.tar.gz", "*.fastq.tar.gz", "*.fq.zip", "*.fastq.zip"));
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "All files", "*"));
+                File selectedDirectory = fileChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
                 if(selectedDirectory!=null)
                     rightField.setText(selectedDirectory.getAbsolutePath());
             });
 
+            sampleChangesButton.disableProperty().bind(sampleNameField.textProperty().isEmpty().or(leftField.textProperty().isEmpty()).or(rightField.textProperty().isEmpty()));
+            addSampleButton.disableProperty().bind(sampleNameField.textProperty().isEmpty().or(leftField.textProperty().isEmpty()).or(rightField.textProperty().isEmpty()));
 
         }else{
             singleField = new TextField();
             singleField.setPromptText("Reads fastq");
             fastqBox.getChildren().add(singleField);
             singleField.setOnMouseClicked(event -> {
-                FileChooser directoryChooser = new FileChooser();
-                File selectedDirectory = directoryChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "Single reads (*.fq, *.fastq, *.fq.tar.gz, *.fastq.tar.gz, *.fq.zip, *.fastq.zip)", "*.fq", "*.fastq", "*.fq.tar.gz", "*.fastq.tar.gz", "*.fq.zip", "*.fastq.zip"));
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                        "All files", "*"));
+                File selectedDirectory = fileChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
                 if(selectedDirectory!=null)
                     singleField.setText(selectedDirectory.getAbsolutePath());
             });
+            sampleChangesButton.disableProperty().bind(sampleNameField.textProperty().isEmpty().or(singleField.textProperty().isEmpty()));
+            addSampleButton.disableProperty().bind(sampleNameField.textProperty().isEmpty().or(singleField.textProperty().isEmpty()));
         }
+
+
     }
 
     public void pickOutput() {
@@ -154,15 +202,18 @@ public class SampleConfigController implements Initializable {
         if(pairEndedButton.isSelected()){
             sample = new Sample(sampleNameField.getText(), sampleConditionCombo.getSelectionModel().getSelectedItem(), leftField.getText(), rightField.getText());
             samples.add(sample);
+            leftField.setText("");
+            rightField.setText("");
         }else{
             sample = new Sample(sampleNameField.getText(), sampleConditionCombo.getSelectionModel().getSelectedItem(), singleField.getText());
             samples.add(sample);
+            singleField.setText("");
         }
 
         samplesList.getItems().add(sample);
-        leftField.setText("");
-        rightField.setText("");
-        singleField.setText("");
+        sampleNameField.setText("");
+
+
     }
     @FXML
     public void addMS() {
@@ -192,8 +243,10 @@ public class SampleConfigController implements Initializable {
     }
 
     public void pickFasta() {
-        FileChooser directoryChooser = new FileChooser();
-        File selectedDirectory = directoryChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
+                "Fasta", "*.fasta"));
+        File selectedDirectory = fileChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
         if(selectedDirectory!=null)
             refFastaField.setText(selectedDirectory.getAbsolutePath());
     }
@@ -264,4 +317,53 @@ public class SampleConfigController implements Initializable {
         return refConditionCombo.getSelectionModel().getSelectedItem();
     }
 
+    @FXML
+    public void deleteCondition() {
+        String condition = conditionsList.getSelectionModel().getSelectedItem();
+        conditionsList.getItems().remove(condition);
+        refConditionCombo.getItems().remove(condition);
+        sampleConditionCombo.getItems().remove(condition);
+
+    }
+
+    private void clickOnSample(Sample sample){
+        sampleNameField.setText(sample.getName());
+        if(sample.getLeft()!=null){
+            leftField.setText(sample.getLeft());
+            rightField.setText(sample.getRight());
+        }else{
+            singleField.setText(sample.getSingle());
+        }
+    }
+
+    @FXML
+    public void saveSampleChanges() {
+        Sample sample = samplesList.getSelectionModel().getSelectedItem();
+        sample.setName(sampleNameField.getText());
+        if(sample.getLeft()!=null){
+            sample.setLeft(leftField.getText());
+            sample.setRight(rightField.getText());
+            sample.setSingle(null);
+        }else{
+            sample.setSingle(singleField.getText());
+            sample.setLeft(null);
+            sample.setRight(null);
+        }
+        samplesList.refresh();
+        samplesList.getSelectionModel().select(null);
+
+        if(pairEndedButton.isSelected()){
+            leftField.setText("");
+            rightField.setText("");
+        }else{
+            singleField.setText("");
+        }
+        sampleNameField.setText("");
+
+
+    }
+    @FXML
+    public void deleteSample() {
+        samplesList.getItems().remove(samplesList.getSelectionModel().getSelectedItem());
+    }
 }

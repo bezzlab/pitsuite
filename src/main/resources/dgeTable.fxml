@@ -68,7 +68,7 @@
                    <TableColumn fx:id="geneTypeFoldChangeTableColumn" prefWidth="-1.0" text="Type" />
                   <TableColumn fx:id="logFoldFoldChangeTableColumn" prefWidth="-1.0" text="Log2Fold" />
                   <TableColumn fx:id="pValFoldChangeTableColumn" minWidth="0.0" prefWidth="-1.0" text="P-Val" />
-                  <TableColumn fx:id="hasPeptideColumn" prefWidth="-1.0" text="Peptide Evidence" />
+<!--                  <TableColumn fx:id="hasPeptideColumn" prefWidth="-1.0" text="Peptide Evidence" />-->
                   <TableColumn fx:id="proteinFcColumn" minWidth="4.0" prefWidth="-1.0" text="Protein Fold change" />
                   <TableColumn fx:id="proteinPvalColumn" prefWidth="-1.0" text="Protein Adj p-val" />
                </columns>

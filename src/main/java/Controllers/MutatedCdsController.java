@@ -606,7 +606,7 @@ public class MutatedCdsController implements Initializable {
                             r.setWidth(letterWidth * 3 * (pepMatchAaPosEnd - pepMatchAaPosStart + 1));
                             r.setHeight(100);
                             r.setX(letterWidth * 3 * pepMatchAaPosStart);
-                            r.setFill(Color.rgb(100, 100, 100));
+                            r.setFill(Color.rgb(193, 154, 0, 0.4));
                             peptidesPane.getChildren().add(r);
 
                             Text t = new Text("Peptide");

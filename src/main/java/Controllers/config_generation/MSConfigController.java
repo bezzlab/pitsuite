@@ -20,6 +20,10 @@ import java.util.*;
 public class MSConfigController implements Initializable {
 
     @FXML
+    private Button removeFileButton;
+    @FXML
+    private Button deleteRunButton;
+    @FXML
     private VBox labelsGridContainer;
     @FXML
     private ListView<String> rawFilesList;
@@ -53,9 +57,9 @@ public class MSConfigController implements Initializable {
         labelTypeCombo.getItems().addAll("TMT-8Plex", "TMT-10Plex", "SILAC");
         fixedModList.getItems().add("Carbamidomethyl (C)");
         combinedRunCombo.getItems().add("None");
+        combinedRunCombo.getSelectionModel().select(0);
 
         labelTypeCombo.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> showLabels());
-
         labelTypeCombo.getSelectionModel().select(0);
 
         runsList.setCellFactory(lv -> new ListCell<MSRunConfig>() {
@@ -65,6 +69,9 @@ public class MSConfigController implements Initializable {
                 setText(item == null ? null : item.getName() );
             }
         });
+
+        deleteRunButton.disableProperty().bind(runsList.getSelectionModel().selectedItemProperty().isNull());
+        removeFileButton.disableProperty().bind(rawFilesList.getSelectionModel().selectedItemProperty().isNull());
     }
 
     public void addRunName() {
@@ -206,6 +213,7 @@ public class MSConfigController implements Initializable {
 
         runsList.getItems().add(run);
         rawFilesList.getItems().clear();
+        runNameField.setText("");
     }
 
     public static MSConfigController getInstance() {
@@ -214,5 +222,19 @@ public class MSConfigController implements Initializable {
 
     public ObservableList<MSRunConfig> getRuns(){
         return runsList.getItems();
+    }
+
+    @FXML
+    public void onBack() {
+        ConfigGenerationController.getInstance().backToSamples();
+    }
+
+    public void deleteRun() {
+        runsList.getItems().remove(runsList.getSelectionModel().getSelectedItem());
+    }
+
+    @FXML
+    public void removeFile() {
+        rawFilesList.getItems().remove(rawFilesList.getSelectionModel().getSelectedItem());
     }
 }
