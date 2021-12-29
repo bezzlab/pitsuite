@@ -4,11 +4,14 @@ package Controllers;
 import Cds.Peptide;
 import Controllers.MSControllers.MSController;
 import Controllers.MSControllers.PTMController;
+import Controllers.blast.BlastTabController;
+
 import FileReading.AllGenesReader;
 import FileReading.UniprotProteinsCollection;
 import Singletons.ControllersBasket;
 import Singletons.Database;
 import Singletons.TrackFiles;
+
 import export.ProVcf;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
@@ -40,6 +43,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import org.apache.commons.io.FilenameUtils;
@@ -245,16 +249,14 @@ public class ResultsController implements Initializable {
                 }
             });
 
-            if(!Config.isReferenceGuided()) {
+            if(Config.hasBlast()) {
                 Platform.runLater(() -> {
+
                     FXMLLoader fxmlLoader2 = new FXMLLoader(SettingsController.class.getResource("/blastTab" + ".fxml"));
                     try {
                         Parent root = fxmlLoader2.load();
-
                         blastTabController = fxmlLoader2.getController();
-
                         resultsTabPane.getTabs().get(8).setContent(root);
-                        //ControllersBasket.setBlastTabController(blastTabController);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -532,6 +534,12 @@ public class ResultsController implements Initializable {
 
     public void moveToTab(int tabIndex){
         resultsTabPane.getSelectionModel().select(tabIndex);
+    }
+
+    public void moveToTab(String tabName){
+
+        Optional<Tab> tab = resultsTabPane.getTabs().stream().filter(e->e.getText().equals(tabName)).findFirst();
+        tab.ifPresent(value -> resultsTabPane.getSelectionModel().select(value));
     }
 
     public static ResultsController getInstance(){ return instance; }

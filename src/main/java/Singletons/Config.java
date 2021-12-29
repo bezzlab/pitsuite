@@ -352,5 +352,15 @@ public class Config {
 
         return comparisons;
     }
+
+    public static boolean hasProteinBlast(){
+        return config.has("protein_blast");
+    }
+    public static boolean hasRnaBlast(){
+        return config.has("rna_blast");
+    }
+    public static boolean hasBlast(){
+        return hasProteinBlast() || hasRnaBlast();
+    }
 }
 

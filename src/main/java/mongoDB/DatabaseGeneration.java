@@ -7,7 +7,6 @@ import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import org.dizitart.no2.*;
-import org.dizitart.no2.filters.Filters;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -166,7 +165,7 @@ public class DatabaseGeneration {
                         transcriptCountsParser(filePath);
                         break;
                     case "blast":
-                        blastParser(filePathString);
+                        blastParser(filePath);
                         break;
                     case "kinaseActivity":
                         kinaseActivityParser(filePath);
@@ -1407,9 +1406,11 @@ public class DatabaseGeneration {
 
 
 
-    private void blastParser(String filePath){
+    private void blastParser(Path filePath){
         Nitrite db = Nitrite.builder().filePath(databasePathAndName).openOrCreate();
-        NitriteCollection blastCollection = db.getCollection("blast");
+
+
+        NitriteCollection blastCollection = db.getCollection("blast_"+filePath.getParent().getFileName());
 
 
         ArrayList<Document> dgeDocsToDBList = new ArrayList<>();
@@ -1418,7 +1419,7 @@ public class DatabaseGeneration {
 
         try {
 
-            Object obj = parser.parse(new FileReader(filePath));
+            Object obj = parser.parse(new FileReader(filePath.toString()));
 
             JSONArray proteins = (JSONArray) obj;
             for (Object o: proteins) {
@@ -1450,6 +1451,7 @@ public class DatabaseGeneration {
             blastCollection.createIndex("lowestEvalue", IndexOptions.indexOptions(IndexType.NonUnique, false));
             blastCollection.createIndex("protein", IndexOptions.indexOptions(IndexType.Unique, false));
             blastCollection.createIndex("hasPeptideEvidence", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            blastCollection.createIndex("transcript", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
             db.close();
 

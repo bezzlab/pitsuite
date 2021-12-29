@@ -1,7 +1,10 @@
-package Controllers;
+package Controllers.blast;
 
 import Cds.Peptide;
+import Controllers.DgeTableController;
+import Controllers.GeneBrowserController;
 import Controllers.MSControllers.PeptideTableController;
+import Controllers.ResultsController;
 import Singletons.Config;
 import Singletons.Database;
 import com.jfoenix.controls.JFXTextField;
@@ -25,6 +28,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.util.StringConverter;
+import org.controlsfx.control.Notifications;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import org.dizitart.no2.Cursor;
@@ -47,16 +51,18 @@ import java.util.regex.Pattern;
 
 import static org.dizitart.no2.filters.Filters.*;
 
-public class BlastTabController implements Initializable {
+public class BlastPaneController implements Initializable {
 
+    @FXML
+    private TableColumn<QueryTableRow, Double> tpmQueryColumn;
     @FXML
     private JFXTextField hitSearchField;
     @FXML
-    private TableView<ProteinTableRow> proteinTable;
+    private TableView<QueryTableRow> queryTable;
     @FXML
-    private TableColumn<ProteinTableRow, String> proteinColumn;
+    private TableColumn<QueryTableRow, String> queryColumn;
     @FXML
-    private TableColumn<ProteinTableRow, Double> evalueProteinColumn;
+    private TableColumn<QueryTableRow, Double> evalueProteinColumn;
     @FXML
     private CheckBox peptideFilterBox;
     @FXML
@@ -110,12 +116,14 @@ public class BlastTabController implements Initializable {
 
     private String selectedProtein;
 
+    String type;
+
 
 
         @Override
         public void initialize (URL location, ResourceBundle resources){
             blastIndex = new BlastIndex();
-            blastIndex.load();
+
 
             /* evalue spinner */
             SpinnerValueFactory<Double> evalFactory = new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 5, 1, 0.001);
@@ -124,17 +132,19 @@ public class BlastTabController implements Initializable {
             evalThresholdSpinner.getValueFactory().setValue(0.010);
             evalThresholdSpinner.setEditable(true);
 
-            proteinColumn.setCellValueFactory(new PropertyValueFactory<>("protein"));
+            queryColumn.setCellValueFactory(new PropertyValueFactory<>("query"));
             evalueProteinColumn.setCellValueFactory(new PropertyValueFactory<>("evalue"));
-            proteinColumn.prefWidthProperty().bind(proteinTable.widthProperty().divide(2));
-            evalueProteinColumn.prefWidthProperty().bind(proteinTable.widthProperty().divide(2));
+            queryColumn.prefWidthProperty().bind(queryTable.widthProperty().divide(3));
+            evalueProteinColumn.prefWidthProperty().bind(queryTable.widthProperty().divide(3));
+            tpmQueryColumn.prefWidthProperty().bind(queryTable.widthProperty().divide(3));
 
-            proteinTable.getSortOrder().add(evalueProteinColumn);
+            queryTable.getSortOrder().add(evalueProteinColumn);
 
             /* hit table */
             definitionColumn.setCellValueFactory(new PropertyValueFactory<>("definition"));
             queryCoverageColumn.setCellValueFactory(new PropertyValueFactory<>("queryCoverage"));
             hitCoverageColumn.setCellValueFactory(new PropertyValueFactory<>("hitCoverage"));
+            tpmQueryColumn.setCellValueFactory(new PropertyValueFactory<>("averageTpm"));
             evalueColumn.setCellValueFactory(new PropertyValueFactory<>("EValue"));
             hspsColumn.setCellValueFactory(new PropertyValueFactory<>("noOfHsps"));
 
@@ -148,8 +158,8 @@ public class BlastTabController implements Initializable {
             hitTable.getSortOrder().add(evalueColumn);
             hitTable.sort();
 
-            proteinTable.setRowFactory(tv -> {
-                TableRow<ProteinTableRow> row = new TableRow<>();
+            queryTable.setRowFactory(tv -> {
+                TableRow<QueryTableRow> row = new TableRow<>();
                 row.setOnMouseClicked(event -> {
                     if (!(row.isEmpty())) {
                         if (event.getButton().equals(MouseButton.PRIMARY)) {
@@ -160,13 +170,13 @@ public class BlastTabController implements Initializable {
                             MenuItem dgeMenu = new MenuItem("Show Differencial gene expression");
                             dgeMenu.setOnAction(e -> {
                                 ResultsController.getInstance().moveToTab(2);
-                                DgeTableController.getInstance().searchForGene(row.getItem().getProtein().split("_i")[0]);
+                                DgeTableController.getInstance().searchForGene(row.getItem().getQuery().split("_i")[0]);
                             });
 
                             MenuItem browserMenu = new MenuItem("Show gene browser");
                             browserMenu.setOnAction(e -> {
                                 ResultsController.getInstance().moveToTab(1);
-                                GeneBrowserController.getInstance().showGeneBrowser(row.getItem().getProtein().split("_i")[0]);
+                                GeneBrowserController.getInstance().showGeneBrowser(row.getItem().getQuery().split("_i")[0]);
                             });
 
                             rowMenu.getItems().add(dgeMenu);
@@ -220,7 +230,7 @@ public class BlastTabController implements Initializable {
             });
 
             evalThresholdSpinner.valueProperty().addListener((observable, oldValue, newValue) -> {
-                ProteinTableRow g = proteinTable.getSelectionModel().getSelectedItem();
+                QueryTableRow g = queryTable.getSelectionModel().getSelectedItem();
                 selectProtein(g);
                 filterHits();
 
@@ -276,12 +286,53 @@ public class BlastTabController implements Initializable {
             }
         };
 
-        public class BlastIndex {
+    public void setType(String rnaOrProtein) {
+        type = rnaOrProtein;
+        if(rnaOrProtein.equals("rna"))
+            queryColumn.setText("Transcript");
+        blastIndex.load();
+
+    }
+
+    public void searchGene(String geneSymbol) {
+        new Thread(()->{
+
+            Cursor cursor = Database.getDb().getCollection("allTranscripts").find(eq("gene", geneSymbol));
+            HashSet<String> transcripts = new HashSet<>(cursor.size());
+            for(Document doc: cursor){
+                transcripts.add((String) doc.get("transcriptID"));
+            }
+
+            queryTable.getItems().clear();
+
+            cursor = Database.getDb().getCollection("blast_"+type).find(in("transcript",  transcripts.toArray(new String[transcripts.size()])));
+            if(cursor.size()>0) {
+                for (Document doc : cursor) {
+                    if (doc.containsKey("lowestEvalue")) {
+                        queryTable.getItems().add(new QueryTableRow((String) doc.get("query"), (double) doc.get("lowestEvalue"), doc.containsKey("tpm") ? (double) doc.get("tpm") : 0));
+                    } else {
+                        queryTable.getItems().add(new QueryTableRow((String) doc.get("query"), Double.NaN, doc.containsKey("tpm") ? (double) doc.get("tpm") : 0));
+                    }
+
+                }
+            }else{
+                Notifications.create()
+                        .title("Warning")
+                        .text("No significant match found for this gene")
+                        .showWarning();
+            }
+        }).start();
+
+
+
+    }
+
+    public class BlastIndex {
 
             HashMap<String, BlastIndex.BlastIndexRecord> records = new HashMap<>();
 
             public void load() {
-                String filepath = Config.getOutputPath()+"/blast/blastIndex.csv";
+                String filepath = Config.getOutputPath()+"/blast/"+type+"/blastIndex.csv";
                 try {
                     File myObj = new File(filepath);
                     Scanner myReader = new Scanner(myObj);
@@ -336,14 +387,14 @@ public class BlastTabController implements Initializable {
         }
 
 
-        public void selectProtein (ProteinTableRow row){
+        public void selectProtein (QueryTableRow row){
 
             Double eValThreshold = evalThresholdSpinner.getValue();
 
             hitTable.getItems().clear();
             alignmentPane.getChildren().clear();
             allHits = new ArrayList<>();
-            selectedProtein = row.getProtein();
+            selectedProtein = row.getQuery();
 
             if(Double.isNaN(row.getEvalue()))
                 drawNovelSequence(selectedProtein);
@@ -355,7 +406,7 @@ public class BlastTabController implements Initializable {
                     int amountBytesToRead = (int) (blastIndex.getRecords().get(selectedProtein).getEnd() - positionToRead);
 
 
-                    RandomAccessFile f = new RandomAccessFile(new File(Config.getOutputPath() + "/blast/output.xml"), "r");
+                    RandomAccessFile f = new RandomAccessFile(new File(Config.getOutputPath() + "/blast/"+type+"/output.xml"), "r");
 
                     byte[] b = new byte[amountBytesToRead];
                     f.seek(positionToRead);
@@ -473,9 +524,9 @@ public class BlastTabController implements Initializable {
         @FXML
         private void filterQueries () {
 
-            proteinTable.getItems().clear();
+            queryTable.getItems().clear();
 
-            NitriteCollection collection = Database.getDb().getCollection("blast");
+            NitriteCollection collection = Database.getDb().getCollection("blast_"+type);
             List<Filter> filters = new ArrayList<>(4);
             if(!querySearchField.getText().isEmpty()){
                 filters.add(regex("protein", "^.*" + querySearchField.getText() + ".*$"));
@@ -486,14 +537,17 @@ public class BlastTabController implements Initializable {
             if(peptideFilterBox.isSelected()){
                 filters.add(eq("hasPeptideEvidence", true));
             }
-
-            Iterator<Document> iterator = collection.find(and(filters.toArray(new Filter[]{}))).iterator();
+            Iterator<Document> iterator;
+            if(filters.size()>0)
+                iterator = collection.find(and(filters.toArray(new Filter[]{}))).iterator();
+            else
+                iterator = collection.find().iterator();
             while(iterator.hasNext()) {
                 Document doc = iterator.next();
                 if(doc.containsKey("lowestEvalue")){
-                    proteinTable.getItems().add(new ProteinTableRow((String) doc.get("protein"), (double) doc.get("lowestEvalue")));
+                    queryTable.getItems().add(new QueryTableRow((String) doc.get("query"), (double) doc.get("lowestEvalue"), doc.containsKey("tpm")?(double) doc.get("tpm"):0));
                 }else{
-                    proteinTable.getItems().add(new ProteinTableRow((String) doc.get("protein"), Double.NaN));
+                    queryTable.getItems().add(new QueryTableRow((String) doc.get("query"), Double.NaN, doc.containsKey("tpm")?(double) doc.get("tpm"):0));
                 }
 
             }
@@ -701,24 +755,37 @@ public class BlastTabController implements Initializable {
 
             HashSet<Peptide> proteinPeptides = findGenePeptides(selectedProtein.split("_i")[0]);
 
-            List<Character> small_red = Arrays.asList('A', 'V', 'F', 'P', 'M', 'I', 'L', 'W');
-            List<Character> acidic_blue = Arrays.asList('D', 'E');
-            List<Character> basic_magenta = Arrays.asList('K', 'R');
-            List<Character> hydroxyl_green = Arrays.asList('S', 'T', 'Y', 'H', 'C', 'N', 'G', 'Q');
+            List<Character> red;
+            List<Character> blue;
+            List<Character> magenta;
+            List<Character> green;
+            if(type.equals("rna")){
+                red = List.of('A');
+                blue = List.of('T');
+                magenta = List.of('G');
+                green = List.of('C');
+            }else{
+                red = Arrays.asList('A', 'V', 'F', 'P', 'M', 'I', 'L', 'W');
+                blue = Arrays.asList('D', 'E');
+                magenta = Arrays.asList('K', 'R');
+                green = Arrays.asList('S', 'T', 'Y', 'H', 'C', 'N', 'G', 'Q');
+            }
 
-            for (Character c : small_red) {
+
+
+            for (Character c : red) {
                 conserv_replace_dict.put("red", c);
                 reverse_dict.put(c, "red");
             }
-            for (Character c : acidic_blue) {
+            for (Character c : blue) {
                 conserv_replace_dict.put("blue", c);
                 reverse_dict.put(c, "blue");
             }
-            for (Character c : basic_magenta) {
+            for (Character c : magenta) {
                 conserv_replace_dict.put("magenta", c);
                 reverse_dict.put(c, "magenta");
             }
-            for (Character c : hydroxyl_green) {
+            for (Character c : green) {
                 conserv_replace_dict.put("green", c);
                 reverse_dict.put(c, "green");
             }
@@ -1120,25 +1187,31 @@ public class BlastTabController implements Initializable {
         }
 
         private void getNoOfQueries () {
-            Integer number = proteinTable.getItems().size();
+            Integer number = queryTable.getItems().size();
             noOfQueries.setText(number.toString());
         }
 
-        public class ProteinTableRow{
-            private final String protein;
+        public class QueryTableRow{
+            private final String query;
             private final double evalue;
+            private final double averageTpm;
 
-            public ProteinTableRow(String protein, double evalue) {
-                this.protein = protein;
+            public QueryTableRow(String query, double evalue, double averageTpm) {
+                this.query = query;
                 this.evalue = evalue;
+                this.averageTpm = averageTpm;
             }
 
-            public String getProtein() {
-                return protein;
+            public String getQuery() {
+                return query;
             }
 
             public double getEvalue() {
                 return evalue;
+            }
+
+            public double getAverageTpm() {
+                return averageTpm;
             }
         }
 }

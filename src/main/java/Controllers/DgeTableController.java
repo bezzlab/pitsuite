@@ -1,5 +1,7 @@
 package Controllers;
 
+import Controllers.blast.BlastPaneController;
+import Controllers.blast.BlastTabController;
 import FileReading.AllGenesReader;
 import Singletons.Config;
 import Singletons.Database;
@@ -276,8 +278,28 @@ public class DgeTableController extends Controller {
                             ResultsController.getInstance().moveToTab(6);
                             PathwaySideController.getInstance().extrernalSearch(row.getItem().getGeneSymbol());
                         });
-
                         rowMenu.getItems().add(editItem);
+
+                        if(Config.hasProteinBlast()){
+                            MenuItem proteinBlastItem = new MenuItem("Show protein BLAST");
+                            proteinBlastItem.setOnAction(e -> {
+                                ResultsController.getInstance().moveToTab("BLAST");
+                                BlastTabController.getInstance().selectTab("protein");
+                                BlastTabController.getInstance().getProteinBlastController().searchGene(row.getItem().getGeneSymbol());
+                            });
+                            rowMenu.getItems().add(proteinBlastItem);
+                        }
+                        if(Config.hasRnaBlast()){
+                            MenuItem rnaBlastItem = new MenuItem("Show RNA BLAST");
+                            rnaBlastItem.setOnAction(e -> {
+                                ResultsController.getInstance().moveToTab("BLAST");
+                                BlastTabController.getInstance().selectTab("rna");
+                                BlastTabController.getInstance().getRnaBlastController().searchGene(row.getItem().getGeneSymbol());
+                            });
+                            rowMenu.getItems().add(rnaBlastItem);
+                        }
+
+
 
                         // only display context menu for non-empty rows:
                         row.contextMenuProperty().bind(

@@ -120,7 +120,7 @@ public class BlastController implements Initializable {
             long positionToRead = blastIndex.getRecords().get(geneId).getStart();
             int amountBytesToRead = (int) (blastIndex.getRecords().get(geneId).getEnd()-positionToRead);
 
-            RandomAccessFile f = new RandomAccessFile(new File("/media/esteban/data/a2_denovo/blast/output.xml"),"r");
+            RandomAccessFile f = new RandomAccessFile(new File("/media/esteban/data/a2_denovo/Controllers.blast/output.xml"),"r");
             //f.seek(2643);
             byte[] b = new byte[amountBytesToRead];
             f.seek(positionToRead);
@@ -402,7 +402,7 @@ public class BlastController implements Initializable {
 
 
         public void load(){
-            String filepath = "/media/esteban/data/a2_denovo/blast/blastIndex.csv";
+            String filepath = "/media/esteban/data/a2_denovo/Controllers.blast/blastIndex.csv";
             try {
                 File myObj = new File(filepath);
                 Scanner myReader = new Scanner(myObj);

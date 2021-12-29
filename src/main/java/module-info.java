@@ -38,7 +38,10 @@ module pitguivTwo {
     opens utilities;
     opens Controllers.MSControllers;
     opens Controllers.PITrun;
+    opens Controllers.blast;
     exports Controllers.MSControllers;
+    exports Controllers.blast;
+
 
     requires org.kordamp.iconli.core;
     requires org.kordamp.ikonli.javafx;
