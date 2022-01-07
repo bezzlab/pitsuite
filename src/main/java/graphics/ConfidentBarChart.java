@@ -320,7 +320,7 @@ public class ConfidentBarChart extends Pane {
                     if (!entry.getKey().equals(reference)) {
                         for (double value : entry.getValue()) {
                             Circle c = new Circle();
-                            double radius = Math.min(barWidth / 8, 10);
+                            double radius = Math.min(barWidth / 12, 7);
                             c.setRadius(radius);
                             Random rand = new Random();
                             double x = rand.nextDouble();

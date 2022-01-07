@@ -16,66 +16,71 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.text.TextFlow?>
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.MSControllers.PTMController">
    <children>
 
-     <GridPane fx:id="grid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <columnConstraints>
-             <ColumnConstraints percentWidth="50" />
-             <ColumnConstraints percentWidth="50" />
-         </columnConstraints>
-         <rowConstraints>
-             <RowConstraints vgrow="NEVER" />
-             <RowConstraints vgrow="ALWAYS" />
-         </rowConstraints>
-         <children>
-             <HBox>
-                 <ComboBox fx:id="runCombobox" />
-                 <ComboBox fx:id="comparisonCombobox" />
-             </HBox>
-             <TableView fx:id="ptmTable" GridPane.rowIndex="1" >
-                 <columns>
-                     <TableColumn fx:id="ptmGeneColumn" text="Gene" />
-                     <TableColumn fx:id="posColumn" text="Position" />
-                     <TableColumn fx:id="residueColumn" text="Residue" />
-                     <TableColumn fx:id="ptmLog2fcColumn" text="Log2 fold change" />
-                     <TableColumn fx:id="ptmPvalColumn" text="P-value" />
-                 </columns>
-             </TableView>
-             <TabPane fx:id="detailsTabpane" GridPane.columnIndex="1" GridPane.rowSpan="2">
-                 <Tab fx:id="intensityTab" text="Intensity">
-                     <VBox fx:id="expressionPane"/>
-                 </Tab>
-                 <Tab fx:id="psmTab" text="PSM">
-                     <VBox>
-                         <ListView fx:id="psmListView" />
-                         <TabPane>
-                             <Tab text="Intensities" closable="false">
-                                 <HBox fx:id="intensitiesPane">
+     <VBox  AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <GridPane fx:id="grid" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+             <columnConstraints>
+                 <ColumnConstraints percentWidth="50" />
+                 <ColumnConstraints percentWidth="50" />
+             </columnConstraints>
+             <rowConstraints>
+                 <RowConstraints vgrow="NEVER" />
+                 <RowConstraints vgrow="ALWAYS" />
+             </rowConstraints>
+             <children>
+                 <HBox>
+                     <ComboBox fx:id="runCombobox" />
+                     <ComboBox fx:id="comparisonCombobox" />
+                 </HBox>
+                 <TableView fx:id="ptmTable" GridPane.rowIndex="1" >
+                     <columns>
+                         <TableColumn fx:id="ptmGeneColumn" text="Gene" />
+                         <TableColumn fx:id="uniprotColumn" text="Uniprot ID" />
+                         <TableColumn fx:id="posColumn" text="Position" />
+                         <TableColumn fx:id="residueColumn" text="Residue" />
+                         <TableColumn fx:id="ptmLog2fcColumn" text="Log2 fold change" />
+                         <TableColumn fx:id="ptmPvalColumn" text="P-value" />
+                     </columns>
+                 </TableView>
+                 <TabPane fx:id="detailsTabpane" GridPane.columnIndex="1" GridPane.rowSpan="2">
+                     <Tab fx:id="intensityTab" text="Intensity">
+                         <VBox fx:id="expressionPane"/>
+                     </Tab>
+                     <Tab fx:id="psmTab" text="PSM">
+                         <VBox>
+                             <ListView fx:id="psmListView" />
+                             <TabPane>
+                                 <Tab text="Intensities" closable="false">
+                                     <HBox fx:id="intensitiesPane">
 
-                                 </HBox>
-                             </Tab>
-<!--                             <Tab text="3D view" >-->
-<!--                                 <AnchorPane fx:id="structurePane">-->
-<!--                                     <fx:include fx:id="structure" source="structure.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />-->
-<!--                                 </AnchorPane>-->
-<!--                             </Tab>-->
-                             <Tab text="Spectrum" closable="false" >
-                                 <AnchorPane>
-                                     <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                 </AnchorPane>
-                             </Tab>
-                             <Tab text="Protein ambiguity group" closable="false">
-                                 <AnchorPane fx:id="pagPane">
-                                     <fx:include fx:id="pag" source="pag.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-                                 </AnchorPane>
-                             </Tab>
-                         </TabPane>
-                     </VBox>
+                                     </HBox>
+                                 </Tab>
+    <!--                             <Tab text="3D view" >-->
+    <!--                                 <AnchorPane fx:id="structurePane">-->
+    <!--                                     <fx:include fx:id="structure" source="structure.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />-->
+    <!--                                 </AnchorPane>-->
+    <!--                             </Tab>-->
+                                 <Tab text="Spectrum" closable="false" >
+                                     <AnchorPane>
+                                         <fx:include fx:id="spectrumViewer" source="spectrumViewer.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                     </AnchorPane>
+                                 </Tab>
+                                 <Tab text="Protein ambiguity group" closable="false">
+                                     <AnchorPane fx:id="pagPane">
+                                         <fx:include fx:id="pag" source="pag.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                     </AnchorPane>
+                                 </Tab>
+                             </TabPane>
+                         </VBox>
 
-                 </Tab>
-             </TabPane>
-         </children>
-     </GridPane>
+                     </Tab>
+                 </TabPane>
+             </children>
+         </GridPane>
+         <TextFlow fx:id="sequenceTextFlow"/>
+     </VBox>
    </children>
 </AnchorPane>

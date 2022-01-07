@@ -21,6 +21,8 @@ public class PTM {
     JSONObject intensities;
     private ArrayList<String> kinases;
     protected String type = "unknown";
+    private String uniprot;
+    private String cds;
 
 
     public PTM(){
@@ -48,7 +50,7 @@ public class PTM {
         this.residue = residue;
     }
 
-    public PTM(String residue, int pos, String gene, double log2fc, double pval, JSONObject intensities, String type) {
+    public PTM(String residue, int pos, String gene, double log2fc, double pval, JSONObject intensities, String type, String uniprot) {
         this.residue = residue;
         this.pos = pos;
         this.gene = gene;
@@ -56,6 +58,7 @@ public class PTM {
         this.pval = pval;
         this.intensities = intensities;
         this.type = type;
+        this.uniprot = uniprot;
     }
 
     public String getResidue() {
@@ -182,5 +185,17 @@ public class PTM {
 
     public String getId() {
         return gene+"("+residue+pos+")";
+    }
+
+    public String getUniprot() {
+        return uniprot;
+    }
+
+    public String getCds() {
+        return cds;
+    }
+
+    public void setCds(String cds) {
+        this.cds = cds;
     }
 }

@@ -114,7 +114,7 @@ public class PTMAlert extends Alert {
                 boolean matchFound = matcher.find();
                 if (matchFound) {
                     PTM ptm = new PTM(matcher.group(1), Integer.parseInt(matcher.group(2)), json.getString("gene"), json.getDouble("log2fc"), json.has("pval") ? json.getDouble("pval") : Double.NaN, json.getJSONObject("samples"),
-                            json.getString("type"));
+                            json.getString("type"), json.has("uniprot")?json.getString("uniprot"):null);
                     if (!ptms.containsKey(ptm.getGene()))
                         ptms.put(ptm.getGene(), new ArrayList<>());
 

@@ -34,9 +34,7 @@
             <HBox>
                <children>
                   <ComboBox fx:id="runCombo" />
-                  <ComboBox fx:id="condACombo" />
-                  <Label text="vs" />
-                  <ComboBox fx:id="condBCombo" />
+                  <ComboBox fx:id="comparisonCombo" />
                </children>
             </HBox>
             <TableView fx:id="proteinsTable" GridPane.columnSpan="2" GridPane.rowIndex="1">

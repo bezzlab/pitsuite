@@ -7,6 +7,7 @@ import Controllers.GeneBrowserController;
 import FileReading.UniprotProteinsCollection;
 import Singletons.Config;
 import Singletons.Database;
+import graphics.CopyableText;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Group;
@@ -37,6 +38,8 @@ import static org.dizitart.no2.filters.Filters.eq;
 
 public class ProteinMSController extends Controller implements Initializable {
 
+    @FXML
+    private ComboBox<String> comparisonCombo;
     @FXML
     private StructureController structureController;
     @FXML
@@ -77,10 +80,7 @@ public class ProteinMSController extends Controller implements Initializable {
     private Pane proteinsRepresentationPane;
     @FXML
     private ComboBox<String> runCombo;
-    @FXML
-    private ComboBox<String> condACombo;
-    @FXML
-    private ComboBox<String> condBCombo;
+
 
     private MSRun currentRun;
 
@@ -146,11 +146,15 @@ public class ProteinMSController extends Controller implements Initializable {
         runCombo.getItems().addAll(Config.getRuns());
         runCombo.getSelectionModel().select(0);
 
+
         Set<String> conditions = Config.getRunConditions(runCombo.getSelectionModel().getSelectedItem());
-        condACombo.getItems().addAll(conditions);
-        condBCombo.getItems().addAll(conditions);
-        condACombo.getSelectionModel().select(0);
-        condBCombo.getSelectionModel().select(1);
+        conditions.retainAll(Config.getConditions());
+        List<String> combinations = Config.getComparisons(new ArrayList<>(conditions));
+        for(String comparison: combinations){
+            comparisonCombo.getItems().add(comparison);
+        }
+        if(comparisonCombo.getItems().size()>0)
+            comparisonCombo.getSelectionModel().select(0);
         loadRun();
     }
 
@@ -160,34 +164,27 @@ public class ProteinMSController extends Controller implements Initializable {
 
             String run = runCombo.getSelectionModel().getSelectedItem();
             currentRun = new MSRun(run);
-            String condA, condB;
-            if(condACombo.getSelectionModel().getSelectedItem().compareTo(condACombo.getSelectionModel().getSelectedItem()) < 0){
-                condA = condACombo.getSelectionModel().getSelectedItem();
-                condB = condBCombo.getSelectionModel().getSelectedItem();
-            }else{
-                condB = condACombo.getSelectionModel().getSelectedItem();
-                condA = condBCombo.getSelectionModel().getSelectedItem();
-            }
-            condA = "Nsi";
-            condB = "si";
-            Cursor dgeFindCursor = Database.getDb().getCollection(condA+"vs"+condB+"_dge").find();
+
+
+            Cursor dgeFindCursor = Database.getDb().getCollection(comparisonCombo.getSelectionModel().getSelectedItem().replace(" vs ", "vs")+"_dge").find();
 
             for(Document doc: dgeFindCursor){
                 if (doc.containsKey("ms")){
                    JSONObject msDoc =  doc.get("ms", JSONObject.class);
                    if(msDoc.containsKey(run)){
+                       JSONObject runDoc = (JSONObject) msDoc.get(run);
                        double dgeFoldChange;
-                       if (doc.get("log2fc") instanceof Long)
-                           dgeFoldChange = ((Long) doc.get("log2fc")).doubleValue();
+                       if (runDoc.get("log2fc") instanceof Long)
+                           dgeFoldChange = ((Long) runDoc.get("log2fc")).doubleValue();
                        else
-                           dgeFoldChange = (double) doc.get("log2fc");
+                           dgeFoldChange = (double) runDoc.get("log2fc");
 
                        double dgePVal = Double.NaN;
-                       if (doc.containsKey("padj")) {
-                           if (doc.get("padj") instanceof Long)
-                               dgePVal = ((Long) doc.get("padj")).doubleValue();
+                       if (runDoc.containsKey("padj")) {
+                           if (runDoc.get("padj") instanceof Long)
+                               dgePVal = ((Long) runDoc.get("padj")).doubleValue();
                            else
-                               dgePVal = (double) doc.get("padj");
+                               dgePVal = (double) runDoc.get("padj");
                        }
                         proteinsTable.getItems().add(new ProteinRow((String) doc.get("symbol"), dgeFoldChange, dgePVal));
                    }
@@ -204,7 +201,7 @@ public class ProteinMSController extends Controller implements Initializable {
 
         HashSet<String> uniprotSequences = UniprotProteinsCollection.getSequences(gene);
 
-        double representationWidth = proteinsRepresentationPane.getWidth();
+
 
         NitriteCollection allTranscriptsCollection = Database.getDb().getCollection("allTranscripts");
         Cursor cursor = allTranscriptsCollection.find(eq("gene", gene));
@@ -228,6 +225,15 @@ public class ProteinMSController extends Controller implements Initializable {
             }
         }
 
+        double idsWidth = 0;
+        for(String transcriptID: transcripts.keySet()){
+            Text t = new Text(transcriptID);
+            t.setFont(Font.font("monospace", 15));
+            double width = t.getLayoutBounds().getWidth();
+            if(width>idsWidth)
+                idsWidth=width;
+        }
+
         int geneStart = 2147483647;
         int geneEnd = 0;
         int offsetY = 0;
@@ -244,11 +250,14 @@ public class ProteinMSController extends Controller implements Initializable {
         }
         int geneLength = geneEnd - geneStart + 1;
 
+        double representationWidth = proteinsRepresentationPane.getWidth()-idsWidth;
 
         for(Map.Entry<String, Transcript> entry: transcripts.entrySet()){
             Transcript transcript = entry.getValue();
-            Text t = new Text(entry.getKey());
-            t.setFont(Font.font(15));
+            CopyableText t = new CopyableText(entry.getKey());
+            t.setFont(Font.font("monospace", 15));
+            t.setY(offsetY+t.getLayoutBounds().getHeight());
+            proteinsRepresentationPane.getChildren().add(t);
 
             boolean isUniProtTranscript = false;
             for(CDS cds: entry.getValue().getCdss()){
@@ -264,11 +273,11 @@ public class ProteinMSController extends Controller implements Initializable {
 
             for (Exon exon: transcript.getExons()){
                 if(currentPos>transcript.getStartGenomCoord() && currentPos<transcript.getEndGenomCoord()){
-                    Line l = new Line(representationWidth * ((double) (currentPos-geneStart+1)/geneLength), offsetY+t.getLayoutBounds().getHeight()/2,
-                            representationWidth * ((double) (exon.getEnd()-geneStart+1)/geneLength), offsetY+t.getLayoutBounds().getHeight()/2);
+                    Line l = new Line(idsWidth+representationWidth * ((double) (currentPos-geneStart+1)/geneLength), offsetY+t.getLayoutBounds().getHeight()/2,
+                            idsWidth+representationWidth * ((double) (exon.getEnd()-geneStart+1)/geneLength), offsetY+t.getLayoutBounds().getHeight()/2);
                     proteinsRepresentationPane.getChildren().add(l);
                 }
-                Rectangle rect = new Rectangle(representationWidth * ((double) (exon.getStart()-geneStart+1)/geneLength), offsetY,
+                Rectangle rect = new Rectangle(idsWidth+representationWidth * ((double) (exon.getStart()-geneStart+1)/geneLength), offsetY,
                         representationWidth * ((double) (exon.getEnd()-exon.getStart()+1)/geneLength), t.getBoundsInLocal().getHeight());
                 if(isUniProtTranscript){
                     rect.setFill(Color.BLUE);
@@ -329,7 +338,7 @@ public class ProteinMSController extends Controller implements Initializable {
 
                                 int tmpStartGeneCoord = cdsRectangleStart - 1;
                                 double width = representationWidth * Math.abs(getProportion(cdsRectangleEnd, tmpStartGeneCoord, geneLength));
-                                double X = representationWidth * getProportion(tmpStartGeneCoord, geneStart, geneLength);
+                                double X = idsWidth+representationWidth * getProportion(tmpStartGeneCoord, geneStart, geneLength);
 
                                 cdsRectangle.setX(X);
                                 cdsRectangle.setWidth(width);
@@ -387,7 +396,7 @@ public class ProteinMSController extends Controller implements Initializable {
 
 
                                 double width = representationWidth * Math.abs(getProportion(cdsRectangleEnd, cdsRectangleStart, geneLength));
-                                double X = representationWidth * getProportion(cdsRectangleStart, geneStart, geneLength);
+                                double X = idsWidth+representationWidth * getProportion(cdsRectangleStart, geneStart, geneLength);
 
                                 cdsRectangleBetweenExons.setX(X);
                                 cdsRectangleBetweenExons.setWidth(width);
@@ -406,6 +415,7 @@ public class ProteinMSController extends Controller implements Initializable {
 
                     Group peptideGroup = GeneBrowserController.getPepGroup(cds, entry.getValue(), t.getLayoutBounds().getHeight(), geneStart, geneEnd, representationWidth, 15, isUniProtTranscript?this:null);
                     peptideGroup.setLayoutY(offsetY);
+                    peptideGroup.setLayoutX(idsWidth);
                     proteinsRepresentationPane.getChildren().add(peptideGroup);
                 }
             }

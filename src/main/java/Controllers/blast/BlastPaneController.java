@@ -8,6 +8,7 @@ import Controllers.ResultsController;
 import Singletons.Config;
 import Singletons.Database;
 import com.jfoenix.controls.JFXTextField;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -316,10 +317,13 @@ public class BlastPaneController implements Initializable {
 
                 }
             }else{
-                Notifications.create()
-                        .title("Warning")
-                        .text("No significant match found for this gene")
-                        .showWarning();
+                Platform.runLater(()->{
+                    Notifications.create()
+                            .title("Warning")
+                            .text("No significant match found for this gene")
+                            .showWarning();
+                });
+
             }
         }).start();
 

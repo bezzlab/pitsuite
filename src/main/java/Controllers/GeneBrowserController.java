@@ -14,6 +14,7 @@ import TablesModels.Variation;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXDrawer;
 import com.jfoenix.controls.JFXTextField;
+import graphics.CopyableText;
 import javafx.application.HostServices;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -58,7 +59,6 @@ import org.dizitart.no2.Document;
 import org.dizitart.no2.NitriteCollection;
 import org.dizitart.no2.filters.Filters;
 import pitguiv2.App;
-
 import java.io.IOException;
 import java.net.URL;
 import java.text.NumberFormat;
@@ -83,13 +83,6 @@ public class GeneBrowserController extends Controller implements Initializable {
     private Button findSeqButton;
     @FXML
     private Label seqSearchMatchIndexLabel;
-    //main tabs
-    @FXML
-    private TabPane browsersTabTabPane;
-    @FXML
-    private Tab genomeBrowserTab;
-    @FXML
-    private Tab geneBrowserTab;
 
     //textfields
     @FXML
@@ -161,8 +154,6 @@ public class GeneBrowserController extends Controller implements Initializable {
 
     // tabs
     @FXML
-    private TabPane bottomTabPane;
-    @FXML
     private Tab mutationsTab;
 
 
@@ -217,10 +208,6 @@ public class GeneBrowserController extends Controller implements Initializable {
     private JFXDrawer drawer;
 
 
-
-
-
-
     // elements in browser
     private boolean isAGeneDisplayed;
     private boolean showCdsInGeneBrowserBool;
@@ -228,18 +215,11 @@ public class GeneBrowserController extends Controller implements Initializable {
 
     private String selectedGene = null;
 
-
-    private ResultsController parentController;
-    private String databaseProjectName;
-
     private boolean activateListenerConditionsGeneBrowserCombobox;
 
     private HashMap<String, String> transcFormatedSequencesMap;
     private HashMap<String, Transcript> transcriptHashMap;
     private ArrayList<CdsCondSample> cdsCondSamplePerTranscCondSample;
-
-    private LinkedList<Variation> variations;
-
     private String viewType;
 
     // private
@@ -262,10 +242,6 @@ public class GeneBrowserController extends Controller implements Initializable {
 
     // list of conditions
     private ArrayList<String> conditions;
-
-    // for depth graphs
-
-    private ArrayList<String> transcriptsIdsOfGene;
 
     private boolean isSelectedZoomRegion;
     private double selectingRegionStart;
@@ -343,7 +319,7 @@ public class GeneBrowserController extends Controller implements Initializable {
         );
 
         geneBrowserScrollPane.setOnMouseClicked(event -> {
-            if (MouseButton.SECONDARY.equals(event.getButton())) {
+            if (MouseButton.SECONDARY.equals(event.getButton()) && event.getClickCount()==2) {
                 menu.show(geneBrowserScrollPane.getScene().getWindow(), event.getScreenX(), event.getScreenY());
             }
         });
@@ -592,11 +568,8 @@ public class GeneBrowserController extends Controller implements Initializable {
      */
     public void setParentControler(ResultsController parent, org.json.JSONObject settings, HostServices hostServices,
                                    String databaseName,  AllGenesReader allGenesReader) {
-        parentController = parent;
-        databaseProjectName = databaseName;
-        this.hostServices = hostServices;
 
-        
+        this.hostServices = hostServices;
 
         this.allGenesReader = allGenesReader;
         displayCdsGeneBrowserMenuItem.setDisable(true);
@@ -607,7 +580,7 @@ public class GeneBrowserController extends Controller implements Initializable {
 
         fastaIndex = new FastaIndex(Config.getFastaPath());
 
-        mutatedCdsController.setResultsController(parentController);
+
 
         viewType = "transcripts";
 
@@ -672,12 +645,7 @@ public class GeneBrowserController extends Controller implements Initializable {
 
 
     public void displaygeneFromGeneSymbol(String geneSymbolToQuery, boolean display) {
-
-
-//        // TODO. check that some may be duplicated,  eg: SNORD38B
         displayGeneFromId(geneSymbolToQuery, -1, -1, display);
-
-
     }
 
     /**
@@ -728,7 +696,6 @@ public class GeneBrowserController extends Controller implements Initializable {
             dialog.setTitle("Gene browser");
             dialog.setHeaderText("Select a location for the gene");
             Optional<String> result = dialog.showAndWait();
-            System.out.println("AAA "+result.get());
             result.ifPresent(letter -> {
                 geneIdTextField.setText(result.get());
                 displaygeneFromGeneSymbol(result.get(), true);
@@ -795,21 +762,19 @@ public class GeneBrowserController extends Controller implements Initializable {
         NitriteCollection mutationsCollection = Database.getDb().getCollection("mutations");
 
 
-        variations = new LinkedList<>();
-
-        Cursor mutationsResults = mutationsCollection.find(Filters.eq("gene", geneIdTextField.getText()));
-        for (Document tmpDoc : mutationsResults) {
-
+        if(Config.hasMutations()) {
+            Cursor mutationsResults = mutationsCollection.find(Filters.eq("gene", geneIdTextField.getText()));
+            for (Document tmpDoc : mutationsResults) {
 
 
-            Variation variation = new Variation(tmpDoc);
+                Variation variation = new Variation(tmpDoc);
 
-            for(String transcriptId: variation.getTranscriptIds()){
-                transcriptHashMap.get(transcriptId).addVariation(variation);
+                for (String transcriptId : variation.getTranscriptIds()) {
+                    transcriptHashMap.get(transcriptId).addVariation(variation);
+                }
+
+
             }
-            variations.add(variation);
-
-
         }
 
 //        // format sequences strings. Add spaces and so.
@@ -1051,11 +1016,7 @@ public class GeneBrowserController extends Controller implements Initializable {
         previousStart = (int) geneSlider.getLowValue();
         previousEnd = (int) geneSlider.getHighValue();
 
-        if (viewType.equals("transcripts")) {
-            displayTranscriptCentricViewExonsOrSeq();
-        } else if (viewType.equals("cds")) {
-            //displayCdsCentricView();
-        }
+        displayTranscriptCentricViewExonsOrSeq();
 
 
 
@@ -1192,7 +1153,6 @@ public class GeneBrowserController extends Controller implements Initializable {
                                 if(parent!=null && parent.getClass().equals(ProteinMSController.class)){
                                     Pair<Integer, Integer> peptidePositionInCds = peptide.getPosInCds(cds);
                                     if (peptidePositionInCds != null) {
-                                        System.out.println((peptidePositionInCds.getKey()+" "+(peptidePositionInCds.getValue())));
                                         pepRect.setOnMouseEntered(event -> StructureController.getInstance().colorPositions(peptidePositionInCds.getKey(), peptidePositionInCds.getValue()));
                                         pepRect.setOnMouseExited(event -> StructureController.getInstance().reset());
                                     }
@@ -1438,8 +1398,8 @@ public class GeneBrowserController extends Controller implements Initializable {
 
 
             // color depends on transcript has coding sequences (cds)
-            Color exonsColour = Color.rgb(0, 0, 0);
-            Color intronsColour = Color.rgb(0, 0, 0);
+            Color exonsColour;
+            Color intronsColour;
 
             if (transcript.getStartGenomCoord() < geneMinimumCoordinate || transcript.getEndGenomCoord() > geneMaximumCoordinate) {
                 if (transcript.getHasCds()) {
@@ -1518,7 +1478,7 @@ public class GeneBrowserController extends Controller implements Initializable {
                     if (mouseEvent.getButton().equals(MouseButton.PRIMARY) && mouseEvent.getClickCount() == 1) {
                         geneSlider.setLowValue(exon.getStart() - 15);
                         geneSlider.setHighValue(exon.getEnd() + 15);
-                        displayExonSplicingInformation("chr1", 1111, 2222);
+
                     }
                 });
 
@@ -1707,7 +1667,7 @@ public class GeneBrowserController extends Controller implements Initializable {
      *
      */
     private String formatSequence(String transcriptId, Transcript transcript, int minimumCoordinate, int maximumCoordinate) {
-        String formatedSeqString = "";
+        StringBuilder formatedSeqString = new StringBuilder();
         String transcSeq = transcript.getSequence();
 
         // get exons list and sort it by start
@@ -1727,23 +1687,23 @@ public class GeneBrowserController extends Controller implements Initializable {
                 if (exon.getStart() != minimumCoordinate) {
                     distance = exon.getStart() - minimumCoordinate; // coordinates are end inclusive
 
-                    formatedSeqString += blanckCharacter.repeat(distance);
+                    formatedSeqString.append(blanckCharacter.repeat(distance));
                 }
 
 
                 // since it's the first exon substring(0,...)
-                formatedSeqString += transcSeq.substring(0, exon.getEnd() - exon.getStart() + 1); // +1 since coordinates are end inclusive
+                formatedSeqString.append(transcSeq, 0, exon.getEnd() - exon.getStart() + 1); // +1 since coordinates are end inclusive
                 currentSeqPosition += exon.getEnd() - exon.getStart() + 1; // this is where the next start coord is
 
             } else { // not the first exon in the list
 
-                formatedSeqString += intronSpace.repeat(exon.getStart() - exonsList.get(i - 1).getEnd() - 1); // -1 since coords are end inclusive
-                formatedSeqString += transcSeq.substring(currentSeqPosition, currentSeqPosition + (exon.getEnd() - exon.getStart() + 1)); // +1 since coordinates are end inclusive
+                formatedSeqString.append(intronSpace.repeat(exon.getStart() - exonsList.get(i - 1).getEnd() - 1)); // -1 since coords are end inclusive
+                formatedSeqString.append(transcSeq, currentSeqPosition, currentSeqPosition + (exon.getEnd() - exon.getStart() + 1)); // +1 since coordinates are end inclusive
                 currentSeqPosition += exon.getEnd() - exon.getStart() + 1;  // this is where the next start coord is
 
                 if (i == exonsList.size() - 1) {
 
-                    formatedSeqString += blanckCharacter.repeat(maximumCoordinate - exon.getEnd());
+                    formatedSeqString.append(blanckCharacter.repeat(maximumCoordinate - exon.getEnd()));
                 }
             }
 
@@ -1751,7 +1711,7 @@ public class GeneBrowserController extends Controller implements Initializable {
         }
 
 
-        return formatedSeqString;
+        return formatedSeqString.toString();
     }
 
     /**
@@ -1825,17 +1785,11 @@ public class GeneBrowserController extends Controller implements Initializable {
 
                 String nucl = subSeq.substring(i, i + 1);
 
-                Text t = new Text(nucl);
+                CopyableText t = new CopyableText(nucl);
+                t.setCopyText(transcript.getSequence());
                 t.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
                 t.setX((i + 0.5) * width - t.getLayoutBounds().getWidth()/2);
                 t.setY(t.getLayoutBounds().getHeight());
-
-                //t.setTextAlignment(TextAlignment.CENTER);
-
-//            t.setY(-2);
-//            t.setLayoutX(width);
-//            t.setLayoutY(height);
-
 
 
                 Rectangle r = new Rectangle();
@@ -1882,12 +1836,8 @@ public class GeneBrowserController extends Controller implements Initializable {
                     r.setOnMouseClicked(eventHandler);
                     t.setOnMouseClicked(eventHandler);
 
-                    EventHandler<MouseEvent> onMouseIn = mouseEvent -> {
-                        ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.HAND);
-                    };
-                    EventHandler<MouseEvent> onMouseOut = mouseEvent -> {
-                        ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.DEFAULT);
-                    };
+                    EventHandler<MouseEvent> onMouseIn = mouseEvent -> ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.HAND);
+                    EventHandler<MouseEvent> onMouseOut = mouseEvent -> ControllersBasket.getScene().getRoot().setCursor(javafx.scene.Cursor.DEFAULT);
                     r.setOnMouseEntered(onMouseIn);
                     t.setOnMouseEntered(onMouseIn);
 
@@ -1958,24 +1908,6 @@ public class GeneBrowserController extends Controller implements Initializable {
     }
 
 
-
-    /**
-     * Filter Variants Table
-     * Uses the Variants Array List obtained previously
-     */
-    private void filterVariantsTable() {
-        varTableView.getItems().clear();
-
-        // make a copy to not modify the original list
-        LinkedList<Variation> variationsLinkedListClone = (LinkedList<Variation>) variations.clone();
-
-
-        //TODO:!!
-
-        varTableView.getItems().addAll(variationsLinkedListClone);
-    }
-
-
     /**
      * controls CDS
      */
@@ -2023,9 +1955,6 @@ public class GeneBrowserController extends Controller implements Initializable {
 
 
 
-    private void displayExonSplicingInformation(String chr, int startCoord, int endCoord) {
-
-    }
 
     /**
      * Used to draw the tpms barchart per condition
@@ -2071,8 +2000,6 @@ public class GeneBrowserController extends Controller implements Initializable {
 
     private void drawCdsForSpecificTranscript(Transcript transcript, Pane transcriptBox) {
 
-        String conditionToSortBy = conditionsGeneBrowserCombobox.getValue();
-
         int startGenomCoord = (int) geneSlider.getLowValue();
         int endGenomCoord = (int) geneSlider.getHighValue();
 
@@ -2082,7 +2009,7 @@ public class GeneBrowserController extends Controller implements Initializable {
 
 
         for(CDS cds: transcript.getCdss()){
-            drawCds(cds, transcript, startGenomCoord, endGenomCoord, vBoxwidth);
+            drawCds(cds, transcript, startGenomCoord, endGenomCoord);
         }
 
     }
@@ -2126,7 +2053,7 @@ public class GeneBrowserController extends Controller implements Initializable {
         return null;
     }
 
-    private void drawCds(CDS cds, Transcript transcript, int startGenomCoord, int endGenomCoord, double containerWidth) {
+    private void drawCds(CDS cds, Transcript transcript, int startGenomCoord, int endGenomCoord) {
         HBox cdsHBox = new HBox();
         HBox pepHBox = new HBox();
 
@@ -2495,9 +2422,6 @@ public class GeneBrowserController extends Controller implements Initializable {
         Text templateAA = new Text();
         templateAA.setFont(Font.font("monospace", FontWeight.BOLD, fontSize));
         double height  = templateAA.getLayoutBounds().getHeight()+10;
-
-
-
 
 
         for (int i = 0; i < seq.length(); i++) {

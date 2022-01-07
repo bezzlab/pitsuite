@@ -341,15 +341,8 @@ public class DgeTableController extends Controller {
             fontSize = settings.getJSONObject("Fonts").getJSONObject("charts").getInt("size");
 
 
-            // set comparison combobox options
-            Set<String> collectionNames = Database.getDb().listCollectionNames();
 
-            for ( String collNameString : collectionNames){
-                if (collNameString.contains("_dge")){
-                    String dgeComparison = collNameString.replace("_dge", "");
-                    dgeComparisonCombobox.getItems().add(dgeComparison);
-                }
-            }
+            dgeComparisonCombobox.getItems().addAll(Config.getComparisons(new ArrayList<>(Config.getConditions())));
 
 
 
@@ -411,7 +404,7 @@ public class DgeTableController extends Controller {
             ArrayList<String> genesWithGoFilterList = (!goTermsController.isGoLoaded()) ? null : goTermsController.genesWithGoTermsForFilter();
 
 
-            String dgeCollectionName = dgeComparisonCombobox.getValue() + "_dge";
+            String dgeCollectionName = dgeComparisonCombobox.getValue().replace(" vs ", "vs") + "_dge";
             boolean filterByProt = protFilterCheckbox.isSelected();
             boolean hasPeptideEvidenceFilter = peptideEvidenceCheckbox.isSelected();
             Double pvalThreshold = adjPValFilterFoldChangeSpinner.getValue();
@@ -434,7 +427,7 @@ public class DgeTableController extends Controller {
     //        filters.add(eq("type", "lncRNA"));
 
 
-            if (Config.haveReplicates(dgeComparisonCombobox.getValue().split("vs"))) {
+            if (Config.haveReplicates(dgeComparisonCombobox.getValue().split(" vs "))) {
                 filters.add(and(lte("padj", pvalThreshold), not(
                         and(gt("log2fc", -foldThreshold), lt("log2fc", foldThreshold))
                 )));

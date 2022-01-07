@@ -281,6 +281,8 @@ public class SplicingTableController extends Controller {
             }
         }
 
+        comparisonSplicingComboboxProtein.getItems().addAll(Config.getRuns());
+
         if(allGenesReader.getGenesLoadedProperty().get()){
             Platform.runLater(() -> {
                 keggController.setParentController(this);
@@ -420,6 +422,9 @@ public class SplicingTableController extends Controller {
 
                         HashMap<String, HashMap<String, Double>> proteins =
                                 (HashMap<String, HashMap<String, Double>>) tmpDoc.get("protein");
+                        if(proteins.containsKey(comparisonSplicingComboboxProtein.getSelectionModel().getSelectedItem())){
+
+                        }
 
 
                         events.add(new SplicingEventsTableModel(tmpEventKey, tmpGeneName, tmpEventType, tmpDeltaPsi, tmpPval,
@@ -427,10 +432,7 @@ public class SplicingTableController extends Controller {
 
                         hasProteinEvidence.set(true);
 
-                        for(String run: proteins.keySet()){
-                            if(!comparisonSplicingComboboxProtein.getItems().contains(run))
-                                comparisonSplicingComboboxProtein.getItems().add(run);
-                        }
+
 
                     }else{
                         events.add(new SplicingEventsTableModel(tmpEventKey, tmpGeneName, tmpEventType, tmpDeltaPsi, tmpPval,
@@ -894,7 +896,7 @@ public class SplicingTableController extends Controller {
         NitriteCollection splicingEventsCollection = Database.getDb().getCollection("eventPeptides");
 
         // get domains
-        Document doc = splicingEventsCollection.find(eq("event", splicingEventKey)).firstOrDefault();
+        Document doc = splicingEventsCollection.find(and(eq("run", comparisonSplicingComboboxProtein.getSelectionModel().getSelectedItem()), eq("event", splicingEventKey))).firstOrDefault();
 
 
         if(doc!=null){
@@ -910,70 +912,65 @@ public class SplicingTableController extends Controller {
 
             }
 
-            if(doc.get("peptidesIn", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                    JSONObject peptideObj = (JSONObject) o;
-                    String peptideSeq = (String) peptideObj.get("sequence");
-                    int startInExon = Math.toIntExact((Long) peptideObj.get("startInExon"));
-                    int exonLength = Math.toIntExact((Long) doc.get("exonLength"));
+            for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
+                    .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+                JSONObject peptideObj = (JSONObject) o;
+                String peptideSeq = (String) peptideObj.get("sequence");
+                int startInExon = Math.toIntExact((Long) peptideObj.get("startInExon"));
+                int exonLength = Math.toIntExact((Long) doc.get("exonLength"));
 
-                    Rectangle rec = new Rectangle();
-                    rec.setStroke(Color.BLACK);
-                    rec.setStrokeWidth(3);
-                    rec.setWidth((xend - xstart) * 0.6);
-                    rec.setY(30);
-                    rec.setHeight(20);
-                    rec.setFill(RED);
-                    if (startInExon < 0) {
-                        rec.setX((leftExonXstart + leftExonXend) / 2);
-                        int lengthInExon = peptideSeq.length() * 3 + startInExon;
-                        double lengthInExonRatio = (double) lengthInExon / exonLength;
-                        if (lengthInExonRatio < 1) {
-                            rec.setWidth(xstart + (xend - xstart) * lengthInExonRatio);
-                        } else {
-                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
-                        }
-                    } else {
-                        rec.setX(xstart + (xend - xstart) * ((double) startInExon / exonLength));
-
-                        int lengthInExon = peptideSeq.length() * 3;
-                        if (startInExon + lengthInExon < exonLength) {
-                            rec.setWidth((xend - xstart) * ((double) lengthInExon / exonLength));
-                        } else {
-                            rec.setWidth((rightExonXstart + rightExonXend) / 2 - (xstart+ (xend - xstart) * ((double) startInExon / exonLength)));
-                        }
-                    }
-
-
-                    group.getChildren().add(rec);
-                }
-            }
-
-            if(doc.get("peptidesOut", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-                for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
-
-                    Rectangle rec = new Rectangle();
-                    rec.setStroke(Color.BLACK);
-                    rec.setStrokeWidth(3);
-                    rec.setWidth((xend - xstart) * 0.6);
-                    rec.setY(100);
-                    rec.setHeight(20);
-                    rec.setFill(RED);
-
+                Rectangle rec = new Rectangle();
+                rec.setStroke(Color.BLACK);
+                rec.setStrokeWidth(3);
+                rec.setWidth((xend - xstart) * 0.6);
+                rec.setY(30);
+                rec.setHeight(20);
+                rec.setFill(RED);
+                if (startInExon < 0) {
                     rec.setX((leftExonXstart + leftExonXend) / 2);
-                    rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
+                    int lengthInExon = peptideSeq.length() * 3 + startInExon;
+                    double lengthInExonRatio = (double) lengthInExon / exonLength;
+                    if (lengthInExonRatio < 1) {
+                        rec.setWidth(xstart + (xend - xstart) * lengthInExonRatio);
+                    } else {
+                        rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
+                    }
+                } else {
+                    rec.setX(xstart + (xend - xstart) * ((double) startInExon / exonLength));
 
-
-                    group.getChildren().add(rec);
+                    int lengthInExon = peptideSeq.length() * 3;
+                    if (startInExon + lengthInExon < exonLength) {
+                        rec.setWidth((xend - xstart) * ((double) lengthInExon / exonLength));
+                    } else {
+                        rec.setWidth((rightExonXstart + rightExonXend) / 2 - (xstart+ (xend - xstart) * ((double) startInExon / exonLength)));
+                    }
                 }
+
+
+                group.getChildren().add(rec);
+            }
+
+            for (Object o : (JSONArray) doc.get("peptidesIn", JSONObject.class)
+                    .get(selectedRunRepresentation.getSelectionModel().getSelectedItem())) {
+
+                Rectangle rec = new Rectangle();
+                rec.setStroke(Color.BLACK);
+                rec.setStrokeWidth(3);
+                rec.setWidth((xend - xstart) * 0.6);
+                rec.setY(100);
+                rec.setHeight(20);
+                rec.setFill(RED);
+
+                rec.setX((leftExonXstart + leftExonXend) / 2);
+                rec.setWidth((rightExonXstart + rightExonXend) / 2 - (leftExonXstart + leftExonXend) / 2);
+
+
+                group.getChildren().add(rec);
             }
 
 
 
-            if(doc.containsKey("proteinCorrectedRatios") &&
-                    doc.get("proteinCorrectedRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+            if(doc.containsKey("proteinCorrectedRatios")){
 
                 final CategoryAxis xAxis = new CategoryAxis();
                 final NumberAxis yAxis = new NumberAxis();
@@ -983,31 +980,40 @@ public class SplicingTableController extends Controller {
                 bc.setTitle("Differential protein splicing");
                 bc.setLegendVisible(false);
 
-                XYChart.Series proteinCorrectedRatiosSeries = new XYChart.Series<>();
 
-                JSONObject intensities = (JSONObject) doc.get("proteinCorrectedRatios", JSONObject.class)
-                        .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+
+                JSONObject intensitiesRuns = doc.get("proteinCorrectedRatios", JSONObject.class);
+
 
                 HashMap<String, ArrayList<Double>> groups = new HashMap();
 
-                for(Object channel: intensities.keySet()){
-                    if(intensities.get(channel)!=null){
-                        proteinCorrectedRatiosSeries.getData().add(new XYChart.Data(channel, intensities.get(channel)));
-                    }
+                for(Object run: intensitiesRuns.keySet()) {
+                    JSONArray peptides = (JSONArray) intensitiesRuns.get(run);
+                    for(Object o: peptides) {
+                        JSONObject intensities = (JSONObject) o;
+                        for (Object channel : intensities.keySet()) {
 
-                    String channelStr = (String) channel;
-                    if(channelStr.contains("/")){
-                        String condition = channelStr.split("/")[0];
-                        if(!groups.containsKey(condition)){
-                            groups.put(condition, new ArrayList<>());
+                            String channelStr = (String) channel;
+//                        if (channelStr.contains("/")) {
+//                            String condition = channelStr.split("/")[0];
+//                            if (!groups.containsKey(condition)) {
+//                                groups.put(condition, new ArrayList<>());
+//                            }
+//                            groups.get(condition).add((Double) intensities.get(channel));
+//                        } else {
+//                            if (!groups.containsKey(channelStr)) {
+//                                groups.put(channelStr, new ArrayList<>());
+//                            }
+//                            groups.get(channelStr).add((Double) intensities.get(channel));
+//
+//                        }
+                            if (!groups.containsKey(channelStr)) {
+                                groups.put(channelStr, new ArrayList<>());
+                            }
+                            groups.get(channelStr).add((Double) intensities.get(channel));
+
                         }
-                        groups.get(condition).add((Double) intensities.get(channel));
-                    }else{
-                        ArrayList<Double> val = new ArrayList<>();
-                        val.add((Double) intensities.get(channel));
-                        groups.put(channelStr, val);
                     }
-
                 }
 
                 ConfidentBarChart cbc = new ConfidentBarChart();
@@ -1015,7 +1021,7 @@ public class SplicingTableController extends Controller {
                 cbc.setTitle("Normalised protein psi");
 
 
-                bc.getData().add(proteinCorrectedRatiosSeries);
+
                 GridPane.setColumnIndex(bc, 0);
                 representationChartsBox.getChildren().add(cbc);
 
@@ -1023,28 +1029,30 @@ public class SplicingTableController extends Controller {
 
 
 
-                if(doc.containsKey("proteinPeptidesRatios") &&
-                        doc.get("proteinPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+                if(doc.containsKey("proteinPeptidesRatios")){
 
                     ConfidentBarChart proteinPeptidesRatiosChart = new ConfidentBarChart();
-                    JSONArray peptidesRatios = (JSONArray) doc.get("proteinPeptidesRatios", JSONObject.class)
-                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+                    JSONObject runs = doc.get("proteinPeptidesRatios", JSONObject.class);
 
                     HashMap<String, ArrayList<Double>> channels = new HashMap<>();
+                    for(Object run: runs.keySet()) {
 
-                    for(Object o: peptidesRatios){
-                        JSONObject peptideChannels = ((JSONObject) o);
+                        JSONArray peptidesRatios = (JSONArray) runs.get(run);
 
-                        for(Object c: peptideChannels.keySet()){
-                            String channel = (String) c;
-                            if(!channels.containsKey(channel)){
-                                channels.put(channel, new ArrayList<>());
+
+                        for (Object o : peptidesRatios) {
+                            JSONObject peptideChannels = ((JSONObject) o);
+
+                            for (Object c : peptideChannels.keySet()) {
+                                String channel = (String) c;
+                                if (!channels.containsKey(channel)) {
+                                    channels.put(channel, new ArrayList<>());
+                                }
+                                channels.get(channel).add((double) peptideChannels.get(channel));
+
                             }
-                            channels.get(channel).add((double) peptideChannels.get(channel));
-
                         }
                     }
-
                     proteinPeptidesRatiosChart.addAll(channels);
                     proteinPeptidesRatiosChart.draw();
                     proteinPeptidesRatiosChart.setTitle("Non event peptides ratios");
@@ -1053,25 +1061,27 @@ public class SplicingTableController extends Controller {
 
                 }
 
-                if(doc.containsKey("eventPeptidesRatios") &&
-                        doc.get("eventPeptidesRatios", JSONObject.class).containsKey(selectedRunRepresentation.getSelectionModel().getSelectedItem())){
+                if(doc.containsKey("eventPeptidesRatios")){
 
                     ConfidentBarChart eventPeptidesRatiosChart = new ConfidentBarChart();
-                    JSONArray peptidesRatios = (JSONArray) doc.get("eventPeptidesRatios", JSONObject.class)
-                            .get(selectedRunRepresentation.getSelectionModel().getSelectedItem());
+                    JSONObject runs = (JSONObject) doc.get("eventPeptidesRatios", JSONObject.class).get(comparisonSplicingComboboxProtein.getSelectionModel().getSelectedItem());
 
                     HashMap<String, ArrayList<Double>> channels = new HashMap<>();
 
-                    for(Object o: peptidesRatios){
-                        JSONObject peptideChannels = ((JSONObject) o);
+                    for(Object run: runs.keySet()) {
 
-                        for(Object c: peptideChannels.keySet()){
-                            String channel = (String) c;
-                            if(!channels.containsKey(channel)){
-                                channels.put(channel, new ArrayList<>());
+                        JSONArray peptidesRatios = (JSONArray) runs.get(run);
+                        for (Object o : peptidesRatios) {
+                            JSONObject peptideChannels = ((JSONObject) o);
+
+                            for (Object c : peptideChannels.keySet()) {
+                                String channel = (String) c;
+                                if (!channels.containsKey(channel)) {
+                                    channels.put(channel, new ArrayList<>());
+                                }
+                                channels.get(channel).add((double) peptideChannels.get(channel));
+
                             }
-                            channels.get(channel).add((double) peptideChannels.get(channel));
-
                         }
                     }
 

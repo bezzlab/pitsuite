@@ -452,7 +452,7 @@ public class SpectrumViewerController implements Initializable {
 
         peaks = new ArrayList<>();
         for (int i = 0; i < mzs.length; i++) {
-            peaks.add(new Pair<>(mzs[i], intensities[i]));
+            peaks.add(new Pair<>(mzs[i], intensities[i]+57.02146));
         }
 
         peptide = new Peptide(sequence, new ArrayList<>(), new ArrayList<>(),

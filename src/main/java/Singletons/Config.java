@@ -17,6 +17,7 @@ public class Config {
 
 
 
+
     public JSONObject getConfig() {
         return config;
     }
@@ -361,6 +362,10 @@ public class Config {
     }
     public static boolean hasBlast(){
         return hasProteinBlast() || hasRnaBlast();
+    }
+
+    public static boolean hasMutations() {
+        return config.has("mutations") && config.getBoolean("mutations");
     }
 }
 

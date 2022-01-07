@@ -82,7 +82,7 @@ public class DatabaseGeneration {
                     case "splicingEvents":
                         if (filePath.getFileName().toString().contains("_events")) {
                             Platform.runLater(() -> progressDialog.setText("Importing splicing events..."));
-                            spliceEventsParser(filePath);
+                            //spliceEventsParser(filePath);
                         } else if (filePath.getFileName().toString().contains("splicingAllEvents_psi.tsv")) {
                             Platform.runLater(() -> progressDialog.setText("Importing splicing Psi / TPM ..."));
                             splicePsiParser(filePath);
@@ -1257,24 +1257,31 @@ public class DatabaseGeneration {
 
             Object obj = parser.parse(new FileReader(filePath));
 
-            JSONObject events = (JSONObject) obj;
-            for (Object o: events.keySet()) {
+            JSONObject runs = (JSONObject) obj;
+            for (Object o: runs.keySet()) {
 
-                String eventID = (String) o;
+                String run = (String) o;
 
-                JSONObject event = (JSONObject) events.get(eventID);
-                if (dgeDocsToDBList.size() >= 10000) {
-                    Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
-                    splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
-                    dgeCollection.insert(splicDocsArray);
-                    dgeDocsToDBList = new ArrayList<>();
+                JSONObject events = (JSONObject) runs.get(run);
+
+                for(Object o2: events.keySet()) {
+                    String eventID = (String) o2;
+                    if (dgeDocsToDBList.size() >= 10000) {
+                        Document[] splicDocsArray = new Document[dgeDocsToDBList.size()];
+                        splicDocsArray = dgeDocsToDBList.toArray(splicDocsArray);
+                        dgeCollection.insert(splicDocsArray);
+                        dgeDocsToDBList = new ArrayList<>();
+                    }
+
+                    JSONObject event = (JSONObject) events.get(eventID);
+
+
+                    Document doc = new Document(event);
+                    doc.put("event", eventID);
+                    doc.put("run", run);
+
+                    dgeDocsToDBList.add(doc);
                 }
-
-
-                Document doc = new Document(event);
-                doc.put("event", eventID);
-
-                dgeDocsToDBList.add(doc);
 
 
             }
@@ -1285,7 +1292,8 @@ public class DatabaseGeneration {
                 dgeCollection.insert(splicDocsArray);
             }
 
-            dgeCollection.createIndex("event", IndexOptions.indexOptions(IndexType.Unique, false));
+            dgeCollection.createIndex("event", IndexOptions.indexOptions(IndexType.NonUnique, false));
+            dgeCollection.createIndex("run", IndexOptions.indexOptions(IndexType.NonUnique, false));
 
             db.close();
 

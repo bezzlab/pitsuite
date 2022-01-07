@@ -11,6 +11,7 @@ import com.brunomnsilva.smartgraph.graphview.SmartCircularSortedPlacementStrateg
 import com.brunomnsilva.smartgraph.graphview.SmartGraphPanel;
 import com.brunomnsilva.smartgraph.graphview.SmartPlacementStrategy;
 import com.brunomnsilva.smartgraph.graphview.SmartRandomPlacementStrategy;
+import com.google.gson.JsonObject;
 import graphics.AnchorFitter;
 import graphics.ConfidentBarChart;
 import graphics.GraphicTools;
@@ -30,6 +31,8 @@ import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.scene.web.WebView;
 import javafx.util.Pair;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
@@ -70,13 +73,17 @@ import static org.dizitart.no2.filters.Filters.eq;
 public class PTMController implements Initializable {
 
     @FXML
-    public ListView<PSM> psmListView;
+    private TextFlow sequenceTextFlow;
     @FXML
-    public HBox intensitiesPane;
+    private ListView<PSM> psmListView;
     @FXML
-    public SpectrumViewerController spectrumViewerController;
+    private HBox intensitiesPane;
     @FXML
-    public PAGController pagController;
+    private SpectrumViewerController spectrumViewerController;
+    @FXML
+    private PAGController pagController;
+    @FXML
+    private TableColumn uniprotColumn;
     @FXML
     private ComboBox<String> runCombobox;
     @FXML
@@ -115,16 +122,18 @@ public class PTMController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         ptmGeneColumn.setCellValueFactory( new PropertyValueFactory<>("gene"));
+        uniprotColumn.setCellValueFactory( new PropertyValueFactory<>("uniprot"));
         posColumn.setCellValueFactory( new PropertyValueFactory<>("pos"));
         residueColumn.setCellValueFactory( new PropertyValueFactory<>("residue"));
         ptmLog2fcColumn.setCellValueFactory( new PropertyValueFactory<>("Log2fc"));
         ptmPvalColumn.setCellValueFactory( new PropertyValueFactory<>("pval"));
 
-        ptmGeneColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(5));
-        posColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(5));
-        residueColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(5));
-        ptmLog2fcColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(5));
-        ptmPvalColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(5));
+        ptmGeneColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
+        uniprotColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
+        posColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
+        residueColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
+        ptmLog2fcColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
+        ptmPvalColumn.prefWidthProperty().bind(ptmTable.widthProperty().divide(6));
 
 
         ptmTable.setRowFactory(tv -> {
@@ -133,9 +142,10 @@ public class PTMController implements Initializable {
                 if (!(row.isEmpty())) {
                     if (event.getButton().equals(MouseButton.PRIMARY)){
                         if ( event.getClickCount() == 1 ) {
+                            showProteinSequence(ptmTable.getSelectionModel().getSelectedItem());
                             intensitiesPane.getChildren().clear();
                             showIntensity(ptmTable.getSelectionModel().getSelectedItem());
-                            showPSM(ptmTable.getSelectionModel().getSelectedItem().getId(), "phospho");
+                            showPSM(ptmTable.getSelectionModel().getSelectedItem().getId(), runCombobox.getSelectionModel().getSelectedItem());
                             if(ptm.equals("Phospho (STY)") && Config.getSpecies()!=null && Config.getSpecies().equalsIgnoreCase("HOMO SAPIENS"))
                                 showPhosphositesKinases(row.getItem(), g, graphView);
                         }
@@ -223,7 +233,8 @@ public class PTMController implements Initializable {
             Matcher matcher = pattern.matcher(json.getString("id"));
             if (matcher.find()) {
                 PTM ptm = new PTM(matcher.group(1), Integer.parseInt(matcher.group(2)), json.getString("gene"), json.getDouble("log2fc"), json.has("pval") ? json.getDouble("pval") : Double.NaN, json.getJSONObject("samples"),
-                        json.getString("type"));
+                        json.getString("type"), json.has("uniprot")?json.getString("uniprot"):null);
+                ptm.setCds(json.getString("cds"));
 
                 if(ptm.getLog2fc()<min)
                     min = ptm.getLog2fc();
@@ -504,6 +515,27 @@ public class PTMController implements Initializable {
 
     public Pair<Double, Double> getMinMaxLog2fc() {
         return minMaxLog2fc;
+    }
+
+    public void showProteinSequence(PTM ptm){
+        String transcriptID = ptm.getCds().split(".p")[0];
+        Document doc = Database.getDb().getCollection("allTranscripts").find(eq("transcriptID", transcriptID)).firstOrDefault();
+
+        org.json.simple.JSONObject transcriptsCds = (org.json.simple.JSONObject) doc.get("CDS");
+        org.json.simple.JSONObject cds = (org.json.simple.JSONObject) transcriptsCds.get(ptm.getCds());
+        String proteinSequence  = (String) cds.get("sequence");
+
+        sequenceTextFlow.getChildren().clear();
+
+        Text beforePTM = new Text(proteinSequence.substring(0, ptm.getPos()-1));
+        sequenceTextFlow.getChildren().add(beforePTM);
+        Text ptmText = new Text(ptm.getResidue());
+        ptmText.setFill(Color.RED);
+        sequenceTextFlow.getChildren().add(ptmText);
+        Text afterPTM = new Text(proteinSequence.substring(ptm.getPos()));
+        sequenceTextFlow.getChildren().add(afterPTM);
+
+
     }
 
 

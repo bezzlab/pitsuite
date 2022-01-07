@@ -48,7 +48,7 @@ public class MutatedCdsController implements Initializable {
     private Pane newAASeqBox = new Pane();
     private Pane peptidesPane = new Pane();
     private VBox extendedSequencesBox = new VBox();
-    private ResultsController resultsController;
+
 
 
     @Override
@@ -64,9 +64,6 @@ public class MutatedCdsController implements Initializable {
         this.drawerController = drawerController;
     }
 
-    public void setResultsController(ResultsController resultsController){
-        this.resultsController = resultsController;
-    }
 
     public void showCds(Variation selectedVariation, CDS cds, int centerPos){
 
@@ -578,7 +575,7 @@ public class MutatedCdsController implements Initializable {
                     r.setOnMouseClicked(mouseEvent -> {
                         if(mouseEvent.getButton().equals(MouseButton.PRIMARY)){
                             if(mouseEvent.getClickCount() == 2){
-                                resultsController.showPeptideTab(peptide);
+                                ResultsController.getInstance().showPeptideTab(peptide);
                                 PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), peptide.getRunName());
                             }
                         }
@@ -630,7 +627,7 @@ public class MutatedCdsController implements Initializable {
                                         }else
                                             PeptideTableController.getInstance().findPeptideInTable(peptide.getSequence(), peptide.getRunName());
 
-                                        resultsController.showPeptideTab(peptide);
+                                        ResultsController.getInstance().showPeptideTab(peptide);
 
 
 
