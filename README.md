@@ -14,7 +14,9 @@ PIT, the core analysis pipeline performs the analysis from the raw files. The re
 Below are listed screenshots from PITgui, highlighting different features present in the application.
 
 
-https://user-images.githubusercontent.com/19326121/145691226-767da92b-2ea6-46c1-ab25-e681d9dcea1c.mp4
+
+
+https://user-images.githubusercontent.com/19326121/148542194-344732b8-c055-4dad-9df1-1eb3c6e2f4eb.mp4
 
 
 
