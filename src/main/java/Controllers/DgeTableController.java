@@ -929,33 +929,41 @@ public class DgeTableController extends Controller {
                 HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
                 for (String peptide : res.keySet()) {
                     JSONObject peptideObj = res.getJSONObject(peptide).getJSONObject("intensity");
-                    for (String subRun : peptideObj.keySet()) {
+                    if( res.getJSONObject(peptide).getBoolean("isGeneUnique")) {
+                        for (String subRun : peptideObj.keySet()) {
 
-                        if (!groups.containsKey(subRun)) {
-                            groups.put(subRun, new HashMap<>());
-                        }
-
-                        JSONObject subRunObj = peptideObj.getJSONObject(subRun);
-
-                        Set<String> conditions = subRunObj.keySet();
-                        for (String condition : conditions) {
-                            if (!groups.get(subRun).containsKey(condition)) {
-                                groups.get(subRun).put(condition, new ArrayList<>());
+                            if (!groups.containsKey(subRun)) {
+                                groups.put(subRun, new HashMap<>());
                             }
 
-                            if (condition.equals(referenceCondition)) {
-                                groups.get(subRun).get(condition).add(1.);
-                            } else {
-                                double ratio = subRunObj.getDouble(condition) / subRunObj.getDouble(referenceCondition);
-                                if (ratio != Double.POSITIVE_INFINITY) {
-                                    groups.get(subRun).get(condition)
-                                            .add(ratio);
+                            JSONObject subRunObj = peptideObj.getJSONObject(subRun);
+
+                            Set<String> conditions = subRunObj.keySet();
+                            for (String condition : conditions) {
+                                if (!groups.get(subRun).containsKey(condition)) {
+                                    groups.get(subRun).put(condition, new ArrayList<>());
                                 }
 
+                                groups.get(subRun).get(condition)
+                                        .add(subRunObj.getDouble(condition));
                             }
                         }
                     }
 
+
+                    JSONObject intensities = new JSONObject(result).getJSONObject("intensity");
+                    for (String subrun : intensities.keySet()) {
+                        JSONObject subrunObj = (JSONObject) intensities.get(subrun);
+                        for (String condition : subrunObj.keySet()) {
+                            double intensity;
+                            if (subrunObj.get(condition) instanceof Long)
+                                intensity = ((Long) subrunObj.get(condition)).doubleValue();
+                            else
+                                intensity = (double) subrunObj.get(condition);
+                        
+                            proteinConfidentBarChart.setBarValues(subrun, condition, intensity);
+                        }
+                    }
 
                 }
 
@@ -1067,8 +1075,8 @@ public class DgeTableController extends Controller {
 
                 }
                 proteinConfidentBarChart.addGroups(groups);
-                proteinConfidentBarChart.setReference(refCondition);
-                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+                //proteinConfidentBarChart.setReference(refCondition);
+                //proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
 
             } else { //TMT
 
@@ -1124,18 +1132,30 @@ public class DgeTableController extends Controller {
                             peptideSeries.getData().add(new XYChart.Data(sample, intensity.get(sample)));
 
 
-                            double ratio = ((Double) intensity.get(sample)) / referenceIntensityMean;
+
                             if (!groups.get(condition).containsKey(sample)) {
                                 groups.get(condition).put(sample, new ArrayList<>());
                             }
-                            if (ratio != Double.POSITIVE_INFINITY) {
-                                groups.get(condition).get(sample)
-                                        .add(ratio);
-                            }
+                            groups.get(condition).get(sample)
+                                    .add((Double) intensity.get(sample));
                         }
                     }
 
 
+                }
+
+                JSONObject intensities = new JSONObject(result).getJSONObject("intensity");
+                for (String subrun : intensities.keySet()) {
+                    JSONObject subrunObj = (JSONObject) intensities.get(subrun);
+                    for (String condition : subrunObj.keySet()) {
+                        double intensity;
+                        if (subrunObj.get(condition) instanceof Long)
+                            intensity = ((Long) subrunObj.get(condition)).doubleValue();
+                        else
+                            intensity = (double) subrunObj.get(condition);
+
+                        proteinConfidentBarChart.setBarValues(subrun, condition, intensity);
+                    }
                 }
 
 //                    for(Pair<String, String> runCondition: runsConditions){

@@ -31,6 +31,8 @@ public class ConfidentBarChart extends Pane {
     Pane titlePane = new Pane();
     HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
 
+    HashMap<String, HashMap<String, Double>> barValues = new HashMap<>();
+
     Double manualMin;
     Double manualMax;
 
@@ -160,6 +162,17 @@ public class ConfidentBarChart extends Pane {
                 }
             }
 
+            for (Map.Entry<String, HashMap<String, Double>> groupEntry : barValues.entrySet()) {
+                for (Map.Entry<String, Double> entry : groupEntry.getValue().entrySet()) {
+                    if (entry.getValue() > max) {
+                        max = entry.getValue();
+                    }
+                    if (entry.getValue() < min) {
+                        min = entry.getValue();
+                    }
+                }
+            }
+
 
             if (manualMax != null)
                 max = manualMax;
@@ -276,8 +289,16 @@ public class ConfidentBarChart extends Pane {
                     rec.setX(offsetX);
                     rec.setWidth(barWidth);
 
-                    rec.setY(height - height * (agregatedValue / max));
-                    rec.setHeight(height * (agregatedValue / max));
+
+                    if(barValues.containsKey(groupEntry.getKey()) && barValues.get(groupEntry.getKey()).containsKey(entry.getKey())){
+                        double value = barValues.get(groupEntry.getKey()).get(entry.getKey());
+                        rec.setY(height - height * (value / max));
+                        rec.setHeight(height * ( value / max));
+                    }else{
+                        rec.setY(height - height * (agregatedValue / max));
+                        rec.setHeight(height * (agregatedValue / max));
+                    }
+
 
 
                     rec.setFill(Color.web(colors[colorIndex]));
@@ -317,21 +338,19 @@ public class ConfidentBarChart extends Pane {
                         dataPane.getChildren().add(intervalLineHorizBottom);
                     }
 
-                    if (!entry.getKey().equals(reference)) {
-                        for (double value : entry.getValue()) {
-                            Circle c = new Circle();
-                            double radius = Math.min(barWidth / 12, 7);
-                            c.setRadius(radius);
-                            Random rand = new Random();
-                            double x = rand.nextDouble();
-                            x *= barWidth - 2 * radius;
-                            x += radius;
+                    for (double value : entry.getValue()) {
+                        Circle c = new Circle();
+                        double radius = Math.min(barWidth / 12, 7);
+                        c.setRadius(radius);
+                        Random rand = new Random();
+                        double x = rand.nextDouble();
+                        x *= barWidth - 2 * radius;
+                        x += radius;
 
-                            c.setCenterX(offsetX + x);
-                            c.setCenterY(height - height * value / max);
-                            dataPane.getChildren().add(c);
+                        c.setCenterX(offsetX + x);
+                        c.setCenterY(height - height * value / max);
+                        dataPane.getChildren().add(c);
 
-                        }
                     }
 
                     offsetX += barWidth;
@@ -719,6 +738,13 @@ public class ConfidentBarChart extends Pane {
     public void updateSettings(org.json.JSONObject settings) {
         fontSize = settings.getJSONObject("Fonts").getJSONObject("charts").getInt("size");
 
+    }
+
+    public void setBarValues(String group, String bar, double intensity){
+        if(!barValues.containsKey(group)){
+            barValues.put(group, new HashMap<String, Double>());
+        }
+        barValues.get(group).put(bar, intensity);
 
     }
 }

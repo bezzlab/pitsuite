@@ -86,8 +86,8 @@
 
              </TableView>
              <HBox GridPane.columnSpan="2" GridPane.rowIndex="1" >
-                 <Pane fx:id="spectrumPane" HBox.hgrow="ALWAYS"/>
-                 <AnchorPane fx:id="lorikeetContainer"/>
+                 <Pane fx:id="spectrumPane" minWidth="700" maxWidth="700"/>
+                 <AnchorPane fx:id="lorikeetContainer" HBox.hgrow="ALWAYS"/>
 <!--                 <WebView fx:id="specWebview" />-->
              </HBox>
 
