@@ -461,7 +461,7 @@ public class SpectrumViewerController implements Initializable {
         ArrayList<HashMap<String, Object>> data = getDatasets(sequence, peptide, peaks);
         drawGraph(data, mzs, intensities);
         makeIonTable();
-        runLorikeet(mzs, intensities, sequence);
+        //runLorikeet(mzs, intensities, sequence);
     }
 
 

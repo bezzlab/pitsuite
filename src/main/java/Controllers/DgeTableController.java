@@ -961,7 +961,7 @@ public class DgeTableController extends Controller {
                             else
                                 intensity = (double) subrunObj.get(condition);
                         
-                            proteinConfidentBarChart.setBarValues(subrun, condition, intensity);
+                            proteinConfidentBarChart.setBarValues(subrun+"/"+condition, intensity);
                         }
                     }
 
@@ -1105,39 +1105,33 @@ public class DgeTableController extends Controller {
                     peptideSeries.setName(peptide);
                     allPeptidesSeries.add(peptideSeries);
 
-                    ArrayList<Double> referenceIntensities = new ArrayList<>();
 
 
-                    if (res.getJSONObject(peptide).getJSONObject("intensity").has(msRun)) {
-                        JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity").getJSONObject(msRun);
-
-                        ArrayList<Double> referenceIntensitiesPeptide = new ArrayList<>();
-                        for (String sample : samples) {
-                            if (intensity.get(sample) instanceof Double) {
-                                if (sample.split("/")[0].equals(refCondition)) {
-                                    referenceIntensitiesPeptide.add(intensity.getDouble(sample));
-                                }
-                            }
-                        }
-
-                        Double referenceIntensityMean = referenceIntensitiesPeptide.stream().mapToDouble(a -> a).average().getAsDouble();
-                        referenceIntensities.add(referenceIntensityMean);
+                    JSONObject intensity = res.getJSONObject(peptide).getJSONObject("intensity");
 
 
-                        for (String sample : samples) {
+
+                    for (String subrun : intensity.keySet()) {
+                        JSONObject subrunObj = (JSONObject) intensity.get(subrun);
+                        for (String sample : subrunObj.keySet()) {
                             String condition = sample.split("/")[0];
                             if (!groups.containsKey(condition)) {
                                 groups.put(condition, new HashMap<>());
                             }
-                            peptideSeries.getData().add(new XYChart.Data(sample, intensity.get(sample)));
+                            peptideSeries.getData().add(new XYChart.Data((intensity.keySet().size()>1?subrun+"/":"")+sample, subrunObj.get(sample)));
 
 
-
-                            if (!groups.get(condition).containsKey(sample)) {
-                                groups.get(condition).put(sample, new ArrayList<>());
+                            if (!groups.get(condition).containsKey((intensity.keySet().size()>1?subrun+"/":"")+sample)) {
+                                groups.get(condition).put((intensity.keySet().size()>1?subrun+"/":"")+sample, new ArrayList<>());
                             }
-                            groups.get(condition).get(sample)
-                                    .add((Double) intensity.get(sample));
+
+                            if (subrunObj.get(sample) instanceof Long)
+                                groups.get(condition).get((intensity.keySet().size()>1?subrun+"/":"")+sample)
+                                        .add(Double.valueOf((Long) subrunObj.get(sample)));
+                            else
+                                groups.get(condition).get((intensity.keySet().size()>1?subrun+"/":"")+sample)
+                                        .add((Double) subrunObj.get(sample));
+
                         }
                     }
 
@@ -1147,14 +1141,14 @@ public class DgeTableController extends Controller {
                 JSONObject intensities = new JSONObject(result).getJSONObject("intensity");
                 for (String subrun : intensities.keySet()) {
                     JSONObject subrunObj = (JSONObject) intensities.get(subrun);
-                    for (String condition : subrunObj.keySet()) {
+                    for (String sample : subrunObj.keySet()) {
                         double intensity;
-                        if (subrunObj.get(condition) instanceof Long)
-                            intensity = ((Long) subrunObj.get(condition)).doubleValue();
+                        if (subrunObj.get(sample) instanceof Long)
+                            intensity = ((Long) subrunObj.get(sample)).doubleValue();
                         else
-                            intensity = (double) subrunObj.get(condition);
+                            intensity = (double) subrunObj.get(sample);
 
-                        proteinConfidentBarChart.setBarValues(subrun, condition, intensity);
+                        proteinConfidentBarChart.setBarValues((intensities.keySet().size()>1?subrun+"/":"")+sample, intensity);
                     }
                 }
 
@@ -1181,8 +1175,7 @@ public class DgeTableController extends Controller {
 
 
                 proteinConfidentBarChart.addGroups(groups);
-                proteinConfidentBarChart.setReference(refCondition);
-                proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+
 
             }
 

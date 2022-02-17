@@ -942,7 +942,7 @@ public class BlastPaneController implements Initializable {
                     peptideRectangle.setX(alignedIndex*peptideAA.getLayoutBounds().getWidth());
                     peptideRectangle.setHeight(peptideAA.getLayoutBounds().getHeight());
                     peptideRectangle.setY(3*peptideAA.getLayoutBounds().getHeight());
-                    peptideRectangle.setFill(Color.YELLOW);
+                    peptideRectangle.setFill(Color.rgb(193, 154, 0));
                     pane.getChildren().add(peptideRectangle);
                     Text peptideLabel = new Text("Peptide");
                     peptideLabel.setFont(Font.font("monospace", fontWeight, 20));

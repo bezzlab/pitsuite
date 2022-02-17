@@ -1043,16 +1043,12 @@ public class DatabaseGeneration {
         Nitrite db = Nitrite.builder().filePath(databasePathAndName ).openOrCreate();
         NitriteCollection dPsiCollection = db.getCollection("SplicingDPSI_"+ filePath.getParent().getFileName().toString());
 
-        ArrayList<Document> splicDocsToDBList = new ArrayList<>();
-
-
         try  {
 
             ArrayList<Document> dpsiDocsToDBList = new ArrayList<>();
 
             JSONParser parser = new JSONParser();
 
-            boolean hasBlastName = false;
 
             try {
                 Object obj = parser.parse(new FileReader(filePath.toString()));

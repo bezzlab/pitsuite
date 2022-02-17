@@ -31,7 +31,7 @@ public class ConfidentBarChart extends Pane {
     Pane titlePane = new Pane();
     HashMap<String, HashMap<String, ArrayList<Double>>> groups = new HashMap<>();
 
-    HashMap<String, HashMap<String, Double>> barValues = new HashMap<>();
+    HashMap<String, Double> barValues = new HashMap<>();
 
     Double manualMin;
     Double manualMax;
@@ -162,15 +162,15 @@ public class ConfidentBarChart extends Pane {
                 }
             }
 
-            for (Map.Entry<String, HashMap<String, Double>> groupEntry : barValues.entrySet()) {
-                for (Map.Entry<String, Double> entry : groupEntry.getValue().entrySet()) {
-                    if (entry.getValue() > max) {
-                        max = entry.getValue();
-                    }
-                    if (entry.getValue() < min) {
-                        min = entry.getValue();
-                    }
+            for (Map.Entry<String, Double> entry : barValues.entrySet()) {
+
+                if (entry.getValue() > max) {
+                    max = entry.getValue();
                 }
+                if (entry.getValue() < min) {
+                    min = entry.getValue();
+                }
+
             }
 
 
@@ -290,8 +290,9 @@ public class ConfidentBarChart extends Pane {
                     rec.setWidth(barWidth);
 
 
-                    if(barValues.containsKey(groupEntry.getKey()) && barValues.get(groupEntry.getKey()).containsKey(entry.getKey())){
-                        double value = barValues.get(groupEntry.getKey()).get(entry.getKey());
+
+                    if(barValues.containsKey(entry.getKey())){
+                        double value = barValues.get(entry.getKey());
                         rec.setY(height - height * (value / max));
                         rec.setHeight(height * ( value / max));
                     }else{
@@ -740,11 +741,10 @@ public class ConfidentBarChart extends Pane {
 
     }
 
-    public void setBarValues(String group, String bar, double intensity){
-        if(!barValues.containsKey(group)){
-            barValues.put(group, new HashMap<String, Double>());
-        }
-        barValues.get(group).put(bar, intensity);
+    public void setBarValues(String sample, double intensity){
+
+        barValues.put(sample, intensity);
+        System.out.println(this);
 
     }
 }

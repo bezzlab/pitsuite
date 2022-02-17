@@ -449,6 +449,8 @@ public class PTMController implements Initializable {
                 HashMap<String, ArrayList<Double>> ptmIntensitiesNormalised = new HashMap<>();
                 for (String sample : ptmIntensities.keySet()) {
                     String condition = sample.split("/")[0];
+                    if(!sample.contains("/"))
+                        sample=sample+"/1";
                     if (!ptmIntensitiesNormalised.containsKey(condition))
                         ptmIntensitiesNormalised.put(condition, new ArrayList<>());
                     ptmIntensitiesNormalised.get(condition).add(ptmIntensities.getDouble(sample) / intensitiesRatios.get(sample));

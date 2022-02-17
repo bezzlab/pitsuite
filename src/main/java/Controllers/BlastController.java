@@ -64,7 +64,7 @@ public class BlastController implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
 
         blastIndex = new BlastIndex();
-        //blastIndex.load();
+        blastIndex.load();
         definitionColumn.setCellValueFactory( new PropertyValueFactory<>("definition"));
         queryCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("queryCoverage"));
         hitCoverageColumn.setCellValueFactory( new PropertyValueFactory<>("hitCoverage"));
