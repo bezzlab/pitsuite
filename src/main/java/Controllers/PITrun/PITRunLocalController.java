@@ -1,6 +1,7 @@
 package Controllers.PITrun;
 
 import Controllers.FXMLDocumentController;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -12,6 +13,7 @@ import javafx.stage.FileChooser;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import utilities.CopyFiles;
 
 import java.io.*;
 import java.net.URL;
@@ -42,39 +44,58 @@ public class PITRunLocalController implements Initializable {
 
     @FXML
     public void run(){
-        ProcessBuilder processBuilder = new ProcessBuilder();
+
 
 
         new Thread(()-> {
-            JSONParser parser = new JSONParser();
-
 
             try {
+
+
+                JSONParser parser = new JSONParser();
+
+
                 JSONObject a = (JSONObject) parser.parse(new FileReader(configField.getText()));
                 String output = (String) a.get("output");
-                processBuilder.command("python3", "/home/esteban/Documents/PIT/pit_docker/LaunchDocker.py", "-c", configField.getText());
-                process = processBuilder.start();
-                process.waitFor();
-
-                containerName = Paths.get(output).getFileName().toString();
-                processBuilder.command("docker", "run",  "--name", containerName, "-v", Paths.get(output) + ":/project/", "pit");
-                process = processBuilder.start();
-
                 cancelButton.setVisible(true);
                 runButton.setVisible(false);
 
+                CopyFiles.copy(configField.getText(), logsArea);
+                logsArea.clear();
 
-                BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(process.getInputStream()));
+                ProcessBuilder processBuilder = new ProcessBuilder();
+                containerName = Paths.get(output).getFileName().toString();
+
+                try{
+                    processBuilder.command("docker", "stop", containerName);
+                    process = processBuilder.start();
+                    process.waitFor();
+                }catch (Exception e){}
+                try{
+                    processBuilder.command("docker", "rm", "--force", containerName);
+                    process = processBuilder.start();
+                    process.waitFor();
+                }catch (Exception e){}
+
+
+//                processBuilder.command("docker", "run", "-it", "--name", containerName, "-v", Paths.get(output) + ":/project/", "pit");
+//                process = processBuilder.start();
+                Process p = Runtime.getRuntime().exec("docker run -t --name "+ containerName +" -v "+ Paths.get(output) + ":/project/ pit");
+
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
                 StringBuilder builder = new StringBuilder();
                 String line = null;
-                while ( (line = reader.readLine()) != null) {
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
                     builder.append(line);
                     builder.append(System.getProperty("line.separator"));
-                    logsArea.setText(builder.toString());
-                }
+                    Platform.runLater(()->{
+                        logsArea.setText(builder.toString());
+                    });
 
-            } catch (IOException | ParseException | InterruptedException e) {
+                }
+            }catch (Exception e){
                 e.printStackTrace();
             }
 

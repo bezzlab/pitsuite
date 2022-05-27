@@ -44,7 +44,7 @@ public class MSConfigController implements Initializable {
     @FXML
     private ComboBox<String> labelTypeCombo;
 
-    HashMap<String, Pair<ComboBox<String>, ComboBox<String>>> labelsMap;
+    HashMap<Pair<ComboBox<String>, ComboBox<String>>, String> labelsMap;
 
     private static MSConfigController instance;
 
@@ -163,7 +163,7 @@ public class MSConfigController implements Initializable {
                 labelsPane.add(conditionCombo, 1, i);
                 labelsPane.add(sampleCombo, 2, i);
 
-                labelsMap.put(labels[i], new Pair<>(conditionCombo, sampleCombo));
+                labelsMap.put(new Pair<>(conditionCombo, sampleCombo), labels[i]);
             }
         }else if(labelTypeCombo.getSelectionModel().getSelectedItem().contains("SILAC")){
             for (int i = 0; i < labels.length; i++) {
@@ -174,7 +174,7 @@ public class MSConfigController implements Initializable {
                 conditionCombo.getItems().addAll(SampleConfigController.getInstance().getConditions());
                 labelsPane.add(name, 0, i);
                 labelsPane.add(conditionCombo, 1, i);
-                labelsMap.put(labels[i], new Pair<>(conditionCombo, null));
+                labelsMap.put(new Pair<>(conditionCombo, null), labels[i]);
 
             }
         }
@@ -196,12 +196,12 @@ public class MSConfigController implements Initializable {
             run.setCombinedRun(combinedRunCombo.getSelectionModel().getSelectedItem());
 
         HashMap<String, String> sampleLabelMap = new HashMap<>();
-        for(Map.Entry<String, Pair<ComboBox<String>, ComboBox<String>>> entry: labelsMap.entrySet()){
-            String sampleName = entry.getValue().getKey().getSelectionModel().getSelectedItem();
-            if(entry.getValue().getValue()!=null && entry.getValue().getValue().getSelectionModel().getSelectedItem()!=null && !entry.getValue().getValue().getSelectionModel().getSelectedItem().equals("None"))
-                sampleName+= "/"+entry.getValue().getValue().getSelectionModel().getSelectedItem();
+        for(Map.Entry<Pair<ComboBox<String>, ComboBox<String>>, String> entry: labelsMap.entrySet()){
+            String sampleName = entry.getKey().getKey().getSelectionModel().getSelectedItem();
+            if(entry.getKey().getValue()!=null && entry.getKey().getValue().getSelectionModel().getSelectedItem()!=null && !entry.getKey().getValue().getSelectionModel().getSelectedItem().equals("None"))
+                sampleName+= "/"+entry.getKey().getValue().getSelectionModel().getSelectedItem();
 
-            sampleLabelMap.put(entry.getKey(), sampleName);
+            sampleLabelMap.put(entry.getValue(), sampleName);
         }
         run.setLabels(sampleLabelMap);
         if(labelTypeCombo.getSelectionModel().getSelectedItem().contains("TMT")){

@@ -172,21 +172,27 @@ public class ProteinMSController extends Controller implements Initializable {
                 if (doc.containsKey("ms")){
                    JSONObject msDoc =  doc.get("ms", JSONObject.class);
                    if(msDoc.containsKey(run)){
-                       JSONObject runDoc = (JSONObject) msDoc.get(run);
-                       double dgeFoldChange;
-                       if (runDoc.get("log2fc") instanceof Long)
-                           dgeFoldChange = ((Long) runDoc.get("log2fc")).doubleValue();
-                       else
-                           dgeFoldChange = (double) runDoc.get("log2fc");
-
-                       double dgePVal = Double.NaN;
-                       if (runDoc.containsKey("padj")) {
-                           if (runDoc.get("padj") instanceof Long)
-                               dgePVal = ((Long) runDoc.get("padj")).doubleValue();
+                       try{
+                           JSONObject runDoc = (JSONObject) msDoc.get(run);
+                           double dgeFoldChange;
+                           if (runDoc.get("log2fc") instanceof Long)
+                               dgeFoldChange = ((Long) runDoc.get("log2fc")).doubleValue();
                            else
-                               dgePVal = (double) runDoc.get("padj");
+                               dgeFoldChange = (double) runDoc.get("log2fc");
+
+                           double dgePVal = Double.NaN;
+                           if (runDoc.containsKey("padj")) {
+                               if (runDoc.get("padj") instanceof Long)
+                                   dgePVal = ((Long) runDoc.get("padj")).doubleValue();
+                               else
+                                   dgePVal = (double) runDoc.get("padj");
+                           }
+                           proteinsTable.getItems().add(new ProteinRow((String) doc.get("symbol"), dgeFoldChange, dgePVal));
+                       } catch (Exception e){
+                           e.printStackTrace();
                        }
-                        proteinsTable.getItems().add(new ProteinRow((String) doc.get("symbol"), dgeFoldChange, dgePVal));
+
+
                    }
                 }
             }

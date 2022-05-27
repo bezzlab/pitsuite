@@ -7,13 +7,15 @@
 <?import javafx.scene.layout.VBox?>
 
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.Label?>
 <AnchorPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.PITrun.PITRunLocalController">
    <children>
-      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" >
          <children>
+            <Label>Configugation file</Label>
             <TextField fx:id="configField" onMouseClicked="#chooseConfig" />
-            <TextArea fx:id="logsArea" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
-            <HBox prefHeight="100.0" prefWidth="200.0">
+            <TextArea promptText="Logs" fx:id="logsArea" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
+            <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                <children>
                   <Button fx:id="cancelButton" mnemonicParsing="false" onMouseClicked="#cancel" text="Cancel" visible="false" />
                   <Button fx:id="runButton" mnemonicParsing="false" onMouseClicked="#run" text="Run" />

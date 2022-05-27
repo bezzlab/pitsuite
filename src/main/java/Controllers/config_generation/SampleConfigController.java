@@ -245,7 +245,7 @@ public class SampleConfigController implements Initializable {
     public void pickFasta() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(
-                "Fasta", "*.fasta"));
+                "Fasta", "*.fasta", "*.fa"));
         File selectedDirectory = fileChooser.showOpenDialog(FXMLDocumentController.getInstance().getStage());
         if(selectedDirectory!=null)
             refFastaField.setText(selectedDirectory.getAbsolutePath());

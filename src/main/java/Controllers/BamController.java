@@ -18,11 +18,7 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
-import javafx.geometry.Side;
 import javafx.scene.Group;
-import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -44,7 +40,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
 
 public class BamController implements Initializable {
 
@@ -206,6 +201,7 @@ public class BamController implements Initializable {
         if(selectedFiles.size()>0) {
 
             mainBox.getChildren().clear();
+            panes.clear();
 
 
             int indexStart = start - geneStart;
@@ -230,7 +226,6 @@ public class BamController implements Initializable {
                         int interval = 1;
                         int cumsum = 0;
                         boolean isAccumulated = false;
-                        ArrayList<Integer> indexes = new ArrayList<>();
 
                         if ((indexEnd - indexStart) > 10000) {
                             isAccumulated = true;
@@ -251,7 +246,6 @@ public class BamController implements Initializable {
                             for (int i = indexStart; i < indexEnd; i++) {
                                 if ((i - indexStart) % interval == 0) {
                                     cumsum += depthList[i];
-                                    indexes.add(i);
                                     depthListFinal[(int) Math.floor((double) (i - indexStart) / interval)] = cumsum;
 
                                     cumsum = 0;

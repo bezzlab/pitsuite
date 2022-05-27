@@ -901,11 +901,7 @@ public class DgeTableController extends Controller {
             lineChart.prefWidthProperty().bind(container.widthProperty().divide(3));
 
 
-            ArrayList<XYChart.Series> allSeriesAbundance = new ArrayList<>();
             ArrayList<XYChart.Series> allPeptidesSeries = new ArrayList<>();
-
-//        XYChart.Series s = new XYChart.Series();
-//        allSeriesAbundance.add(new XYChart.Data(conditionKey+" "+sampleKey, condition.getInt(sampleKey));
 
 
             ConfidentBarChart proteinConfidentBarChart = new ConfidentBarChart();
@@ -1011,9 +1007,25 @@ public class DgeTableController extends Controller {
                     }
                 }
 
-                runsConditions.sort(Comparator.comparing(Pair::getValue));
+                double maxSampleIntensity = 0;
+                JSONObject intensities = new JSONObject(result).getJSONObject("intensity");
+                for (String subrun : intensities.keySet()) {
 
-                String refCondition = runsConditions.get(0).getValue();
+                    double intensity;
+                    if (intensities.get(subrun) instanceof Long)
+                        intensity = ((Long) intensities.get(subrun)).doubleValue();
+                    else
+                        intensity = (double) intensities.get(subrun);
+
+                    if (intensity > maxSampleIntensity)
+                        maxSampleIntensity = intensity;
+
+
+
+                    proteinConfidentBarChart.setBarValues(subrun, intensity);
+
+                }
+                runsConditions.sort(Comparator.comparing(Pair::getValue));
 
 
                 res = res.getJSONObject("peptides");
@@ -1023,60 +1035,42 @@ public class DgeTableController extends Controller {
                     peptideSeries.setName(peptide);
                     allPeptidesSeries.add(peptideSeries);
 
-                    ArrayList<Double> referenceIntensities = new ArrayList<>();
+                    boolean canInsert = true;
 
                     for (Pair<String, String> runCondition : runsConditions) {
-
-                        String run = runCondition.getKey();
-                        String condition = runCondition.getValue();
-
-                        double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(run);
-
-                        peptideSeries.getData().add(new XYChart.Data(run, intensity));
-
-
-                        if (condition.equals(refCondition)) {
-                            referenceIntensities.add(intensity);
-                        } else {
-                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
-                                    .average().getAsDouble();
-                            double ratio = intensity / referenceIntensityMean;
-                            if (!groups.get(condition).containsKey(run)) {
-                                groups.get(condition).put(run, new ArrayList<>());
-                            }
-                            if (ratio != Double.POSITIVE_INFINITY) {
-                                groups.get(condition).get(run)
-                                        .add(ratio);
-                            }
-
-                        }
-                    }
-                    for (Pair<String, String> runCondition : runsConditions) {
-                        if (runCondition.getValue().equals(refCondition)) {
-                            String run = runCondition.getKey();
-                            String condition = runCondition.getValue();
-                            double intensity = res.getJSONObject(peptide).getJSONObject("intensities").getDouble(run);
-                            double referenceIntensityMean = referenceIntensities.stream().mapToDouble(a -> a)
-                                    .average().getAsDouble();
-                            double ratio = intensity / referenceIntensityMean;
-                            if (!groups.get(condition).containsKey(run)) {
-                                groups.get(condition).put(run, new ArrayList<>());
-                            }
-                            if (ratio != Double.POSITIVE_INFINITY) {
-                                groups.get(condition).get(run)
-                                        .add(ratio);
-                            }
-
-                        } else {
+                        double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(runCondition.getKey());
+                        if(intensity>3*maxSampleIntensity){
+                            canInsert=false;
                             break;
                         }
                     }
 
+                    if (canInsert) {
+
+
+                        for (Pair<String, String> runCondition : runsConditions) {
+
+                            String run = runCondition.getKey();
+                            String condition = runCondition.getValue();
+
+                            double intensity = res.getJSONObject(peptide).getJSONObject("intensity").getDouble(run);
+
+                            peptideSeries.getData().add(new XYChart.Data(run, intensity));
+
+
+                            if (!groups.get(condition).containsKey(run)) {
+                                groups.get(condition).put(run, new ArrayList<>());
+                            }
+                            if (intensity != Double.POSITIVE_INFINITY) {
+                                groups.get(condition).get(run)
+                                        .add(intensity);
+                            }
+                        }
+                    }
 
                 }
                 proteinConfidentBarChart.addGroups(groups);
-                //proteinConfidentBarChart.setReference(refCondition);
-                //proteinConfidentBarChart.drawHorizontalLineAt(1., refCondition);
+
 
             } else { //TMT
 
