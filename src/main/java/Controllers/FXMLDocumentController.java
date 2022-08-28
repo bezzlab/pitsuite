@@ -79,8 +79,7 @@ public class FXMLDocumentController implements Initializable {
     private TextField pathTosaveDatabaseTextField;
     @FXML
     private Button directoryFieldBrowseButton;
-    @FXML
-    private Button pathTosaveDatabaseButton;
+
     @FXML
     private TextField newProjNameTextField;
     @FXML
@@ -117,14 +116,14 @@ public class FXMLDocumentController implements Initializable {
         existingProject.setVisible(false);
         directoryFieldTextField.setVisible(true);
         directoryLabel.setVisible(true);
-        directoryToSaveDBLabel.setVisible(true);
+
         directoryFieldBrowseButton.setVisible(true);
         nameLabel.setVisible(true);
         newProjNameTextField.setVisible(true);
         createButton.setVisible(true);
         genConfigFile.setVisible(false);
-        pathTosaveDatabaseTextField.setVisible(true);
-        pathTosaveDatabaseButton.setVisible(true);
+
+
     }
 
     public void browse() {
@@ -134,10 +133,10 @@ public class FXMLDocumentController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle){
         instance = this;
         directoryFieldTextField.setEditable(false); // not possible to edit the path, only from the one extracted with the button
-        pathTosaveDatabaseTextField.setEditable(false);
+
         createButton.setDisable(true);
-        pathTosaveDatabaseTextField.setVisible(false);
-        pathTosaveDatabaseButton.setVisible(false);
+
+
 
 //        newProjectButtonsVBox.setVisible(true);
 //        projectImportDetailsVBox.setVisible(false);
@@ -153,7 +152,7 @@ public class FXMLDocumentController implements Initializable {
         directoryFieldBrowseButton.setVisible(false);
         directoryFieldTextField.setVisible(false);
         directoryLabel.setVisible(false);
-        directoryToSaveDBLabel.setVisible(false);
+
         newProjNameTextField.setVisible(false);
         nameLabel.setVisible(false);
         createButton.setVisible(false);
@@ -237,12 +236,6 @@ public class FXMLDocumentController implements Initializable {
         });
 
 
-        pathTosaveDatabaseButton.setOnAction(event -> {
-            DirectoryChooser chooser = new DirectoryChooser();
-            File selectedFile = chooser.showDialog(((Node) event.getTarget()).getScene().getWindow());
-
-            pathTosaveDatabaseTextField.setText(selectedFile.toString());
-        });
 
         createButton.setOnAction(event -> {
 //            importingLoadingVBox.setVisible(true);
@@ -283,12 +276,7 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
-        pathTosaveDatabaseTextField.textProperty().addListener((observableValue, s, t1) -> {
-            String newProjName = newProjNameTextField.getText().strip();
-            if (newProjName.length() > 0 && directoryFieldTextField.getText().length() > 0 && directoryFieldTextField.getText().length() > 0) {
-                createButton.setDisable(false);
-            }
-        });
+
 
 
 
@@ -346,7 +334,7 @@ public class FXMLDocumentController implements Initializable {
         currDatabase = newProjName;
 
         Path newProjSelectedPath = Paths.get(directoryFieldTextField.getText());
-        Path pathToSaveDB = Paths.get(pathTosaveDatabaseTextField.getText());
+        Path pathToSaveDB = Paths.get(directoryFieldTextField.getText());
 
         // check if the folder exist...
         // TODO: add here a check to see if the minimum required files are in the folder...
