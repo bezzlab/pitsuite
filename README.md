@@ -1,5 +1,5 @@
 
-# pitsuite
+# Pitsuite
 A complete software suite for PIT analysis 
 
 
@@ -38,3 +38,24 @@ https://user-images.githubusercontent.com/19326121/148542194-344732b8-c055-4dad-
 
 ![splicing](https://user-images.githubusercontent.com/19326121/143865923-de2c3b82-6a1a-44c8-8b9f-40e3f1216913.png)
 Discovery by PIT on a cryptic exon on STAG2. A. Representation of the splicing event in PITgui. Blue rectangles represent transcript exons, purple rectangle the coding sequence and pink rectangles peptides mapping to this position. B. PCR showing inclusion of the event. C. Psi (Percentage spliced in) in each condition based on PCR. D. Psi predicted by PIT based on RNA-Seq of si2. Relative abundance of this exon at the protein level based on peptide evidence.
+
+
+
+
+# Running PIT
+
+Instructions for running the PIT analysis pipeline can be found at: https://github.com/nirkoty/PIT
+
+
+# Running PITgui
+
+## Installation instructions
+
+1) Download the zip file in releases.
+
+2) Extract zip file
+
+3) run pitguiv2.jar (make sure you have Java >= 11 installed)
+
+4) To import a project, click on "New project" and for "Directory", select the directory where the PIT pipeline outputed the results.
+
